@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
         "biti",
+        "cass",
+        "cassete",
+        "cbios",
         "CPDR",
         "CPIR",
         "DDCB",
@@ -8,13 +11,18 @@
         "DJNZ",
         "Fazzi",
         "FDCB",
+        "fint",
+        "gomsx",
         "INDR",
         "INIR",
+        "KONAMI",
         "LDDR",
         "LDIR",
+        "libsdl",
         "macroquad",
         "magnif",
         "mreq",
+        "mtype",
         "MULUB",
         "MULUW",
         "nnrr",
@@ -31,7 +39,13 @@
         "RLCA",
         "RRCA",
         "rrnn",
+        "rsmsx",
+        "RTYPE",
+        "rustup",
+        "sels",
         "SLTTRAP",
+        "softwaredb",
+        "yourworkspace",
         "Zilog"
     ]
 }
