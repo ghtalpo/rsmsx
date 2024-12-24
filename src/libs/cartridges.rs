@@ -63,6 +63,9 @@ impl MapperKonami4 {
 }
 
 impl Mapper for MapperKonami4 {
+    fn is_void(&self) -> bool {
+        false
+    }
     fn read_byte(&self, mut address: u16) -> u8 {
         address -= 0x4000;
         let place = address / 0x2000;
@@ -111,6 +114,9 @@ impl MapperKonami5 {
 }
 
 impl Mapper for MapperKonami5 {
+    fn is_void(&self) -> bool {
+        false
+    }
     fn read_byte(&self, mut address: u16) -> u8 {
         if (self.sels[2] & 0x3f == 0x3f) && (0x9800..=0x9fff).contains(&address) {
             // SCC Area
@@ -190,6 +196,9 @@ impl MapperASCII8 {
 }
 
 impl Mapper for MapperASCII8 {
+    fn is_void(&self) -> bool {
+        false
+    }
     fn read_byte(&self, mut address: u16) -> u8 {
         address -= 0x4000;
         let place = address / 0x2000;

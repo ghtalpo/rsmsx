@@ -6,15 +6,25 @@ use crate::libs::cartridges::MapperKonami4;
 use super::cartridges::{get_cart_type, CartType, MapperASCII8, MapperKonami5};
 use super::ppi::PPI;
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum MapperType {
-    None = 0,
-    Konami4,
-    Konami5,
-    Ascii8kb,
+pub struct NullMapper {}
+impl NullMapper {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Mapper for NullMapper {
+    fn read_byte(&self, _address: u16) -> u8 {
+        0
+    }
+
+    fn write_byte(&mut self, _address: u16, _value: u8) {}
 }
 
 pub trait Mapper {
+    fn is_void(&self) -> bool {
+        true
+    }
     fn read_byte(&self, address: u16) -> u8;
     fn write_byte(&mut self, address: u16, value: u8);
 }
@@ -25,14 +35,9 @@ pub type MemoryAccessor = Rc<RefCell<Memory>>;
 pub struct Memory {
     contents: Vec<u8>, //[u8; 4 * 4 * 0x4000],
     can_write: [bool; 4 * 4],
-    // mapper: Option<&'a (dyn Mapper + 'a)>,
-    // mapper: Box<dyn Mapper>,
-    mapper_type: MapperType,
     slot_mapper: isize,
-    ppi: Rc<RefCell<PPI>>,
-    mapper_konami4: MapperKonami4,
-    mapper_konami5: MapperKonami5,
-    mapper_ascii8: MapperASCII8,
+    pub(crate) ppi: Rc<RefCell<PPI>>,
+    mapper: Rc<RefCell<dyn Mapper>>,
 }
 
 impl Memory {
@@ -41,12 +46,8 @@ impl Memory {
             contents: vec![0; 4 * 4 * 0x4000],
             can_write: [true; 4 * 4],
             slot_mapper: -1,
-            // mapper: None,
-            mapper_type: MapperType::None,
-            mapper_konami4: MapperKonami4::new(),
-            mapper_konami5: MapperKonami5::new(),
-            mapper_ascii8: MapperASCII8::new(),
             ppi,
+            mapper: Rc::new(RefCell::new(NullMapper::new())),
         }
     }
     pub fn save_state(&self) -> Memory {
@@ -55,21 +56,14 @@ impl Memory {
         m.can_write = self.can_write;
         m.slot_mapper = self.slot_mapper;
         // m.mapper = self.mapper;
-        m.mapper_type = self.mapper_type;
-        m.mapper_konami4 = self.mapper_konami4.clone();
-        m.mapper_konami5 = self.mapper_konami5.clone();
-        m.mapper_ascii8 = self.mapper_ascii8.clone();
+        m.mapper = self.mapper.clone();
         m
     }
     pub fn restore_state(&mut self, m: Memory) {
         self.contents = m.contents.clone();
         self.can_write = m.can_write;
         self.slot_mapper = m.slot_mapper;
-        // self.mapper = m.mapper;
-        self.mapper_type = m.mapper_type;
-        self.mapper_konami4 = m.mapper_konami4.clone();
-        self.mapper_konami5 = m.mapper_konami5.clone();
-        self.mapper_ascii8 = m.mapper_ascii8.clone();
+        self.mapper = m.mapper.clone();
         self.ppi = m.ppi;
     }
     pub fn load_bios_basic(&mut self, fname: &str) {
@@ -90,22 +84,23 @@ impl Memory {
         match get_cart_type(&buffer) {
             CartType::KONAMI4 => {
                 log::info!("Loading ROM {} to slot 1 as type KONAMI4", fname);
-                // let mapper = MapperKonami4::new(&buffer);
-                // self.setMapper(&mapper, slot);
-                self.mapper_konami4.init(&buffer);
-                self.set_mapper_type(MapperType::Konami4, slot);
+                let mut mapper_konami4 = MapperKonami4::new();
+                mapper_konami4.init(&buffer);
+                self.set_mapper(Rc::new(RefCell::new(mapper_konami4)), slot);
                 return;
             }
             CartType::KONAMI5 => {
                 log::info!("Loading ROM {} to slot 1 as type KONAMI5", fname);
-                self.mapper_konami5.init(&buffer);
-                self.set_mapper_type(MapperType::Konami5, slot);
+                let mut mapper_konami5 = MapperKonami5::new();
+                mapper_konami5.init(&buffer);
+                self.set_mapper(Rc::new(RefCell::new(mapper_konami5)), slot);
                 return;
             }
             CartType::ASCII8KB => {
                 log::info!("Loading ROM {} to slot 1 as type ASCII8KB", fname);
-                self.mapper_ascii8.init(&buffer);
-                self.set_mapper_type(MapperType::Ascii8kb, slot);
+                let mut mapper_ascii8 = MapperASCII8::new();
+                mapper_ascii8.init(&buffer);
+                self.set_mapper(Rc::new(RefCell::new(mapper_ascii8)), slot);
                 return;
             }
             CartType::NORMAL => {
@@ -118,10 +113,9 @@ impl Memory {
         log::info!("Trying to load as a standard cartridge...");
 
         if !mapper_type.is_empty() && mapper_type == "KONAMI4" {
-            // mapper := NewMapperKonami4(buffer)
-            // self.setMapper(mapper, slot)
-            self.mapper_konami4.init(&buffer);
-            self.set_mapper_type(MapperType::Konami4, slot);
+            let mut mapper_konami4 = MapperKonami4::new();
+            mapper_konami4.init(&buffer);
+            self.set_mapper(Rc::new(RefCell::new(mapper_konami4)), slot);
             return;
         }
         let num_of_pages = buffer.len() / 0x4000;
@@ -160,15 +154,9 @@ impl Memory {
         self.can_write[page * 4 + slot] = false;
     }
 
-    // pub fn setMapper(&mut self, mapper: &dyn Mapper, slot: isize) {
-    //     log::info!("Loading MegaROM in slot {}", slot);
-    //     self.mapper = Some(mapper);
-    //     self.slotMapper = slot;
-    // }
-    pub fn set_mapper_type(&mut self, mapper_type: MapperType, slot: usize) {
+    pub fn set_mapper(&mut self, mapper: Rc<RefCell<dyn Mapper>>, slot: usize) {
         log::info!("Loading MegaROM in slot {}", slot);
-        // self.mapper = Some(mapper);
-        self.mapper_type = mapper_type;
+        self.mapper = mapper;
         self.slot_mapper = slot as isize;
     }
 
@@ -182,29 +170,13 @@ impl Memory {
         let page = (address / 0x4000) as usize;
         let slot = self.ppi.borrow().pg_slots[page];
 
-        // if self.mapper != nil && self.slotMapper == slot && (page == 1 || page == 2) {
-        if self.mapper_type != MapperType::None
-            && self.slot_mapper == slot
-            && (page == 1 || page == 2)
-        {
-            // return self.mapper.readByte(address);
-            return self.mapper_read_byte(address);
+        if !self.mapper.borrow().is_void() && self.slot_mapper == slot && (page == 1 || page == 2) {
+            return self.mapper.borrow().read_byte(address);
         }
 
         let delta = (address as usize) - page * 0x4000;
         // return self.contents[page][slot as usize][delta];
         self.contents[(page * 4 + slot as usize) * 0x4000 + delta]
-    }
-
-    fn mapper_read_byte(&self, address: u16) -> u8 {
-        match self.mapper_type {
-            MapperType::Konami4 => self.mapper_konami4.read_byte(address),
-            MapperType::Konami5 => self.mapper_konami5.read_byte(address),
-            MapperType::Ascii8kb => self.mapper_ascii8.read_byte(address),
-            _ => {
-                unimplemented!()
-            }
-        }
     }
 
     // WriteByte writes a byte at address taking into account
@@ -219,12 +191,8 @@ impl Memory {
         let page = (address / 0x4000) as usize;
         let slot = self.ppi.borrow().pg_slots[page];
 
-        if self.mapper_type != MapperType::None
-            && self.slot_mapper == slot
-            && (page == 1 || page == 2)
-        {
-            // self.mapper.writeByte(address, value);
-            self.mapper_write_byte(address, value);
+        if !self.mapper.borrow().is_void() && self.slot_mapper == slot && (page == 1 || page == 2) {
+            self.mapper.borrow_mut().write_byte(address, value);
             return;
         }
 
@@ -232,17 +200,6 @@ impl Memory {
             let delta = (address as usize) - page * 0x4000;
             // return self.contents[page][slot as usize][delta];
             self.contents[(page * 4 + slot as usize) * 0x4000 + delta] = value;
-        }
-    }
-
-    fn mapper_write_byte(&mut self, address: u16, value: u8) {
-        match self.mapper_type {
-            MapperType::Konami4 => self.mapper_konami4.write_byte(address, value),
-            MapperType::Konami5 => self.mapper_konami5.write_byte(address, value),
-            MapperType::Ascii8kb => self.mapper_ascii8.write_byte(address, value),
-            _ => {
-                unimplemented!()
-            }
         }
     }
 
