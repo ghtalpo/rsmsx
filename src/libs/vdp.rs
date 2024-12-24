@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use super::graphics::GraphicsDriver;
+use super::graphics::{GraphicsDriver, GraphicsType};
 
 pub(crate) const SCREEN0: u8 = 0;
 pub(crate) const SCREEN1: u8 = 1;
@@ -24,7 +24,8 @@ pub struct Vdp {
 }
 
 impl Vdp {
-    pub fn new(graphics: Rc<RefCell<dyn GraphicsDriver>>) -> Self {
+    pub fn new(graphics_type: GraphicsType, quality: bool) -> Self {
+        let graphics = graphics_type.create(quality);
         Self {
             screen_enabled: false,
             screen_mode: 0,

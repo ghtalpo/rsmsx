@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use macroquad::prelude::*;
 
 use super::vdp::{SCREEN0, SCREEN1, SCREEN2};
@@ -13,6 +15,20 @@ const WIN_H: f32 = MSX_H as f32 * SCALE;
 enum ActiveTexture {
     Tex256,
     Tex320,
+}
+
+pub enum GraphicsType {
+    None,
+    Normal,
+}
+
+impl GraphicsType {
+    pub fn create(self, quality: bool) -> Rc<RefCell<dyn GraphicsDriver>> {
+        match self {
+            GraphicsType::None => Rc::new(RefCell::new(NullGraphics::new(quality))),
+            GraphicsType::Normal => Rc::new(RefCell::new(Graphics::new(quality))),
+        }
+    }
 }
 
 pub trait GraphicsDriver {

@@ -1,12 +1,25 @@
 pub const FREQUENCY: i32 = 22050;
 // pub const FREQUENCY: i32 = 44100;
 
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use sdl2::{
     audio::{AudioCallback, AudioDevice, AudioSpecDesired},
     AudioSubsystem,
 };
+
+pub enum SoundType {
+    None,
+    Normal,
+}
+impl SoundType {
+    pub fn create(self) -> Rc<RefCell<dyn SoundDriver>> {
+        match self {
+            SoundType::None => Rc::new(RefCell::new(NullSound::new())),
+            SoundType::Normal => Rc::new(RefCell::new(Sound::new())),
+        }
+    }
+}
 
 pub trait SoundDriver {
     fn add_channel(&mut self, channel: usize) -> Result<String, String>;

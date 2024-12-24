@@ -17,7 +17,10 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use super::{sound::SoundDriver, tone_generator::ToneGenerator};
+use super::{
+    sound::{SoundDriver, SoundType},
+    tone_generator::ToneGenerator,
+};
 
 pub struct PSG {
     sound: Rc<RefCell<dyn SoundDriver>>,
@@ -28,7 +31,8 @@ pub struct PSG {
 }
 
 impl PSG {
-    pub fn new(sound: Rc<RefCell<dyn SoundDriver>>) -> Self {
+    pub fn new(sound_type: SoundType) -> Self {
+        let sound = sound_type.create();
         for i in 0..3 {
             let _ = sound.borrow_mut().add_channel(i);
         }

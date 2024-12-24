@@ -6,13 +6,13 @@ use std::rc::Rc;
 use arg::Args;
 use log::{Level, LevelFilter, Metadata, Record};
 use macroquad::prelude::*;
-use rsmsx::libs::graphics::Graphics;
+use rsmsx::libs::graphics::GraphicsType;
 use rsmsx::libs::memory::Memory;
 use rsmsx::libs::msx::MSX;
 use rsmsx::libs::ports::Ports;
 use rsmsx::libs::ppi::PPI;
 use rsmsx::libs::psg::PSG;
-use rsmsx::libs::sound::Sound;
+use rsmsx::libs::sound::SoundType;
 use rsmsx::libs::vdp::Vdp;
 use rsmsx::libs::z80::z80_base::Z80;
 
@@ -85,11 +85,8 @@ async fn main() {
             if !args.cart.is_empty() {
                 memory.load_rom(&args.cart, 1, &args.mtype);
             }
-            let sound = Sound::new();
-
-            let psg = PSG::new(Rc::new(RefCell::new(sound)));
-            let graphics = Graphics::new(args.quality);
-            let vdp = Rc::new(RefCell::new(Vdp::new(Rc::new(RefCell::new(graphics)))));
+            let psg = PSG::new(SoundType::Normal);
+            let vdp = Rc::new(RefCell::new(Vdp::new(GraphicsType::Normal, args.quality)));
             vdp.borrow_mut().init_graphics();
             let ports = Ports::new(vdp.clone(), ppi.clone(), psg);
             let mut cpu_z80 = Z80::new(memory, ports);
