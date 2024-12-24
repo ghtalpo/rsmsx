@@ -1,0 +1,12714 @@
+// /*
+
+// Copyright (c) 2010 Andrea Fazzi
+
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 8
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+use super::{
+    z80_base::{
+        join_bytes, sign_extend, split_word, tern_op_b, Register16, FLAG_3, FLAG_5, FLAG_C, FLAG_H,
+        FLAG_N, FLAG_P, FLAG_S, FLAG_V, FLAG_Z, SHIFT_0X_CB, SHIFT_0X_DD, SHIFT_0X_DDCB,
+        SHIFT_0X_ED, SHIFT_0X_FD, Z80,
+    },
+    z80_tables::HALF_CARRY_SUB_TABLE,
+};
+
+// */
+#[allow(non_snake_case)]
+impl Z80 {
+    pub fn execute_opcode(&mut self, opcode: u16) -> bool {
+        match opcode {
+            0 => {
+                /* NOP */
+                self.instr__NOP();
+                true
+            }
+            1 => {
+                /* LD BC,nnnn */
+                self.instr__LD_BC_NNNN();
+                true
+            }
+            0x02 => {
+                /* LD (BC),A */
+                self.instr__LD_iBC_A();
+                true
+            }
+
+            0x03 => {
+                /* INC BC */
+                self.instr__INC_BC();
+                true
+            }
+
+            0x04 => {
+                /* INC B */
+                self.instr__INC_B();
+                true
+            }
+
+            0x05 => {
+                /* DEC B */
+                self.instr__DEC_B();
+                true
+            }
+
+            0x06 => {
+                /* LD B,nn */
+                self.instr__LD_B_NN();
+                true
+            }
+
+            0x07 => {
+                /* RLCA */
+                self.instr__RLCA();
+                true
+            }
+
+            0x08 => {
+                /* EX AF,AF' */
+                self.instr__EX_AF_AF();
+                true
+            }
+
+            0x09 => {
+                /* ADD HL,BC */
+                self.instr__ADD_HL_BC();
+                true
+            }
+
+            0x0a => {
+                /* LD A,(BC) */
+                self.instr__LD_A_iBC();
+                true
+            }
+
+            0x0b => {
+                /* DEC BC */
+                self.instr__DEC_BC();
+                true
+            }
+
+            0x0c => {
+                /* INC C */
+                self.instr__INC_C();
+                true
+            }
+
+            0x0d => {
+                /* DEC C */
+                self.instr__DEC_C();
+                true
+            }
+
+            0x0e => {
+                /* LD C,nn */
+                self.instr__LD_C_NN();
+                true
+            }
+
+            0x0f => {
+                /* RRCA */
+                self.instr__RRCA();
+                true
+            }
+
+            0x10 => {
+                /* DJNZ offset */
+                self.instr__DJNZ_OFFSET();
+                true
+            }
+
+            0x11 => {
+                /* LD DE,nnnn */
+                self.instr__LD_DE_NNNN();
+                true
+            }
+
+            0x12 => {
+                /* LD (DE),A */
+                self.instr__LD_iDE_A();
+                true
+            }
+
+            0x13 => {
+                /* INC DE */
+                self.instr__INC_DE();
+                true
+            }
+
+            0x14 => {
+                /* INC D */
+                self.instr__INC_D();
+                true
+            }
+
+            0x15 => {
+                /* DEC D */
+                self.instr__DEC_D();
+                true
+            }
+
+            0x16 => {
+                /* LD D,nn */
+                self.instr__LD_D_NN();
+                true
+            }
+
+            0x17 => {
+                /* RLA */
+                self.instr__RLA();
+                true
+            }
+
+            0x18 => {
+                /* JR offset */
+                self.instr__JR_OFFSET();
+                true
+            }
+
+            0x19 => {
+                /* ADD HL,DE */
+                self.instr__ADD_HL_DE();
+                true
+            }
+
+            0x1a => {
+                /* LD A,(DE) */
+                self.instr__LD_A_iDE();
+                true
+            }
+
+            0x1b => {
+                /* DEC DE */
+                self.instr__DEC_DE();
+                true
+            }
+
+            0x1c => {
+                /* INC E */
+                self.instr__INC_E();
+                true
+            }
+
+            0x1d => {
+                /* DEC E */
+                self.instr__DEC_E();
+                true
+            }
+
+            0x1e => {
+                /* LD E,nn */
+                self.instr__LD_E_NN();
+                true
+            }
+
+            0x1f => {
+                /* RRA */
+                self.instr__RRA();
+                true
+            }
+
+            0x20 => {
+                /* JR NZ,offset */
+                self.instr__JR_NZ_OFFSET();
+                true
+            }
+
+            0x21 => {
+                /* LD HL,nnnn */
+                self.instr__LD_HL_NNNN();
+                true
+            }
+
+            0x22 => {
+                /* LD (nnnn),HL */
+                self.instr__LD_iNNNN_HL();
+                true
+            }
+
+            0x23 => {
+                /* INC HL */
+                self.instr__INC_HL();
+                true
+            }
+
+            0x24 => {
+                /* INC H */
+                self.instr__INC_H();
+                true
+            }
+
+            0x25 => {
+                /* DEC H */
+                self.instr__DEC_H();
+                true
+            }
+
+            0x26 => {
+                /* LD H,nn */
+                self.instr__LD_H_NN();
+                true
+            }
+
+            0x27 => {
+                /* DAA */
+                self.instr__DAA();
+                true
+            }
+
+            0x28 => {
+                /* JR Z,offset */
+                self.instr__JR_Z_OFFSET();
+                true
+            }
+
+            0x29 => {
+                /* ADD HL,HL */
+                self.instr__ADD_HL_HL();
+                true
+            }
+
+            0x2a => {
+                /* LD HL,(nnnn) */
+                self.instr__LD_HL_iNNNN();
+                true
+            }
+
+            0x2b => {
+                /* DEC HL */
+                self.instr__DEC_HL();
+                true
+            }
+
+            0x2c => {
+                /* INC L */
+                self.instr__INC_L();
+                true
+            }
+
+            0x2d => {
+                /* DEC L */
+                self.instr__DEC_L();
+                true
+            }
+
+            0x2e => {
+                /* LD L,nn */
+                self.instr__LD_L_NN();
+                true
+            }
+
+            0x2f => {
+                /* CPL */
+                self.instr__CPL();
+                true
+            }
+
+            0x30 => {
+                /* JR NC,offset */
+                self.instr__JR_NC_OFFSET();
+                true
+            }
+
+            0x31 => {
+                /* LD SP,nnnn */
+                self.instr__LD_SP_NNNN();
+                true
+            }
+
+            0x32 => {
+                /* LD (nnnn),A */
+                self.instr__LD_iNNNN_A();
+                true
+            }
+
+            0x33 => {
+                /* INC SP */
+                self.instr__INC_SP();
+                true
+            }
+
+            0x34 => {
+                /* INC (HL) */
+                self.instr__INC_iHL();
+                true
+            }
+
+            0x35 => {
+                /* DEC (HL) */
+                self.instr__DEC_iHL();
+                true
+            }
+
+            0x36 => {
+                /* LD (HL),nn */
+                self.instr__LD_iHL_NN();
+                true
+            }
+
+            0x37 => {
+                /* SCF */
+                self.instr__SCF();
+                true
+            }
+
+            0x38 => {
+                /* JR C,offset */
+                self.instr__JR_C_OFFSET();
+                true
+            }
+
+            0x39 => {
+                /* ADD HL,SP */
+                self.instr__ADD_HL_SP();
+                true
+            }
+
+            0x3a => {
+                /* LD A,(nnnn) */
+                self.instr__LD_A_iNNNN();
+                true
+            }
+
+            0x3b => {
+                /* DEC SP */
+                self.instr__DEC_SP();
+                true
+            }
+
+            0x3c => {
+                /* INC A */
+                self.instr__INC_A();
+                true
+            }
+
+            0x3d => {
+                /* DEC A */
+                self.instr__DEC_A();
+                true
+            }
+
+            0x3e => {
+                /* LD A,nn */
+                self.instr__LD_A_NN();
+                true
+            }
+
+            0x3f => {
+                /* CCF */
+                self.instr__CCF();
+                true
+            }
+
+            0x40 => {
+                /* LD B,B */
+                self.instr__LD_B_B();
+                true
+            }
+
+            0x41 => {
+                /* LD B,C */
+                self.instr__LD_B_C();
+                true
+            }
+
+            0x42 => {
+                /* LD B,D */
+                self.instr__LD_B_D();
+                true
+            }
+
+            0x43 => {
+                /* LD B,E */
+                self.instr__LD_B_E();
+                true
+            }
+
+            0x44 => {
+                /* LD B,H */
+                self.instr__LD_B_H();
+                true
+            }
+
+            0x45 => {
+                /* LD B,L */
+                self.instr__LD_B_L();
+                true
+            }
+
+            0x46 => {
+                /* LD B,(HL) */
+                self.instr__LD_B_iHL();
+                true
+            }
+
+            0x47 => {
+                /* LD B,A */
+                self.instr__LD_B_A();
+                true
+            }
+
+            0x48 => {
+                /* LD C,B */
+                self.instr__LD_C_B();
+                true
+            }
+
+            0x49 => {
+                /* LD C,C */
+                self.instr__LD_C_C();
+                true
+            }
+
+            0x4a => {
+                /* LD C,D */
+                self.instr__LD_C_D();
+                true
+            }
+
+            0x4b => {
+                /* LD C,E */
+                self.instr__LD_C_E();
+                true
+            }
+
+            0x4c => {
+                /* LD C,H */
+                self.instr__LD_C_H();
+                true
+            }
+
+            0x4d => {
+                /* LD C,L */
+                self.instr__LD_C_L();
+                true
+            }
+
+            0x4e => {
+                /* LD C,(HL) */
+                self.instr__LD_C_iHL();
+                true
+            }
+
+            0x4f => {
+                /* LD C,A */
+                self.instr__LD_C_A();
+                true
+            }
+
+            0x50 => {
+                /* LD D,B */
+                self.instr__LD_D_B();
+                true
+            }
+
+            0x51 => {
+                /* LD D,C */
+                self.instr__LD_D_C();
+                true
+            }
+
+            0x52 => {
+                /* LD D,D */
+                self.instr__LD_D_D();
+                true
+            }
+
+            0x53 => {
+                /* LD D,E */
+                self.instr__LD_D_E();
+                true
+            }
+
+            0x54 => {
+                /* LD D,H */
+                self.instr__LD_D_H();
+                true
+            }
+
+            0x55 => {
+                /* LD D,L */
+                self.instr__LD_D_L();
+                true
+            }
+
+            0x56 => {
+                /* LD D,(HL) */
+                self.instr__LD_D_iHL();
+                true
+            }
+
+            0x57 => {
+                /* LD D,A */
+                self.instr__LD_D_A();
+                true
+            }
+
+            0x58 => {
+                /* LD E,B */
+                self.instr__LD_E_B();
+                true
+            }
+
+            0x59 => {
+                /* LD E,C */
+                self.instr__LD_E_C();
+                true
+            }
+
+            0x5a => {
+                /* LD E,D */
+                self.instr__LD_E_D();
+                true
+            }
+
+            0x5b => {
+                /* LD E,E */
+                self.instr__LD_E_E();
+                true
+            }
+
+            0x5c => {
+                /* LD E,H */
+                self.instr__LD_E_H();
+                true
+            }
+
+            0x5d => {
+                /* LD E,L */
+                self.instr__LD_E_L();
+                true
+            }
+
+            0x5e => {
+                /* LD E,(HL) */
+                self.instr__LD_E_iHL();
+                true
+            }
+
+            0x5f => {
+                /* LD E,A */
+                self.instr__LD_E_A();
+                true
+            }
+
+            0x60 => {
+                /* LD H,B */
+                self.instr__LD_H_B();
+                true
+            }
+
+            0x61 => {
+                /* LD H,C */
+                self.instr__LD_H_C();
+                true
+            }
+
+            0x62 => {
+                /* LD H,D */
+                self.instr__LD_H_D();
+                true
+            }
+
+            0x63 => {
+                /* LD H,E */
+                self.instr__LD_H_E();
+                true
+            }
+
+            0x64 => {
+                /* LD H,H */
+                self.instr__LD_H_H();
+                true
+            }
+
+            0x65 => {
+                /* LD H,L */
+                self.instr__LD_H_L();
+                true
+            }
+
+            0x66 => {
+                /* LD H,(HL) */
+                self.instr__LD_H_iHL();
+                true
+            }
+
+            0x67 => {
+                /* LD H,A */
+                self.instr__LD_H_A();
+                true
+            }
+
+            0x68 => {
+                /* LD L,B */
+                self.instr__LD_L_B();
+                true
+            }
+
+            0x69 => {
+                /* LD L,C */
+                self.instr__LD_L_C();
+                true
+            }
+
+            0x6a => {
+                /* LD L,D */
+                self.instr__LD_L_D();
+                true
+            }
+
+            0x6b => {
+                /* LD L,E */
+                self.instr__LD_L_E();
+                true
+            }
+
+            0x6c => {
+                /* LD L,H */
+                self.instr__LD_L_H();
+                true
+            }
+
+            0x6d => {
+                /* LD L,L */
+                self.instr__LD_L_L();
+                true
+            }
+
+            0x6e => {
+                /* LD L,(HL) */
+                self.instr__LD_L_iHL();
+                true
+            }
+
+            0x6f => {
+                /* LD L,A */
+                self.instr__LD_L_A();
+                true
+            }
+
+            0x70 => {
+                /* LD (HL),B */
+                self.instr__LD_iHL_B();
+                true
+            }
+
+            0x71 => {
+                /* LD (HL),C */
+                self.instr__LD_iHL_C();
+                true
+            }
+
+            0x72 => {
+                /* LD (HL),D */
+                self.instr__LD_iHL_D();
+                true
+            }
+
+            0x73 => {
+                /* LD (HL),E */
+                self.instr__LD_iHL_E();
+                true
+            }
+
+            0x74 => {
+                /* LD (HL),H */
+                self.instr__LD_iHL_H();
+                true
+            }
+
+            0x75 => {
+                /* LD (HL),L */
+                self.instr__LD_iHL_L();
+                true
+            }
+
+            0x76 => {
+                /* HALT */
+                self.instr__HALT();
+                true
+            }
+
+            0x77 => {
+                /* LD (HL),A */
+                self.instr__LD_iHL_A();
+                true
+            }
+
+            0x78 => {
+                /* LD A,B */
+                self.instr__LD_A_B();
+                true
+            }
+
+            0x79 => {
+                /* LD A,C */
+                self.instr__LD_A_C();
+                true
+            }
+
+            0x7a => {
+                /* LD A,D */
+                self.instr__LD_A_D();
+                true
+            }
+
+            0x7b => {
+                /* LD A,E */
+                self.instr__LD_A_E();
+                true
+            }
+
+            0x7c => {
+                /* LD A,H */
+                self.instr__LD_A_H();
+                true
+            }
+
+            0x7d => {
+                /* LD A,L */
+                self.instr__LD_A_L();
+                true
+            }
+
+            0x7e => {
+                /* LD A,(HL) */
+                self.instr__LD_A_iHL();
+                true
+            }
+
+            0x7f => {
+                /* LD A,A */
+                self.instr__LD_A_A();
+                true
+            }
+
+            0x80 => {
+                /* ADD A,B */
+                self.instr__ADD_A_B();
+                true
+            }
+
+            0x81 => {
+                /* ADD A,C */
+                self.instr__ADD_A_C();
+                true
+            }
+
+            0x82 => {
+                /* ADD A,D */
+                self.instr__ADD_A_D();
+                true
+            }
+
+            0x83 => {
+                /* ADD A,E */
+                self.instr__ADD_A_E();
+                true
+            }
+
+            0x84 => {
+                /* ADD A,H */
+                self.instr__ADD_A_H();
+                true
+            }
+
+            0x85 => {
+                /* ADD A,L */
+                self.instr__ADD_A_L();
+                true
+            }
+
+            0x86 => {
+                /* ADD A,(HL) */
+                self.instr__ADD_A_iHL();
+                true
+            }
+
+            0x87 => {
+                /* ADD A,A */
+                self.instr__ADD_A_A();
+                true
+            }
+
+            0x88 => {
+                /* ADC A,B */
+                self.instr__ADC_A_B();
+                true
+            }
+
+            0x89 => {
+                /* ADC A,C */
+                self.instr__ADC_A_C();
+                true
+            }
+
+            0x8a => {
+                /* ADC A,D */
+                self.instr__ADC_A_D();
+                true
+            }
+
+            0x8b => {
+                /* ADC A,E */
+                self.instr__ADC_A_E();
+                true
+            }
+
+            0x8c => {
+                /* ADC A,H */
+                self.instr__ADC_A_H();
+                true
+            }
+
+            0x8d => {
+                /* ADC A,L */
+                self.instr__ADC_A_L();
+                true
+            }
+
+            0x8e => {
+                /* ADC A,(HL) */
+                self.instr__ADC_A_iHL();
+                true
+            }
+
+            0x8f => {
+                /* ADC A,A */
+                self.instr__ADC_A_A();
+                true
+            }
+
+            0x90 => {
+                /* SUB A,B */
+                self.instr__SUB_A_B();
+                true
+            }
+
+            0x91 => {
+                /* SUB A,C */
+                self.instr__SUB_A_C();
+                true
+            }
+
+            0x92 => {
+                /* SUB A,D */
+                self.instr__SUB_A_D();
+                true
+            }
+
+            0x93 => {
+                /* SUB A,E */
+                self.instr__SUB_A_E();
+                true
+            }
+
+            0x94 => {
+                /* SUB A,H */
+                self.instr__SUB_A_H();
+                true
+            }
+
+            0x95 => {
+                /* SUB A,L */
+                self.instr__SUB_A_L();
+                true
+            }
+
+            0x96 => {
+                /* SUB A,(HL) */
+                self.instr__SUB_A_iHL();
+                true
+            }
+
+            0x97 => {
+                /* SUB A,A */
+                self.instr__SUB_A_A();
+                true
+            }
+
+            0x98 => {
+                /* SBC A,B */
+                self.instr__SBC_A_B();
+                true
+            }
+
+            0x99 => {
+                /* SBC A,C */
+                self.instr__SBC_A_C();
+                true
+            }
+
+            0x9a => {
+                /* SBC A,D */
+                self.instr__SBC_A_D();
+                true
+            }
+
+            0x9b => {
+                /* SBC A,E */
+                self.instr__SBC_A_E();
+                true
+            }
+
+            0x9c => {
+                /* SBC A,H */
+                self.instr__SBC_A_H();
+                true
+            }
+
+            0x9d => {
+                /* SBC A,L */
+                self.instr__SBC_A_L();
+                true
+            }
+
+            0x9e => {
+                /* SBC A,(HL) */
+                self.instr__SBC_A_iHL();
+                true
+            }
+
+            0x9f => {
+                /* SBC A,A */
+                self.instr__SBC_A_A();
+                true
+            }
+
+            0xa0 => {
+                /* AND A,B */
+                self.instr__AND_A_B();
+                true
+            }
+
+            0xa1 => {
+                /* AND A,C */
+                self.instr__AND_A_C();
+                true
+            }
+
+            0xa2 => {
+                /* AND A,D */
+                self.instr__AND_A_D();
+                true
+            }
+
+            0xa3 => {
+                /* AND A,E */
+                self.instr__AND_A_E();
+                true
+            }
+
+            0xa4 => {
+                /* AND A,H */
+                self.instr__AND_A_H();
+                true
+            }
+
+            0xa5 => {
+                /* AND A,L */
+                self.instr__AND_A_L();
+                true
+            }
+
+            0xa6 => {
+                /* AND A,(HL) */
+                self.instr__AND_A_iHL();
+                true
+            }
+
+            0xa7 => {
+                /* AND A,A */
+                self.instr__AND_A_A();
+                true
+            }
+
+            0xa8 => {
+                /* XOR A,B */
+                self.instr__XOR_A_B();
+                true
+            }
+
+            0xa9 => {
+                /* XOR A,C */
+                self.instr__XOR_A_C();
+                true
+            }
+
+            0xaa => {
+                /* XOR A,D */
+                self.instr__XOR_A_D();
+                true
+            }
+
+            0xab => {
+                /* XOR A,E */
+                self.instr__XOR_A_E();
+                true
+            }
+
+            0xac => {
+                /* XOR A,H */
+                self.instr__XOR_A_H();
+                true
+            }
+
+            0xad => {
+                /* XOR A,L */
+                self.instr__XOR_A_L();
+                true
+            }
+
+            0xae => {
+                /* XOR A,(HL) */
+                self.instr__XOR_A_iHL();
+                true
+            }
+
+            0xaf => {
+                /* XOR A,A */
+                self.instr__XOR_A_A();
+                true
+            }
+
+            0xb0 => {
+                /* OR A,B */
+                self.instr__OR_A_B();
+                true
+            }
+
+            0xb1 => {
+                /* OR A,C */
+                self.instr__OR_A_C();
+                true
+            }
+
+            0xb2 => {
+                /* OR A,D */
+                self.instr__OR_A_D();
+                true
+            }
+
+            0xb3 => {
+                /* OR A,E */
+                self.instr__OR_A_E();
+                true
+            }
+
+            0xb4 => {
+                /* OR A,H */
+                self.instr__OR_A_H();
+                true
+            }
+
+            0xb5 => {
+                /* OR A,L */
+                self.instr__OR_A_L();
+                true
+            }
+
+            0xb6 => {
+                /* OR A,(HL) */
+                self.instr__OR_A_iHL();
+                true
+            }
+
+            0xb7 => {
+                /* OR A,A */
+                self.instr__OR_A_A();
+                true
+            }
+
+            0xb8 => {
+                /* CP B */
+                self.instr__CP_B();
+                true
+            }
+
+            0xb9 => {
+                /* CP C */
+                self.instr__CP_C();
+                true
+            }
+
+            0xba => {
+                /* CP D */
+                self.instr__CP_D();
+                true
+            }
+
+            0xbb => {
+                /* CP E */
+                self.instr__CP_E();
+                true
+            }
+
+            0xbc => {
+                /* CP H */
+                self.instr__CP_H();
+                true
+            }
+
+            0xbd => {
+                /* CP L */
+                self.instr__CP_L();
+                true
+            }
+
+            0xbe => {
+                /* CP (HL) */
+                self.instr__CP_iHL();
+                true
+            }
+
+            0xbf => {
+                /* CP A */
+                self.instr__CP_A();
+                true
+            }
+
+            0xc0 => {
+                /* RET NZ */
+                self.instr__RET_NZ();
+                true
+            }
+
+            0xc1 => {
+                /* POP BC */
+                self.instr__POP_BC();
+                true
+            }
+
+            0xc2 => {
+                /* JP NZ,nnnn */
+                self.instr__JP_NZ_NNNN();
+                true
+            }
+
+            0xc3 => {
+                /* JP nnnn */
+                self.instr__JP_NNNN();
+                true
+            }
+
+            0xc4 => {
+                /* CALL NZ,nnnn */
+                self.instr__CALL_NZ_NNNN();
+                true
+            }
+
+            0xc5 => {
+                /* PUSH BC */
+                self.instr__PUSH_BC();
+                true
+            }
+
+            0xc6 => {
+                /* ADD A,nn */
+                self.instr__ADD_A_NN();
+                true
+            }
+
+            0xc7 => {
+                /* RST 00 */
+                self.instr__RST_00();
+                true
+            }
+
+            0xc8 => {
+                /* RET Z */
+                self.instr__RET_Z();
+                true
+            }
+
+            0xc9 => {
+                /* RET */
+                self.instr__RET();
+                true
+            }
+
+            0xca => {
+                /* JP Z,nnnn */
+                self.instr__JP_Z_NNNN();
+                true
+            }
+
+            0xcb => {
+                /* shift CB */
+                self.instr__SHIFT_CB();
+                true
+            }
+
+            0xcc => {
+                /* CALL Z,nnnn */
+                self.instr__CALL_Z_NNNN();
+                true
+            }
+
+            0xcd => {
+                /* CALL nnnn */
+                self.instr__CALL_NNNN();
+                true
+            }
+
+            0xce => {
+                /* ADC A,nn */
+                self.instr__ADC_A_NN();
+                true
+            }
+
+            0xcf => {
+                /* RST 8 */
+                self.instr__RST_8();
+                true
+            }
+
+            0xd0 => {
+                /* RET NC */
+                self.instr__RET_NC();
+                true
+            }
+
+            0xd1 => {
+                /* POP DE */
+                self.instr__POP_DE();
+                true
+            }
+
+            0xd2 => {
+                /* JP NC,nnnn */
+                self.instr__JP_NC_NNNN();
+                true
+            }
+
+            0xd3 => {
+                /* OUT (nn),A */
+                self.instr__OUT_iNN_A();
+                true
+            }
+
+            0xd4 => {
+                /* CALL NC,nnnn */
+                self.instr__CALL_NC_NNNN();
+                true
+            }
+
+            0xd5 => {
+                /* PUSH DE */
+                self.instr__PUSH_DE();
+                true
+            }
+
+            0xd6 => {
+                /* SUB nn */
+                self.instr__SUB_NN();
+                true
+            }
+
+            0xd7 => {
+                /* RST 10 */
+                self.instr__RST_10();
+                true
+            }
+
+            0xd8 => {
+                /* RET C */
+                self.instr__RET_C();
+                true
+            }
+
+            0xd9 => {
+                /* EXX */
+                self.instr__EXX();
+                true
+            }
+
+            0xda => {
+                /* JP C,nnnn */
+                self.instr__JP_C_NNNN();
+                true
+            }
+
+            0xdb => {
+                /* IN A,(nn) */
+                self.instr__IN_A_iNN();
+                true
+            }
+
+            0xdc => {
+                /* CALL C,nnnn */
+                self.instr__CALL_C_NNNN();
+                true
+            }
+
+            0xdd => {
+                /* shift DD */
+                self.instr__SHIFT_DD();
+                true
+            }
+
+            0xde => {
+                /* SBC A,nn */
+                self.instr__SBC_A_NN();
+                true
+            }
+
+            0xdf => {
+                /* RST 18 */
+                self.instr__RST_18();
+                true
+            }
+
+            0xe0 => {
+                /* RET PO */
+                self.instr__RET_PO();
+                true
+            }
+
+            0xe1 => {
+                /* POP HL */
+                self.instr__POP_HL();
+                true
+            }
+
+            0xe2 => {
+                /* JP PO,nnnn */
+                self.instr__JP_PO_NNNN();
+                true
+            }
+
+            0xe3 => {
+                /* EX (SP),HL */
+                self.instr__EX_iSP_HL();
+                true
+            }
+
+            0xe4 => {
+                /* CALL PO,nnnn */
+                self.instr__CALL_PO_NNNN();
+                true
+            }
+
+            0xe5 => {
+                /* PUSH HL */
+                self.instr__PUSH_HL();
+                true
+            }
+
+            0xe6 => {
+                /* AND nn */
+                self.instr__AND_NN();
+                true
+            }
+
+            0xe7 => {
+                /* RST 20 */
+                self.instr__RST_20();
+                true
+            }
+
+            0xe8 => {
+                /* RET PE */
+                self.instr__RET_PE();
+                true
+            }
+
+            0xe9 => {
+                /* JP HL */
+                self.instr__JP_HL();
+                true
+            }
+
+            0xea => {
+                /* JP PE,nnnn */
+                self.instr__JP_PE_NNNN();
+                true
+            }
+
+            0xeb => {
+                /* EX DE,HL */
+                self.instr__EX_DE_HL();
+                true
+            }
+
+            0xec => {
+                /* CALL PE,nnnn */
+                self.instr__CALL_PE_NNNN();
+                true
+            }
+
+            0xed => {
+                /* shift ED */
+                self.instr__SHIFT_ED();
+                true
+            }
+
+            0xee => {
+                /* XOR A,nn */
+                self.instr__XOR_A_NN();
+                true
+            }
+
+            0xef => {
+                /* RST 28 */
+                self.instr__RST_28();
+                true
+            }
+
+            0xf0 => {
+                /* RET P */
+                self.instr__RET_P();
+                true
+            }
+
+            0xf1 => {
+                /* POP AF */
+                self.instr__POP_AF();
+                true
+            }
+
+            0xf2 => {
+                /* JP P,nnnn */
+                self.instr__JP_P_NNNN();
+                true
+            }
+
+            0xf3 => {
+                /* DI */
+                self.instr__DI();
+                true
+            }
+
+            0xf4 => {
+                /* CALL P,nnnn */
+                self.instr__CALL_P_NNNN();
+                true
+            }
+
+            0xf5 => {
+                /* PUSH AF */
+                self.instr__PUSH_AF();
+                true
+            }
+
+            0xf6 => {
+                /* OR nn */
+                self.instr__OR_NN();
+                true
+            }
+
+            0xf7 => {
+                /* RST 30 */
+                self.instr__RST_30();
+                true
+            }
+
+            0xf8 => {
+                /* RET M */
+                self.instr__RET_M();
+                true
+            }
+
+            0xf9 => {
+                /* LD SP,HL */
+                self.instr__LD_SP_HL();
+                true
+            }
+
+            0xfa => {
+                /* JP M,nnnn */
+                self.instr__JP_M_NNNN();
+                true
+            }
+
+            0xfb => {
+                /* EI */
+                self.instr__EI();
+                true
+            }
+
+            0xfc => {
+                /* CALL M,nnnn */
+                self.instr__CALL_M_NNNN();
+                true
+            }
+
+            0xfd => {
+                /* shift FD */
+                self.instr__SHIFT_FD();
+                true
+            }
+
+            0xfe => {
+                /* CP nn */
+                self.instr__CP_NN();
+                true
+            }
+
+            0xff => {
+                /* RST 38 */
+                self.instr__RST_38();
+                true
+            }
+
+            val if val == SHIFT_0X_CB => {
+                /* RLC B */
+                self.instrCB__RLC_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x01 => {
+                /* RLC C */
+                self.instrCB__RLC_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x02 => {
+                /* RLC D */
+                self.instrCB__RLC_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x03 => {
+                /* RLC E */
+                self.instrCB__RLC_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x04 => {
+                /* RLC H */
+                self.instrCB__RLC_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x05 => {
+                /* RLC L */
+                self.instrCB__RLC_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x06 => {
+                /* RLC (HL) */
+                self.instrCB__RLC_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x07 => {
+                /* RLC A */
+                self.instrCB__RLC_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x08 => {
+                /* RRC B */
+                self.instrCB__RRC_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x09 => {
+                /* RRC C */
+                self.instrCB__RRC_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x0a => {
+                /* RRC D */
+                self.instrCB__RRC_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x0b => {
+                /* RRC E */
+                self.instrCB__RRC_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x0c => {
+                /* RRC H */
+                self.instrCB__RRC_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x0d => {
+                /* RRC L */
+                self.instrCB__RRC_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x0e => {
+                /* RRC (HL) */
+                self.instrCB__RRC_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x0f => {
+                /* RRC A */
+                self.instrCB__RRC_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x10 => {
+                /* RL B */
+                self.instrCB__RL_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x11 => {
+                /* RL C */
+                self.instrCB__RL_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x12 => {
+                /* RL D */
+                self.instrCB__RL_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x13 => {
+                /* RL E */
+                self.instrCB__RL_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x14 => {
+                /* RL H */
+                self.instrCB__RL_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x15 => {
+                /* RL L */
+                self.instrCB__RL_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x16 => {
+                /* RL (HL) */
+                self.instrCB__RL_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x17 => {
+                /* RL A */
+                self.instrCB__RL_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x18 => {
+                /* RR B */
+                self.instrCB__RR_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x19 => {
+                /* RR C */
+                self.instrCB__RR_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x1a => {
+                /* RR D */
+                self.instrCB__RR_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x1b => {
+                /* RR E */
+                self.instrCB__RR_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x1c => {
+                /* RR H */
+                self.instrCB__RR_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x1d => {
+                /* RR L */
+                self.instrCB__RR_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x1e => {
+                /* RR (HL) */
+                self.instrCB__RR_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x1f => {
+                /* RR A */
+                self.instrCB__RR_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x20 => {
+                /* SLA B */
+                self.instrCB__SLA_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x21 => {
+                /* SLA C */
+                self.instrCB__SLA_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x22 => {
+                /* SLA D */
+                self.instrCB__SLA_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x23 => {
+                /* SLA E */
+                self.instrCB__SLA_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x24 => {
+                /* SLA H */
+                self.instrCB__SLA_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x25 => {
+                /* SLA L */
+                self.instrCB__SLA_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x26 => {
+                /* SLA (HL) */
+                self.instrCB__SLA_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x27 => {
+                /* SLA A */
+                self.instrCB__SLA_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x28 => {
+                /* SRA B */
+                self.instrCB__SRA_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x29 => {
+                /* SRA C */
+                self.instrCB__SRA_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x2a => {
+                /* SRA D */
+                self.instrCB__SRA_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x2b => {
+                /* SRA E */
+                self.instrCB__SRA_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x2c => {
+                /* SRA H */
+                self.instrCB__SRA_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x2d => {
+                /* SRA L */
+                self.instrCB__SRA_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x2e => {
+                /* SRA (HL) */
+                self.instrCB__SRA_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x2f => {
+                /* SRA A */
+                self.instrCB__SRA_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x30 => {
+                /* SLL B */
+                self.instrCB__SLL_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x31 => {
+                /* SLL C */
+                self.instrCB__SLL_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x32 => {
+                /* SLL D */
+                self.instrCB__SLL_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x33 => {
+                /* SLL E */
+                self.instrCB__SLL_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x34 => {
+                /* SLL H */
+                self.instrCB__SLL_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x35 => {
+                /* SLL L */
+                self.instrCB__SLL_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x36 => {
+                /* SLL (HL) */
+                self.instrCB__SLL_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x37 => {
+                /* SLL A */
+                self.instrCB__SLL_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x38 => {
+                /* SRL B */
+                self.instrCB__SRL_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x39 => {
+                /* SRL C */
+                self.instrCB__SRL_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x3a => {
+                /* SRL D */
+                self.instrCB__SRL_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x3b => {
+                /* SRL E */
+                self.instrCB__SRL_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x3c => {
+                /* SRL H */
+                self.instrCB__SRL_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x3d => {
+                /* SRL L */
+                self.instrCB__SRL_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x3e => {
+                /* SRL (HL) */
+                self.instrCB__SRL_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x3f => {
+                /* SRL A */
+                self.instrCB__SRL_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x40 => {
+                /* BIT 0,B */
+                self.instrCB__BIT_0_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x41 => {
+                /* BIT 0,C */
+                self.instrCB__BIT_0_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x42 => {
+                /* BIT 0,D */
+                self.instrCB__BIT_0_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x43 => {
+                /* BIT 0,E */
+                self.instrCB__BIT_0_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x44 => {
+                /* BIT 0,H */
+                self.instrCB__BIT_0_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x45 => {
+                /* BIT 0,L */
+                self.instrCB__BIT_0_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x46 => {
+                /* BIT 0,(HL) */
+                self.instrCB__BIT_0_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x47 => {
+                /* BIT 0,A */
+                self.instrCB__BIT_0_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x48 => {
+                /* BIT 1,B */
+                self.instrCB__BIT_1_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x49 => {
+                /* BIT 1,C */
+                self.instrCB__BIT_1_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x4a => {
+                /* BIT 1,D */
+                self.instrCB__BIT_1_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x4b => {
+                /* BIT 1,E */
+                self.instrCB__BIT_1_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x4c => {
+                /* BIT 1,H */
+                self.instrCB__BIT_1_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x4d => {
+                /* BIT 1,L */
+                self.instrCB__BIT_1_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x4e => {
+                /* BIT 1,(HL) */
+                self.instrCB__BIT_1_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x4f => {
+                /* BIT 1,A */
+                self.instrCB__BIT_1_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x50 => {
+                /* BIT 2,B */
+                self.instrCB__BIT_2_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x51 => {
+                /* BIT 2,C */
+                self.instrCB__BIT_2_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x52 => {
+                /* BIT 2,D */
+                self.instrCB__BIT_2_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x53 => {
+                /* BIT 2,E */
+                self.instrCB__BIT_2_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x54 => {
+                /* BIT 2,H */
+                self.instrCB__BIT_2_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x55 => {
+                /* BIT 2,L */
+                self.instrCB__BIT_2_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x56 => {
+                /* BIT 2,(HL) */
+                self.instrCB__BIT_2_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x57 => {
+                /* BIT 2,A */
+                self.instrCB__BIT_2_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x58 => {
+                /* BIT 3,B */
+                self.instrCB__BIT_3_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x59 => {
+                /* BIT 3,C */
+                self.instrCB__BIT_3_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x5a => {
+                /* BIT 3,D */
+                self.instrCB__BIT_3_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x5b => {
+                /* BIT 3,E */
+                self.instrCB__BIT_3_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x5c => {
+                /* BIT 3,H */
+                self.instrCB__BIT_3_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x5d => {
+                /* BIT 3,L */
+                self.instrCB__BIT_3_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x5e => {
+                /* BIT 3,(HL) */
+                self.instrCB__BIT_3_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x5f => {
+                /* BIT 3,A */
+                self.instrCB__BIT_3_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x60 => {
+                /* BIT 4,B */
+                self.instrCB__BIT_4_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x61 => {
+                /* BIT 4,C */
+                self.instrCB__BIT_4_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x62 => {
+                /* BIT 4,D */
+                self.instrCB__BIT_4_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x63 => {
+                /* BIT 4,E */
+                self.instrCB__BIT_4_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x64 => {
+                /* BIT 4,H */
+                self.instrCB__BIT_4_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x65 => {
+                /* BIT 4,L */
+                self.instrCB__BIT_4_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x66 => {
+                /* BIT 4,(HL) */
+                self.instrCB__BIT_4_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x67 => {
+                /* BIT 4,A */
+                self.instrCB__BIT_4_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x68 => {
+                /* BIT 5,B */
+                self.instrCB__BIT_5_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x69 => {
+                /* BIT 5,C */
+                self.instrCB__BIT_5_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x6a => {
+                /* BIT 5,D */
+                self.instrCB__BIT_5_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x6b => {
+                /* BIT 5,E */
+                self.instrCB__BIT_5_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x6c => {
+                /* BIT 5,H */
+                self.instrCB__BIT_5_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x6d => {
+                /* BIT 5,L */
+                self.instrCB__BIT_5_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x6e => {
+                /* BIT 5,(HL) */
+                self.instrCB__BIT_5_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x6f => {
+                /* BIT 5,A */
+                self.instrCB__BIT_5_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x70 => {
+                /* BIT 6,B */
+                self.instrCB__BIT_6_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x71 => {
+                /* BIT 6,C */
+                self.instrCB__BIT_6_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x72 => {
+                /* BIT 6,D */
+                self.instrCB__BIT_6_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x73 => {
+                /* BIT 6,E */
+                self.instrCB__BIT_6_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x74 => {
+                /* BIT 6,H */
+                self.instrCB__BIT_6_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x75 => {
+                /* BIT 6,L */
+                self.instrCB__BIT_6_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x76 => {
+                /* BIT 6,(HL) */
+                self.instrCB__BIT_6_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x77 => {
+                /* BIT 6,A */
+                self.instrCB__BIT_6_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x78 => {
+                /* BIT 7,B */
+                self.instrCB__BIT_7_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x79 => {
+                /* BIT 7,C */
+                self.instrCB__BIT_7_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x7a => {
+                /* BIT 7,D */
+                self.instrCB__BIT_7_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x7b => {
+                /* BIT 7,E */
+                self.instrCB__BIT_7_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x7c => {
+                /* BIT 7,H */
+                self.instrCB__BIT_7_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x7d => {
+                /* BIT 7,L */
+                self.instrCB__BIT_7_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x7e => {
+                /* BIT 7,(HL) */
+                self.instrCB__BIT_7_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x7f => {
+                /* BIT 7,A */
+                self.instrCB__BIT_7_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x80 => {
+                /* RES 0,B */
+                self.instrCB__RES_0_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x81 => {
+                /* RES 0,C */
+                self.instrCB__RES_0_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x82 => {
+                /* RES 0,D */
+                self.instrCB__RES_0_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x83 => {
+                /* RES 0,E */
+                self.instrCB__RES_0_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x84 => {
+                /* RES 0,H */
+                self.instrCB__RES_0_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x85 => {
+                /* RES 0,L */
+                self.instrCB__RES_0_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x86 => {
+                /* RES 0,(HL) */
+                self.instrCB__RES_0_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x87 => {
+                /* RES 0,A */
+                self.instrCB__RES_0_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x88 => {
+                /* RES 1,B */
+                self.instrCB__RES_1_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x89 => {
+                /* RES 1,C */
+                self.instrCB__RES_1_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x8a => {
+                /* RES 1,D */
+                self.instrCB__RES_1_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x8b => {
+                /* RES 1,E */
+                self.instrCB__RES_1_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x8c => {
+                /* RES 1,H */
+                self.instrCB__RES_1_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x8d => {
+                /* RES 1,L */
+                self.instrCB__RES_1_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x8e => {
+                /* RES 1,(HL) */
+                self.instrCB__RES_1_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x8f => {
+                /* RES 1,A */
+                self.instrCB__RES_1_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x90 => {
+                /* RES 2,B */
+                self.instrCB__RES_2_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x91 => {
+                /* RES 2,C */
+                self.instrCB__RES_2_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x92 => {
+                /* RES 2,D */
+                self.instrCB__RES_2_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x93 => {
+                /* RES 2,E */
+                self.instrCB__RES_2_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x94 => {
+                /* RES 2,H */
+                self.instrCB__RES_2_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x95 => {
+                /* RES 2,L */
+                self.instrCB__RES_2_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x96 => {
+                /* RES 2,(HL) */
+                self.instrCB__RES_2_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x97 => {
+                /* RES 2,A */
+                self.instrCB__RES_2_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x98 => {
+                /* RES 3,B */
+                self.instrCB__RES_3_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x99 => {
+                /* RES 3,C */
+                self.instrCB__RES_3_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x9a => {
+                /* RES 3,D */
+                self.instrCB__RES_3_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x9b => {
+                /* RES 3,E */
+                self.instrCB__RES_3_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x9c => {
+                /* RES 3,H */
+                self.instrCB__RES_3_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x9d => {
+                /* RES 3,L */
+                self.instrCB__RES_3_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x9e => {
+                /* RES 3,(HL) */
+                self.instrCB__RES_3_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0x9f => {
+                /* RES 3,A */
+                self.instrCB__RES_3_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa0 => {
+                /* RES 4,B */
+                self.instrCB__RES_4_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa1 => {
+                /* RES 4,C */
+                self.instrCB__RES_4_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa2 => {
+                /* RES 4,D */
+                self.instrCB__RES_4_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa3 => {
+                /* RES 4,E */
+                self.instrCB__RES_4_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa4 => {
+                /* RES 4,H */
+                self.instrCB__RES_4_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa5 => {
+                /* RES 4,L */
+                self.instrCB__RES_4_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa6 => {
+                /* RES 4,(HL) */
+                self.instrCB__RES_4_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa7 => {
+                /* RES 4,A */
+                self.instrCB__RES_4_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa8 => {
+                /* RES 5,B */
+                self.instrCB__RES_5_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xa9 => {
+                /* RES 5,C */
+                self.instrCB__RES_5_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xaa => {
+                /* RES 5,D */
+                self.instrCB__RES_5_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xab => {
+                /* RES 5,E */
+                self.instrCB__RES_5_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xac => {
+                /* RES 5,H */
+                self.instrCB__RES_5_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xad => {
+                /* RES 5,L */
+                self.instrCB__RES_5_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xae => {
+                /* RES 5,(HL) */
+                self.instrCB__RES_5_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xaf => {
+                /* RES 5,A */
+                self.instrCB__RES_5_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb0 => {
+                /* RES 6,B */
+                self.instrCB__RES_6_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb1 => {
+                /* RES 6,C */
+                self.instrCB__RES_6_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb2 => {
+                /* RES 6,D */
+                self.instrCB__RES_6_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb3 => {
+                /* RES 6,E */
+                self.instrCB__RES_6_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb4 => {
+                /* RES 6,H */
+                self.instrCB__RES_6_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb5 => {
+                /* RES 6,L */
+                self.instrCB__RES_6_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb6 => {
+                /* RES 6,(HL) */
+                self.instrCB__RES_6_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb7 => {
+                /* RES 6,A */
+                self.instrCB__RES_6_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb8 => {
+                /* RES 7,B */
+                self.instrCB__RES_7_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xb9 => {
+                /* RES 7,C */
+                self.instrCB__RES_7_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xba => {
+                /* RES 7,D */
+                self.instrCB__RES_7_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xbb => {
+                /* RES 7,E */
+                self.instrCB__RES_7_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xbc => {
+                /* RES 7,H */
+                self.instrCB__RES_7_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xbd => {
+                /* RES 7,L */
+                self.instrCB__RES_7_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xbe => {
+                /* RES 7,(HL) */
+                self.instrCB__RES_7_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xbf => {
+                /* RES 7,A */
+                self.instrCB__RES_7_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc0 => {
+                /* SET 0,B */
+                self.instrCB__SET_0_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc1 => {
+                /* SET 0,C */
+                self.instrCB__SET_0_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc2 => {
+                /* SET 0,D */
+                self.instrCB__SET_0_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc3 => {
+                /* SET 0,E */
+                self.instrCB__SET_0_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc4 => {
+                /* SET 0,H */
+                self.instrCB__SET_0_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc5 => {
+                /* SET 0,L */
+                self.instrCB__SET_0_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc6 => {
+                /* SET 0,(HL) */
+                self.instrCB__SET_0_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc7 => {
+                /* SET 0,A */
+                self.instrCB__SET_0_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc8 => {
+                /* SET 1,B */
+                self.instrCB__SET_1_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xc9 => {
+                /* SET 1,C */
+                self.instrCB__SET_1_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xca => {
+                /* SET 1,D */
+                self.instrCB__SET_1_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xcb => {
+                /* SET 1,E */
+                self.instrCB__SET_1_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xcc => {
+                /* SET 1,H */
+                self.instrCB__SET_1_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xcd => {
+                /* SET 1,L */
+                self.instrCB__SET_1_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xce => {
+                /* SET 1,(HL) */
+                self.instrCB__SET_1_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xcf => {
+                /* SET 1,A */
+                self.instrCB__SET_1_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd0 => {
+                /* SET 2,B */
+                self.instrCB__SET_2_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd1 => {
+                /* SET 2,C */
+                self.instrCB__SET_2_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd2 => {
+                /* SET 2,D */
+                self.instrCB__SET_2_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd3 => {
+                /* SET 2,E */
+                self.instrCB__SET_2_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd4 => {
+                /* SET 2,H */
+                self.instrCB__SET_2_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd5 => {
+                /* SET 2,L */
+                self.instrCB__SET_2_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd6 => {
+                /* SET 2,(HL) */
+                self.instrCB__SET_2_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd7 => {
+                /* SET 2,A */
+                self.instrCB__SET_2_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd8 => {
+                /* SET 3,B */
+                self.instrCB__SET_3_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xd9 => {
+                /* SET 3,C */
+                self.instrCB__SET_3_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xda => {
+                /* SET 3,D */
+                self.instrCB__SET_3_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xdb => {
+                /* SET 3,E */
+                self.instrCB__SET_3_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xdc => {
+                /* SET 3,H */
+                self.instrCB__SET_3_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xdd => {
+                /* SET 3,L */
+                self.instrCB__SET_3_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xde => {
+                /* SET 3,(HL) */
+                self.instrCB__SET_3_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xdf => {
+                /* SET 3,A */
+                self.instrCB__SET_3_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe0 => {
+                /* SET 4,B */
+                self.instrCB__SET_4_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe1 => {
+                /* SET 4,C */
+                self.instrCB__SET_4_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe2 => {
+                /* SET 4,D */
+                self.instrCB__SET_4_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe3 => {
+                /* SET 4,E */
+                self.instrCB__SET_4_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe4 => {
+                /* SET 4,H */
+                self.instrCB__SET_4_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe5 => {
+                /* SET 4,L */
+                self.instrCB__SET_4_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe6 => {
+                /* SET 4,(HL) */
+                self.instrCB__SET_4_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe7 => {
+                /* SET 4,A */
+                self.instrCB__SET_4_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe8 => {
+                /* SET 5,B */
+                self.instrCB__SET_5_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xe9 => {
+                /* SET 5,C */
+                self.instrCB__SET_5_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xea => {
+                /* SET 5,D */
+                self.instrCB__SET_5_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xeb => {
+                /* SET 5,E */
+                self.instrCB__SET_5_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xec => {
+                /* SET 5,H */
+                self.instrCB__SET_5_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xed => {
+                /* SET 5,L */
+                self.instrCB__SET_5_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xee => {
+                /* SET 5,(HL) */
+                self.instrCB__SET_5_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xef => {
+                /* SET 5,A */
+                self.instrCB__SET_5_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf0 => {
+                /* SET 6,B */
+                self.instrCB__SET_6_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf1 => {
+                /* SET 6,C */
+                self.instrCB__SET_6_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf2 => {
+                /* SET 6,D */
+                self.instrCB__SET_6_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf3 => {
+                /* SET 6,E */
+                self.instrCB__SET_6_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf4 => {
+                /* SET 6,H */
+                self.instrCB__SET_6_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf5 => {
+                /* SET 6,L */
+                self.instrCB__SET_6_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf6 => {
+                /* SET 6,(HL) */
+                self.instrCB__SET_6_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf7 => {
+                /* SET 6,A */
+                self.instrCB__SET_6_A();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf8 => {
+                /* SET 7,B */
+                self.instrCB__SET_7_B();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xf9 => {
+                /* SET 7,C */
+                self.instrCB__SET_7_C();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xfa => {
+                /* SET 7,D */
+                self.instrCB__SET_7_D();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xfb => {
+                /* SET 7,E */
+                self.instrCB__SET_7_E();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xfc => {
+                /* SET 7,H */
+                self.instrCB__SET_7_H();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xfd => {
+                /* SET 7,L */
+                self.instrCB__SET_7_L();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xfe => {
+                /* SET 7,(HL) */
+                self.instrCB__SET_7_iHL();
+                true
+            }
+
+            val if val == SHIFT_0X_CB + 0xff => {
+                /* SET 7,A */
+                self.instrCB__SET_7_A();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x40 => {
+                /* IN B,(C) */
+                self.instrED__IN_B_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x41 => {
+                /* OUT (C),B */
+                self.instrED__OUT_iC_B();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x42 => {
+                /* SBC HL,BC */
+                self.instrED__SBC_HL_BC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x43 => {
+                /* LD (nnnn),BC */
+                self.instrED__LD_iNNNN_BC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x7c => {
+                /* NEG */
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x44 => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x4c => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x54 => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x5c => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x64 => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x6c => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x74 => {
+                /* NEG */
+                // self.OpcodesMap[SHIFT_0xED + 0x7c]();return true;
+                self.instrED__NEG();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x7d => {
+                /* RETN */
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x45 => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x4d => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x55 => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x5d => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x65 => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x6d => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x75 => {
+                /* RETN */
+                // self.OpcodesMap[SHIFT_0xED + 0x7d]();return true;
+                self.instrED__RETN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x6e => {
+                /* IM 0 */
+                self.instrED__IM_0();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x46 => {
+                /* IM 0 */
+                // self.OpcodesMap[SHIFT_0xED + 0x6e]();return true;
+                self.instrED__IM_0();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x4e => {
+                /* IM 0 */
+                // self.OpcodesMap[SHIFT_0xED + 0x6e]();return true;
+                self.instrED__IM_0();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x66 => {
+                /* IM 0 */
+                // self.OpcodesMap[SHIFT_0xED + 0x6e]();return true;
+                self.instrED__IM_0();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x47 => {
+                /* LD I,A */
+                self.instrED__LD_I_A();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x48 => {
+                /* IN C,(C) */
+                self.instrED__IN_C_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x49 => {
+                /* OUT (C),C */
+                self.instrED__OUT_iC_C();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x4a => {
+                /* ADC HL,BC */
+                self.instrED__ADC_HL_BC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x4b => {
+                /* LD BC,(nnnn) */
+                self.instrED__LD_BC_iNNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x4f => {
+                /* LD R,A */
+                self.instrED__LD_R_A();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x50 => {
+                /* IN D,(C) */
+                self.instrED__IN_D_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x51 => {
+                /* OUT (C),D */
+                self.instrED__OUT_iC_D();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x52 => {
+                /* SBC HL,DE */
+                self.instrED__SBC_HL_DE();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x53 => {
+                /* LD (nnnn),DE */
+                self.instrED__LD_iNNNN_DE();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x76 => {
+                /* IM 1 */
+                self.instrED__IM_1();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x56 => {
+                /* IM 1 */
+                // self.OpcodesMap[SHIFT_0xED + 0x76]();return true;
+                self.instrED__IM_1();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x57 => {
+                /* LD A,I */
+                self.instrED__LD_A_I();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x58 => {
+                /* IN E,(C) */
+                self.instrED__IN_E_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x59 => {
+                /* OUT (C),E */
+                self.instrED__OUT_iC_E();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x5a => {
+                /* ADC HL,DE */
+                self.instrED__ADC_HL_DE();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x5b => {
+                /* LD DE,(nnnn) */
+                self.instrED__LD_DE_iNNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x7e => {
+                /* IM 2 */
+                self.instrED__IM_2();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x5e => {
+                /* IM 2 */
+                // self.OpcodesMap[SHIFT_0xED + 0x7e]();return true;
+                self.instrED__IM_2();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x5f => {
+                /* LD A,R */
+                self.instrED__LD_A_R();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x60 => {
+                /* IN H,(C) */
+                self.instrED__IN_H_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x61 => {
+                /* OUT (C),H */
+                self.instrED__OUT_iC_H();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x62 => {
+                /* SBC HL,HL */
+                self.instrED__SBC_HL_HL();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x63 => {
+                /* LD (nnnn),HL */
+                self.instrED__LD_iNNNN_HL();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x67 => {
+                /* RRD */
+                self.instrED__RRD();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x68 => {
+                /* IN L,(C) */
+                self.instrED__IN_L_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x69 => {
+                /* OUT (C),L */
+                self.instrED__OUT_iC_L();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x6a => {
+                /* ADC HL,HL */
+                self.instrED__ADC_HL_HL();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x6b => {
+                /* LD HL,(nnnn) */
+                self.instrED__LD_HL_iNNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x6f => {
+                /* RLD */
+                self.instrED__RLD();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x70 => {
+                /* IN F,(C) */
+                self.instrED__IN_F_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x71 => {
+                /* OUT (C),0 */
+                self.instrED__OUT_iC_0();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x72 => {
+                /* SBC HL,SP */
+                self.instrED__SBC_HL_SP();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x73 => {
+                /* LD (nnnn),SP */
+                self.instrED__LD_iNNNN_SP();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x78 => {
+                /* IN A,(C) */
+                self.instrED__IN_A_iC();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x79 => {
+                /* OUT (C),A */
+                self.instrED__OUT_iC_A();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x7a => {
+                /* ADC HL,SP */
+                self.instrED__ADC_HL_SP();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0x7b => {
+                /* LD SP,(nnnn) */
+                self.instrED__LD_SP_iNNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xa0 => {
+                /* LDI */
+                self.instrED__LDI();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xa1 => {
+                /* CPI */
+                self.instrED__CPI();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xa2 => {
+                /* INI */
+                self.instrED__INI();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xa3 => {
+                /* OUTI */
+                self.instrED__OUTI();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xa8 => {
+                /* LDD */
+                self.instrED__LDD();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xa9 => {
+                /* CPD */
+                self.instrED__CPD();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xaa => {
+                /* IND */
+                self.instrED__IND();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xab => {
+                /* OUTD */
+                self.instrED__OUTD();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xb0 => {
+                /* LDIR */
+                self.instrED__LDIR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xb1 => {
+                /* CPIR */
+                self.instrED__CPIR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xb2 => {
+                /* INIR */
+                self.instrED__INIR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xb3 => {
+                /* OTIR */
+                self.instrED__OTIR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xb8 => {
+                /* LDDR */
+                self.instrED__LDDR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xb9 => {
+                /* CPDR */
+                self.instrED__CPDR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xba => {
+                /* INDR */
+                self.instrED__INDR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xbb => {
+                /* OTDR */
+                self.instrED__OTDR();
+                true
+            }
+
+            val if val == SHIFT_0X_ED + 0xfb => {
+                /* slttrap */
+                self.instrED__SLTTRAP();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x09 => {
+                /* ADD REGISTER,BC */
+                self.instrDD__ADD_REG_BC();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x19 => {
+                /* ADD REGISTER,DE */
+                self.instrDD__ADD_REG_DE();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x21 => {
+                /* LD REGISTER,nnnn */
+                self.instrDD__LD_REG_NNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x22 => {
+                /* LD (nnnn),REGISTER */
+                self.instrDD__LD_iNNNN_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x23 => {
+                /* INC REGISTER */
+                self.instrDD__INC_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x24 => {
+                /* INC REGISTERH */
+                self.instrDD__INC_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x25 => {
+                /* DEC REGISTERH */
+                self.instrDD__DEC_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x26 => {
+                /* LD REGISTERH,nn */
+                self.instrDD__LD_REGH_NN();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x29 => {
+                /* ADD REGISTER,REGISTER */
+                self.instrDD__ADD_REG_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x2a => {
+                /* LD REGISTER,(nnnn) */
+                self.instrDD__LD_REG_iNNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x2b => {
+                /* DEC REGISTER */
+                self.instrDD__DEC_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x2c => {
+                /* INC REGISTERL */
+                self.instrDD__INC_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x2d => {
+                /* DEC REGISTERL */
+                self.instrDD__DEC_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x2e => {
+                /* LD REGISTERL,nn */
+                self.instrDD__LD_REGL_NN();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x34 => {
+                /* INC (REGISTER+dd) */
+                self.instrDD__INC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x35 => {
+                /* DEC (REGISTER+dd) */
+                self.instrDD__DEC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x36 => {
+                /* LD (REGISTER+dd),nn */
+                self.instrDD__LD_iREGpDD_NN();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x39 => {
+                /* ADD REGISTER,SP */
+                self.instrDD__ADD_REG_SP();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x44 => {
+                /* LD B,REGISTERH */
+                self.instrDD__LD_B_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x45 => {
+                /* LD B,REGISTERL */
+                self.instrDD__LD_B_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x46 => {
+                /* LD B,(REGISTER+dd) */
+                self.instrDD__LD_B_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x4c => {
+                /* LD C,REGISTERH */
+                self.instrDD__LD_C_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x4d => {
+                /* LD C,REGISTERL */
+                self.instrDD__LD_C_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x4e => {
+                /* LD C,(REGISTER+dd) */
+                self.instrDD__LD_C_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x54 => {
+                /* LD D,REGISTERH */
+                self.instrDD__LD_D_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x55 => {
+                /* LD D,REGISTERL */
+                self.instrDD__LD_D_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x56 => {
+                /* LD D,(REGISTER+dd) */
+                self.instrDD__LD_D_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x5c => {
+                /* LD E,REGISTERH */
+                self.instrDD__LD_E_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x5d => {
+                /* LD E,REGISTERL */
+                self.instrDD__LD_E_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x5e => {
+                /* LD E,(REGISTER+dd) */
+                self.instrDD__LD_E_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x60 => {
+                /* LD REGISTERH,B */
+                self.instrDD__LD_REGH_B();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x61 => {
+                /* LD REGISTERH,C */
+                self.instrDD__LD_REGH_C();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x62 => {
+                /* LD REGISTERH,D */
+                self.instrDD__LD_REGH_D();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x63 => {
+                /* LD REGISTERH,E */
+                self.instrDD__LD_REGH_E();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x64 => {
+                /* LD REGISTERH,REGISTERH */
+                self.instrDD__LD_REGH_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x65 => {
+                /* LD REGISTERH,REGISTERL */
+                self.instrDD__LD_REGH_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x66 => {
+                /* LD H,(REGISTER+dd) */
+                self.instrDD__LD_H_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x67 => {
+                /* LD REGISTERH,A */
+                self.instrDD__LD_REGH_A();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x68 => {
+                /* LD REGISTERL,B */
+                self.instrDD__LD_REGL_B();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x69 => {
+                /* LD REGISTERL,C */
+                self.instrDD__LD_REGL_C();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x6a => {
+                /* LD REGISTERL,D */
+                self.instrDD__LD_REGL_D();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x6b => {
+                /* LD REGISTERL,E */
+                self.instrDD__LD_REGL_E();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x6c => {
+                /* LD REGISTERL,REGISTERH */
+                self.instrDD__LD_REGL_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x6d => {
+                /* LD REGISTERL,REGISTERL */
+                self.instrDD__LD_REGL_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x6e => {
+                /* LD L,(REGISTER+dd) */
+                self.instrDD__LD_L_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x6f => {
+                /* LD REGISTERL,A */
+                self.instrDD__LD_REGL_A();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x70 => {
+                /* LD (REGISTER+dd),B */
+                self.instrDD__LD_iREGpDD_B();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x71 => {
+                /* LD (REGISTER+dd),C */
+                self.instrDD__LD_iREGpDD_C();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x72 => {
+                /* LD (REGISTER+dd),D */
+                self.instrDD__LD_iREGpDD_D();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x73 => {
+                /* LD (REGISTER+dd),E */
+                self.instrDD__LD_iREGpDD_E();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x74 => {
+                /* LD (REGISTER+dd),H */
+                self.instrDD__LD_iREGpDD_H();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x75 => {
+                /* LD (REGISTER+dd),L */
+                self.instrDD__LD_iREGpDD_L();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x77 => {
+                /* LD (REGISTER+dd),A */
+                self.instrDD__LD_iREGpDD_A();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x7c => {
+                /* LD A,REGISTERH */
+                self.instrDD__LD_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x7d => {
+                /* LD A,REGISTERL */
+                self.instrDD__LD_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x7e => {
+                /* LD A,(REGISTER+dd) */
+                self.instrDD__LD_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x84 => {
+                /* ADD A,REGISTERH */
+                self.instrDD__ADD_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x85 => {
+                /* ADD A,REGISTERL */
+                self.instrDD__ADD_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x86 => {
+                /* ADD A,(REGISTER+dd) */
+                self.instrDD__ADD_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x8c => {
+                /* ADC A,REGISTERH */
+                self.instrDD__ADC_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x8d => {
+                /* ADC A,REGISTERL */
+                self.instrDD__ADC_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x8e => {
+                /* ADC A,(REGISTER+dd) */
+                self.instrDD__ADC_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x94 => {
+                /* SUB A,REGISTERH */
+                self.instrDD__SUB_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x95 => {
+                /* SUB A,REGISTERL */
+                self.instrDD__SUB_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x96 => {
+                /* SUB A,(REGISTER+dd) */
+                self.instrDD__SUB_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x9c => {
+                /* SBC A,REGISTERH */
+                self.instrDD__SBC_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x9d => {
+                /* SBC A,REGISTERL */
+                self.instrDD__SBC_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0x9e => {
+                /* SBC A,(REGISTER+dd) */
+                self.instrDD__SBC_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xa4 => {
+                /* AND A,REGISTERH */
+                self.instrDD__AND_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xa5 => {
+                /* AND A,REGISTERL */
+                self.instrDD__AND_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xa6 => {
+                /* AND A,(REGISTER+dd) */
+                self.instrDD__AND_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xac => {
+                /* XOR A,REGISTERH */
+                self.instrDD__XOR_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xad => {
+                /* XOR A,REGISTERL */
+                self.instrDD__XOR_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xae => {
+                /* XOR A,(REGISTER+dd) */
+                self.instrDD__XOR_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xb4 => {
+                /* OR A,REGISTERH */
+                self.instrDD__OR_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xb5 => {
+                /* OR A,REGISTERL */
+                self.instrDD__OR_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xb6 => {
+                /* OR A,(REGISTER+dd) */
+                self.instrDD__OR_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xbc => {
+                /* CP A,REGISTERH */
+                self.instrDD__CP_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xbd => {
+                /* CP A,REGISTERL */
+                self.instrDD__CP_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xbe => {
+                /* CP A,(REGISTER+dd) */
+                self.instrDD__CP_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xcb => {
+                /* shift DDFDCB */
+                self.instrDD__SHIFT_DDFDCB();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xe1 => {
+                /* POP REGISTER */
+                self.instrDD__POP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xe3 => {
+                /* EX (SP),REGISTER */
+                self.instrDD__EX_iSP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xe5 => {
+                /* PUSH REGISTER */
+                self.instrDD__PUSH_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xe9 => {
+                /* JP REGISTER */
+                self.instrDD__JP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DD + 0xf9 => {
+                /* LD SP,REGISTER */
+                self.instrDD__LD_SP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x09 => {
+                /* ADD REGISTER,BC */
+                self.instrFD__ADD_REG_BC();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x19 => {
+                /* ADD REGISTER,DE */
+                self.instrFD__ADD_REG_DE();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x21 => {
+                /* LD REGISTER,nnnn */
+                self.instrFD__LD_REG_NNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x22 => {
+                /* LD (nnnn),REGISTER */
+                self.instrFD__LD_iNNNN_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x23 => {
+                /* INC REGISTER */
+                self.instrFD__INC_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x24 => {
+                /* INC REGISTERH */
+                self.instrFD__INC_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x25 => {
+                /* DEC REGISTERH */
+                self.instrFD__DEC_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x26 => {
+                /* LD REGISTERH,nn */
+                self.instrFD__LD_REGH_NN();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x29 => {
+                /* ADD REGISTER,REGISTER */
+                self.instrFD__ADD_REG_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x2a => {
+                /* LD REGISTER,(nnnn) */
+                self.instrFD__LD_REG_iNNNN();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x2b => {
+                /* DEC REGISTER */
+                self.instrFD__DEC_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x2c => {
+                /* INC REGISTERL */
+                self.instrFD__INC_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x2d => {
+                /* DEC REGISTERL */
+                self.instrFD__DEC_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x2e => {
+                /* LD REGISTERL,nn */
+                self.instrFD__LD_REGL_NN();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x34 => {
+                /* INC (REGISTER+dd) */
+                self.instrFD__INC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x35 => {
+                /* DEC (REGISTER+dd) */
+                self.instrFD__DEC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x36 => {
+                /* LD (REGISTER+dd),nn */
+                self.instrFD__LD_iREGpDD_NN();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x39 => {
+                /* ADD REGISTER,SP */
+                self.instrFD__ADD_REG_SP();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x44 => {
+                /* LD B,REGISTERH */
+                self.instrFD__LD_B_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x45 => {
+                /* LD B,REGISTERL */
+                self.instrFD__LD_B_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x46 => {
+                /* LD B,(REGISTER+dd) */
+                self.instrFD__LD_B_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x4c => {
+                /* LD C,REGISTERH */
+                self.instrFD__LD_C_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x4d => {
+                /* LD C,REGISTERL */
+                self.instrFD__LD_C_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x4e => {
+                /* LD C,(REGISTER+dd) */
+                self.instrFD__LD_C_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x54 => {
+                /* LD D,REGISTERH */
+                self.instrFD__LD_D_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x55 => {
+                /* LD D,REGISTERL */
+                self.instrFD__LD_D_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x56 => {
+                /* LD D,(REGISTER+dd) */
+                self.instrFD__LD_D_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x5c => {
+                /* LD E,REGISTERH */
+                self.instrFD__LD_E_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x5d => {
+                /* LD E,REGISTERL */
+                self.instrFD__LD_E_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x5e => {
+                /* LD E,(REGISTER+dd) */
+                self.instrFD__LD_E_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x60 => {
+                /* LD REGISTERH,B */
+                self.instrFD__LD_REGH_B();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x61 => {
+                /* LD REGISTERH,C */
+                self.instrFD__LD_REGH_C();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x62 => {
+                /* LD REGISTERH,D */
+                self.instrFD__LD_REGH_D();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x63 => {
+                /* LD REGISTERH,E */
+                self.instrFD__LD_REGH_E();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x64 => {
+                /* LD REGISTERH,REGISTERH */
+                self.instrFD__LD_REGH_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x65 => {
+                /* LD REGISTERH,REGISTERL */
+                self.instrFD__LD_REGH_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x66 => {
+                /* LD H,(REGISTER+dd) */
+                self.instrFD__LD_H_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x67 => {
+                /* LD REGISTERH,A */
+                self.instrFD__LD_REGH_A();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x68 => {
+                /* LD REGISTERL,B */
+                self.instrFD__LD_REGL_B();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x69 => {
+                /* LD REGISTERL,C */
+                self.instrFD__LD_REGL_C();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x6a => {
+                /* LD REGISTERL,D */
+                self.instrFD__LD_REGL_D();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x6b => {
+                /* LD REGISTERL,E */
+                self.instrFD__LD_REGL_E();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x6c => {
+                /* LD REGISTERL,REGISTERH */
+                self.instrFD__LD_REGL_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x6d => {
+                /* LD REGISTERL,REGISTERL */
+                self.instrFD__LD_REGL_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x6e => {
+                /* LD L,(REGISTER+dd) */
+                self.instrFD__LD_L_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x6f => {
+                /* LD REGISTERL,A */
+                self.instrFD__LD_REGL_A();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x70 => {
+                /* LD (REGISTER+dd),B */
+                self.instrFD__LD_iREGpDD_B();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x71 => {
+                /* LD (REGISTER+dd),C */
+                self.instrFD__LD_iREGpDD_C();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x72 => {
+                /* LD (REGISTER+dd),D */
+                self.instrFD__LD_iREGpDD_D();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x73 => {
+                /* LD (REGISTER+dd),E */
+                self.instrFD__LD_iREGpDD_E();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x74 => {
+                /* LD (REGISTER+dd),H */
+                self.instrFD__LD_iREGpDD_H();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x75 => {
+                /* LD (REGISTER+dd),L */
+                self.instrFD__LD_iREGpDD_L();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x77 => {
+                /* LD (REGISTER+dd),A */
+                self.instrFD__LD_iREGpDD_A();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x7c => {
+                /* LD A,REGISTERH */
+                self.instrFD__LD_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x7d => {
+                /* LD A,REGISTERL */
+                self.instrFD__LD_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x7e => {
+                /* LD A,(REGISTER+dd) */
+                self.instrFD__LD_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x84 => {
+                /* ADD A,REGISTERH */
+                self.instrFD__ADD_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x85 => {
+                /* ADD A,REGISTERL */
+                self.instrFD__ADD_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x86 => {
+                /* ADD A,(REGISTER+dd) */
+                self.instrFD__ADD_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x8c => {
+                /* ADC A,REGISTERH */
+                self.instrFD__ADC_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x8d => {
+                /* ADC A,REGISTERL */
+                self.instrFD__ADC_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x8e => {
+                /* ADC A,(REGISTER+dd) */
+                self.instrFD__ADC_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x94 => {
+                /* SUB A,REGISTERH */
+                self.instrFD__SUB_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x95 => {
+                /* SUB A,REGISTERL */
+                self.instrFD__SUB_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x96 => {
+                /* SUB A,(REGISTER+dd) */
+                self.instrFD__SUB_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x9c => {
+                /* SBC A,REGISTERH */
+                self.instrFD__SBC_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x9d => {
+                /* SBC A,REGISTERL */
+                self.instrFD__SBC_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0x9e => {
+                /* SBC A,(REGISTER+dd) */
+                self.instrFD__SBC_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xa4 => {
+                /* AND A,REGISTERH */
+                self.instrFD__AND_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xa5 => {
+                /* AND A,REGISTERL */
+                self.instrFD__AND_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xa6 => {
+                /* AND A,(REGISTER+dd) */
+                self.instrFD__AND_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xac => {
+                /* XOR A,REGISTERH */
+                self.instrFD__XOR_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xad => {
+                /* XOR A,REGISTERL */
+                self.instrFD__XOR_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xae => {
+                /* XOR A,(REGISTER+dd) */
+                self.instrFD__XOR_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xb4 => {
+                /* OR A,REGISTERH */
+                self.instrFD__OR_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xb5 => {
+                /* OR A,REGISTERL */
+                self.instrFD__OR_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xb6 => {
+                /* OR A,(REGISTER+dd) */
+                self.instrFD__OR_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xbc => {
+                /* CP A,REGISTERH */
+                self.instrFD__CP_A_REGH();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xbd => {
+                /* CP A,REGISTERL */
+                self.instrFD__CP_A_REGL();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xbe => {
+                /* CP A,(REGISTER+dd) */
+                self.instrFD__CP_A_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xcb => {
+                /* shift DDFDCB */
+                self.instrFD__SHIFT_DDFDCB();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xe1 => {
+                /* POP REGISTER */
+                self.instrFD__POP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xe3 => {
+                /* EX (SP),REGISTER */
+                self.instrFD__EX_iSP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xe5 => {
+                /* PUSH REGISTER */
+                self.instrFD__PUSH_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xe9 => {
+                /* JP REGISTER */
+                self.instrFD__JP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_FD + 0xf9 => {
+                /* LD SP,REGISTER */
+                self.instrFD__LD_SP_REG();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB => {
+                /* LD B,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_B_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x01 => {
+                /* LD C,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_C_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x02 => {
+                /* LD D,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_D_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x03 => {
+                /* LD E,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_E_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x04 => {
+                /* LD H,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_H_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x05 => {
+                /* LD L,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_L_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x06 => {
+                /* RLC (REGISTER+dd) */
+                self.instrDDCB__RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x07 => {
+                /* LD A,RLC (REGISTER+dd) */
+                self.instrDDCB__LD_A_RLC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x08 => {
+                /* LD B,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_B_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x09 => {
+                /* LD C,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_C_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x0a => {
+                /* LD D,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_D_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x0b => {
+                /* LD E,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_E_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x0c => {
+                /* LD H,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_H_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x0d => {
+                /* LD L,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_L_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x0e => {
+                /* RRC (REGISTER+dd) */
+                self.instrDDCB__RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x0f => {
+                /* LD A,RRC (REGISTER+dd) */
+                self.instrDDCB__LD_A_RRC_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x10 => {
+                /* LD B,RL (REGISTER+dd) */
+                self.instrDDCB__LD_B_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x11 => {
+                /* LD C,RL (REGISTER+dd) */
+                self.instrDDCB__LD_C_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x12 => {
+                /* LD D,RL (REGISTER+dd) */
+                self.instrDDCB__LD_D_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x13 => {
+                /* LD E,RL (REGISTER+dd) */
+                self.instrDDCB__LD_E_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x14 => {
+                /* LD H,RL (REGISTER+dd) */
+                self.instrDDCB__LD_H_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x15 => {
+                /* LD L,RL (REGISTER+dd) */
+                self.instrDDCB__LD_L_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x16 => {
+                /* RL (REGISTER+dd) */
+                self.instrDDCB__RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x17 => {
+                /* LD A,RL (REGISTER+dd) */
+                self.instrDDCB__LD_A_RL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x18 => {
+                /* LD B,RR (REGISTER+dd) */
+                self.instrDDCB__LD_B_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x19 => {
+                /* LD C,RR (REGISTER+dd) */
+                self.instrDDCB__LD_C_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x1a => {
+                /* LD D,RR (REGISTER+dd) */
+                self.instrDDCB__LD_D_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x1b => {
+                /* LD E,RR (REGISTER+dd) */
+                self.instrDDCB__LD_E_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x1c => {
+                /* LD H,RR (REGISTER+dd) */
+                self.instrDDCB__LD_H_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x1d => {
+                /* LD L,RR (REGISTER+dd) */
+                self.instrDDCB__LD_L_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x1e => {
+                /* RR (REGISTER+dd) */
+                self.instrDDCB__RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x1f => {
+                /* LD A,RR (REGISTER+dd) */
+                self.instrDDCB__LD_A_RR_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x20 => {
+                /* LD B,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_B_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x21 => {
+                /* LD C,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_C_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x22 => {
+                /* LD D,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_D_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x23 => {
+                /* LD E,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_E_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x24 => {
+                /* LD H,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_H_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x25 => {
+                /* LD L,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_L_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x26 => {
+                /* SLA (REGISTER+dd) */
+                self.instrDDCB__SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x27 => {
+                /* LD A,SLA (REGISTER+dd) */
+                self.instrDDCB__LD_A_SLA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x28 => {
+                /* LD B,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_B_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x29 => {
+                /* LD C,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_C_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x2a => {
+                /* LD D,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_D_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x2b => {
+                /* LD E,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_E_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x2c => {
+                /* LD H,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_H_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x2d => {
+                /* LD L,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_L_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x2e => {
+                /* SRA (REGISTER+dd) */
+                self.instrDDCB__SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x2f => {
+                /* LD A,SRA (REGISTER+dd) */
+                self.instrDDCB__LD_A_SRA_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x30 => {
+                /* LD B,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_B_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x31 => {
+                /* LD C,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_C_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x32 => {
+                /* LD D,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_D_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x33 => {
+                /* LD E,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_E_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x34 => {
+                /* LD H,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_H_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x35 => {
+                /* LD L,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_L_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x36 => {
+                /* SLL (REGISTER+dd) */
+                self.instrDDCB__SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x37 => {
+                /* LD A,SLL (REGISTER+dd) */
+                self.instrDDCB__LD_A_SLL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x38 => {
+                /* LD B,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_B_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x39 => {
+                /* LD C,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_C_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x3a => {
+                /* LD D,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_D_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x3b => {
+                /* LD E,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_E_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x3c => {
+                /* LD H,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_H_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x3d => {
+                /* LD L,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_L_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x3e => {
+                /* SRL (REGISTER+dd) */
+                self.instrDDCB__SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x3f => {
+                /* LD A,SRL (REGISTER+dd) */
+                self.instrDDCB__LD_A_SRL_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x47 => {
+                /* BIT 0,(REGISTER+dd) */
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x40 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x41 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x42 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x43 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x44 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x45 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x46 => {
+                /* BIT 0,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x47]();return true;
+                self.instrDDCB__BIT_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x4f => {
+                /* BIT 1,(REGISTER+dd) */
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x48 => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x49 => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x4a => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x4b => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x4c => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x4d => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x4e => {
+                /* BIT 1,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x4f]();return true;
+                self.instrDDCB__BIT_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x57 => {
+                /* BIT 2,(REGISTER+dd) */
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x50 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x51 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x52 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x53 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x54 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x55 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x56 => {
+                /* BIT 2,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x57]();return true;
+                self.instrDDCB__BIT_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x5f => {
+                /* BIT 3,(REGISTER+dd) */
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x58 => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x59 => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x5a => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x5b => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x5c => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x5d => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x5e => {
+                /* BIT 3,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x5f]();return true;
+                self.instrDDCB__BIT_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x67 => {
+                /* BIT 4,(REGISTER+dd) */
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x60 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x61 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x62 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x63 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x64 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x65 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x66 => {
+                /* BIT 4,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x67]();return true;
+                self.instrDDCB__BIT_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x6f => {
+                /* BIT 5,(REGISTER+dd) */
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x68 => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x69 => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x6a => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x6b => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x6c => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x6d => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x6e => {
+                /* BIT 5,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x6f]();return true;
+                self.instrDDCB__BIT_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x77 => {
+                /* BIT 6,(REGISTER+dd) */
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x70 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x71 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x72 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x73 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x74 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x75 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x76 => {
+                /* BIT 6,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x77]();return true;
+                self.instrDDCB__BIT_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x7f => {
+                /* BIT 7,(REGISTER+dd) */
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x78 => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x79 => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x7a => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x7b => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x7c => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x7d => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x7e => {
+                /* BIT 7,(REGISTER+dd) */
+                // self.OpcodesMap[SHIFT_0xDDCB + 0x7f]();return true;
+                self.instrDDCB__BIT_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x80 => {
+                /* LD B,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x81 => {
+                /* LD C,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x82 => {
+                /* LD D,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x83 => {
+                /* LD E,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x84 => {
+                /* LD H,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x85 => {
+                /* LD L,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x86 => {
+                /* RES 0,(REGISTER+dd) */
+                self.instrDDCB__RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x87 => {
+                /* LD A,RES 0,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x88 => {
+                /* LD B,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x89 => {
+                /* LD C,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x8a => {
+                /* LD D,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x8b => {
+                /* LD E,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x8c => {
+                /* LD H,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x8d => {
+                /* LD L,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x8e => {
+                /* RES 1,(REGISTER+dd) */
+                self.instrDDCB__RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x8f => {
+                /* LD A,RES 1,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x90 => {
+                /* LD B,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x91 => {
+                /* LD C,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x92 => {
+                /* LD D,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x93 => {
+                /* LD E,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x94 => {
+                /* LD H,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x95 => {
+                /* LD L,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x96 => {
+                /* RES 2,(REGISTER+dd) */
+                self.instrDDCB__RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x97 => {
+                /* LD A,RES 2,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x98 => {
+                /* LD B,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x99 => {
+                /* LD C,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x9a => {
+                /* LD D,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x9b => {
+                /* LD E,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x9c => {
+                /* LD H,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x9d => {
+                /* LD L,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x9e => {
+                /* RES 3,(REGISTER+dd) */
+                self.instrDDCB__RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0x9f => {
+                /* LD A,RES 3,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa0 => {
+                /* LD B,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa1 => {
+                /* LD C,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa2 => {
+                /* LD D,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa3 => {
+                /* LD E,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa4 => {
+                /* LD H,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa5 => {
+                /* LD L,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa6 => {
+                /* RES 4,(REGISTER+dd) */
+                self.instrDDCB__RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa7 => {
+                /* LD A,RES 4,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa8 => {
+                /* LD B,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xa9 => {
+                /* LD C,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xaa => {
+                /* LD D,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xab => {
+                /* LD E,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xac => {
+                /* LD H,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xad => {
+                /* LD L,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xae => {
+                /* RES 5,(REGISTER+dd) */
+                self.instrDDCB__RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xaf => {
+                /* LD A,RES 5,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb0 => {
+                /* LD B,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb1 => {
+                /* LD C,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb2 => {
+                /* LD D,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb3 => {
+                /* LD E,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb4 => {
+                /* LD H,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb5 => {
+                /* LD L,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb6 => {
+                /* RES 6,(REGISTER+dd) */
+                self.instrDDCB__RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb7 => {
+                /* LD A,RES 6,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb8 => {
+                /* LD B,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_B_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xb9 => {
+                /* LD C,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_C_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xba => {
+                /* LD D,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_D_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xbb => {
+                /* LD E,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_E_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xbc => {
+                /* LD H,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_H_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xbd => {
+                /* LD L,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_L_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xbe => {
+                /* RES 7,(REGISTER+dd) */
+                self.instrDDCB__RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xbf => {
+                /* LD A,RES 7,(REGISTER+dd) */
+                self.instrDDCB__LD_A_RES_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc0 => {
+                /* LD B,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc1 => {
+                /* LD C,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc2 => {
+                /* LD D,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc3 => {
+                /* LD E,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc4 => {
+                /* LD H,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc5 => {
+                /* LD L,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc6 => {
+                /* SET 0,(REGISTER+dd) */
+                self.instrDDCB__SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc7 => {
+                /* LD A,SET 0,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_0_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc8 => {
+                /* LD B,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xc9 => {
+                /* LD C,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xca => {
+                /* LD D,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xcb => {
+                /* LD E,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xcc => {
+                /* LD H,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xcd => {
+                /* LD L,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xce => {
+                /* SET 1,(REGISTER+dd) */
+                self.instrDDCB__SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xcf => {
+                /* LD A,SET 1,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_1_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd0 => {
+                /* LD B,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd1 => {
+                /* LD C,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd2 => {
+                /* LD D,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd3 => {
+                /* LD E,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd4 => {
+                /* LD H,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd5 => {
+                /* LD L,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd6 => {
+                /* SET 2,(REGISTER+dd) */
+                self.instrDDCB__SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd7 => {
+                /* LD A,SET 2,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_2_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd8 => {
+                /* LD B,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xd9 => {
+                /* LD C,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xda => {
+                /* LD D,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xdb => {
+                /* LD E,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xdc => {
+                /* LD H,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xdd => {
+                /* LD L,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xde => {
+                /* SET 3,(REGISTER+dd) */
+                self.instrDDCB__SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xdf => {
+                /* LD A,SET 3,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_3_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe0 => {
+                /* LD B,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe1 => {
+                /* LD C,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe2 => {
+                /* LD D,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe3 => {
+                /* LD E,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe4 => {
+                /* LD H,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe5 => {
+                /* LD L,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe6 => {
+                /* SET 4,(REGISTER+dd) */
+                self.instrDDCB__SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe7 => {
+                /* LD A,SET 4,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_4_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe8 => {
+                /* LD B,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xe9 => {
+                /* LD C,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xea => {
+                /* LD D,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xeb => {
+                /* LD E,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xec => {
+                /* LD H,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xed => {
+                /* LD L,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xee => {
+                /* SET 5,(REGISTER+dd) */
+                self.instrDDCB__SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xef => {
+                /* LD A,SET 5,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_5_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf0 => {
+                /* LD B,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf1 => {
+                /* LD C,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf2 => {
+                /* LD D,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf3 => {
+                /* LD E,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf4 => {
+                /* LD H,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf5 => {
+                /* LD L,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf6 => {
+                /* SET 6,(REGISTER+dd) */
+                self.instrDDCB__SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf7 => {
+                /* LD A,SET 6,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_6_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf8 => {
+                /* LD B,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_B_SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xf9 => {
+                /* LD C,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_C_SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xfa => {
+                /* LD D,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_D_SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xfb => {
+                /* LD E,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_E_SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xfc => {
+                /* LD H,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_H_SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xfd => {
+                /* LD L,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_L_SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xfe => {
+                /* SET 7,(REGISTER+dd) */
+                self.instrDDCB__SET_7_iREGpDD();
+                true
+            }
+
+            val if val == SHIFT_0X_DDCB + 0xff => {
+                /* LD A,SET 7,(REGISTER+dd) */
+                self.instrDDCB__LD_A_SET_7_iREGpDD();
+                true
+            }
+            _ => false,
+        }
+    }
+    /* NOP */
+    fn instr__NOP(&mut self) {}
+    /* LD BC,nnnn */
+    fn instr__LD_BC_NNNN(&mut self) {
+        let address = self.PC();
+        let b1 = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let b2 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.SetBC(join_bytes(b2, b1));
+    }
+
+    /* LD (BC),A */
+    fn instr__LD_iBC_A(&mut self) {
+        let address = self.BC();
+        self.memory.write_byte(address, self.A);
+    }
+
+    /* INC BC */
+    fn instr__INC_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncBC();
+    }
+
+    /* INC B */
+    fn instr__INC_B(&mut self) {
+        self.incB();
+    }
+
+    /* DEC B */
+    fn instr__DEC_B(&mut self) {
+        self.decB();
+    }
+
+    /* LD B,nn */
+    fn instr__LD_B_NN(&mut self) {
+        let address = self.PC();
+        self.B = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* RLCA */
+    fn instr__RLCA(&mut self) {
+        self.A = self.A.rotate_left(1);
+        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.A & (FLAG_C | FLAG_3 | FLAG_5));
+    }
+
+    /* EX AF,AF' */
+    fn instr__EX_AF_AF(&mut self) {
+        let old_a: u8 = self.A;
+        let old_f: u8 = self.F;
+        self.A = self.A_;
+        self.F = self.F_;
+        self.A_ = old_a;
+        self.F_ = old_f;
+    }
+
+    /* ADD HL,BC */
+    fn instr__ADD_HL_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.hl, self.BC());
+        let mut hl = Register16::new(self.H, self.L);
+        let value2 = self.BC();
+        self.add16(&mut hl, value2);
+        (self.H, self.L) = hl.result();
+    }
+
+    /* LD A,(BC) */
+    fn instr__LD_A_iBC(&mut self) {
+        let address = self.BC();
+        self.A = self.memory.read_byte(address);
+    }
+
+    /* DEC BC */
+    fn instr__DEC_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.DecBC();
+    }
+
+    /* INC C */
+    fn instr__INC_C(&mut self) {
+        self.incC();
+    }
+
+    /* DEC C */
+    fn instr__DEC_C(&mut self) {
+        self.decC();
+    }
+
+    /* LD C,nn */
+    fn instr__LD_C_NN(&mut self) {
+        let address = self.PC();
+        self.C = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* RRCA */
+    fn instr__RRCA(&mut self) {
+        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.A & FLAG_C);
+        self.A = self.A.rotate_right(1);
+        self.F |= self.A & (FLAG_3 | FLAG_5);
+    }
+
+    /* DJNZ offset */
+    fn instr__DJNZ_OFFSET(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.B = self.B.wrapping_sub(1);
+        if self.B != 0 {
+            self.jr();
+            self.cycles += 14;
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            self.cycles += 9;
+        }
+        self.IncPC(1);
+    }
+
+    /* LD DE,nnnn */
+    fn instr__LD_DE_NNNN(&mut self) {
+        let address = self.PC();
+        let b1 = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let b2 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.SetDE(join_bytes(b2, b1));
+    }
+
+    /* LD (DE),A */
+    fn instr__LD_iDE_A(&mut self) {
+        self.memory.write_byte(self.DE(), self.A);
+    }
+
+    /* INC DE */
+    fn instr__INC_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncDE();
+    }
+
+    /* INC D */
+    fn instr__INC_D(&mut self) {
+        self.incD();
+    }
+
+    /* DEC D */
+    fn instr__DEC_D(&mut self) {
+        self.decD();
+    }
+
+    /* LD D,nn */
+    fn instr__LD_D_NN(&mut self) {
+        let address = self.PC();
+        self.D = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* RLA */
+    fn instr__RLA(&mut self) {
+        let byte_temp: u8 = self.A;
+        self.A = (self.A << 1) | (self.F & FLAG_C);
+        self.F =
+            (self.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.A & (FLAG_3 | FLAG_5)) | (byte_temp >> 7);
+    }
+
+    /* JR offset */
+    fn instr__JR_OFFSET(&mut self) {
+        self.jr();
+        self.IncPC(1);
+    }
+
+    /* ADD HL,DE */
+    fn instr__ADD_HL_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.hl, self.DE());
+        let mut hl = Register16::new(self.H, self.L);
+        let value2 = self.DE();
+        self.add16(&mut hl, value2);
+        (self.H, self.L) = hl.result();
+    }
+
+    /* LD A,(DE) */
+    fn instr__LD_A_iDE(&mut self) {
+        self.A = self.memory.read_byte(self.DE());
+    }
+
+    /* DEC DE */
+    fn instr__DEC_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.DecDE();
+    }
+
+    /* INC E */
+    fn instr__INC_E(&mut self) {
+        self.incE();
+    }
+
+    /* DEC E */
+    fn instr__DEC_E(&mut self) {
+        self.decE();
+    }
+
+    /* LD E,nn */
+    fn instr__LD_E_NN(&mut self) {
+        let address = self.PC();
+        self.E = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* RRA */
+    fn instr__RRA(&mut self) {
+        let byte_temp: u8 = self.A;
+        self.A = (self.A >> 1) | (self.F << 7);
+        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S))
+            | (self.A & (FLAG_3 | FLAG_5))
+            | (byte_temp & FLAG_C);
+    }
+
+    /* JR NZ,offset */
+    fn instr__JR_NZ_OFFSET(&mut self) {
+        if (self.F & FLAG_Z) == 0 {
+            self.jr();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+        }
+        self.IncPC(1);
+    }
+
+    /* LD HL,nnnn */
+    fn instr__LD_HL_NNNN(&mut self) {
+        let address = self.PC();
+        let b1 = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let b2 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.SetHL(join_bytes(b2, b1));
+    }
+
+    /* LD (nnnn),HL */
+    fn instr__LD_iNNNN_HL(&mut self) {
+        self.ld16nnrr(self.L, self.H);
+        // break
+    }
+
+    /* INC HL */
+    fn instr__INC_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncHL();
+    }
+
+    /* INC H */
+    fn instr__INC_H(&mut self) {
+        self.incH();
+    }
+
+    /* DEC H */
+    fn instr__DEC_H(&mut self) {
+        self.decH();
+    }
+
+    /* LD H,nn */
+    fn instr__LD_H_NN(&mut self) {
+        let address = self.PC();
+        self.H = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* DAA */
+    fn instr__DAA(&mut self) {
+        let mut add: u8 = 0;
+        let mut carry: u8 = self.F & FLAG_C;
+        if ((self.F & FLAG_H) != 0) || ((self.A & 0x0f) > 9) {
+            add = 6;
+        }
+        if (carry != 0) || (self.A > 0x99) {
+            add |= 0x60;
+        }
+        if self.A > 0x99 {
+            carry = FLAG_C;
+        }
+        if (self.F & FLAG_N) != 0 {
+            self.sub(add);
+        } else {
+            self.add(add);
+        }
+        let temp: u8 =
+            self.F & !(FLAG_C | FLAG_P) | carry | self.tables.parity_table[self.A as usize];
+        self.F = temp;
+    }
+
+    /* JR Z,offset */
+    fn instr__JR_Z_OFFSET(&mut self) {
+        if (self.F & FLAG_Z) != 0 {
+            self.jr();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+        }
+        self.IncPC(1);
+    }
+
+    /* ADD HL,HL */
+    fn instr__ADD_HL_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.hl, self.HL());
+        let mut hl = Register16::new(self.H, self.L);
+        let value2 = self.HL();
+        self.add16(&mut hl, value2);
+        (self.H, self.L) = hl.result();
+    }
+
+    /* LD HL,(nnnn) */
+    fn instr__LD_HL_iNNNN(&mut self) {
+        // self.ld16rrnn(&mut self.L, &mut self.H););
+        (self.L, self.H) = self.ld16rrnn_ex();
+        // break
+    }
+
+    /* DEC HL */
+    fn instr__DEC_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.DecHL();
+    }
+
+    /* INC L */
+    fn instr__INC_L(&mut self) {
+        self.incL();
+    }
+
+    /* DEC L */
+    fn instr__DEC_L(&mut self) {
+        self.decL();
+    }
+
+    /* LD L,nn */
+    fn instr__LD_L_NN(&mut self) {
+        let address = self.PC();
+        self.L = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* CPL */
+    fn instr__CPL(&mut self) {
+        self.A ^= 0xff;
+        self.F = (self.F & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S))
+            | (self.A & (FLAG_3 | FLAG_5))
+            | (FLAG_N | FLAG_H);
+    }
+
+    /* JR NC,offset */
+    fn instr__JR_NC_OFFSET(&mut self) {
+        if (self.F & FLAG_C) == 0 {
+            self.jr();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+        }
+        self.IncPC(1);
+    }
+
+    /* LD SP,nnnn */
+    fn instr__LD_SP_NNNN(&mut self) {
+        let address = self.PC();
+        let b1 = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let b2 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.SetSP(join_bytes(b2, b1));
+    }
+
+    /* LD (nnnn),A */
+    fn instr__LD_iNNNN_A(&mut self) {
+        let address = self.PC();
+        let mut word_temp: u16 = (self.memory.read_byte(address)) as u16;
+        self.IncPC(1);
+        let address = self.PC();
+        word_temp |= (self.memory.read_byte(address) as u16) << 8;
+        self.IncPC(1);
+        self.memory.write_byte(word_temp, self.A);
+    }
+
+    /* INC SP */
+    fn instr__INC_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncSP();
+    }
+
+    /* INC (HL) */
+    fn instr__INC_iHL(&mut self) {
+        {
+            let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+            self.memory.contend_read_no_mreq(self.HL(), 1);
+            self.inc(&mut byte_temp);
+            self.memory.write_byte(self.HL(), byte_temp);
+        }
+    }
+
+    /* DEC (HL) */
+    fn instr__DEC_iHL(&mut self) {
+        {
+            let address = self.HL();
+            let mut byte_temp: u8 = self.memory.read_byte(address);
+            let _address = self.HL();
+            self.memory.contend_read_no_mreq(_address, 1);
+            self.dec(&mut byte_temp);
+            self.memory.write_byte(self.HL(), byte_temp);
+        }
+    }
+
+    /* LD (HL),nn */
+    fn instr__LD_iHL_NN(&mut self) {
+        let address = self.PC();
+        let value = self.memory.read_byte(address);
+        let address = self.HL();
+        self.memory.write_byte(address, value);
+        self.IncPC(1);
+    }
+
+    /* SCF */
+    fn instr__SCF(&mut self) {
+        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.A & (FLAG_3 | FLAG_5)) | FLAG_C;
+    }
+
+    /* JR C,offset */
+    fn instr__JR_C_OFFSET(&mut self) {
+        if (self.F & FLAG_C) != 0 {
+            self.jr();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+        }
+        self.IncPC(1);
+    }
+
+    /* ADD HL,SP */
+    fn instr__ADD_HL_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.hl, self.SP());
+        let mut hl = Register16::new(self.H, self.L);
+        let value2 = self.SP();
+        self.add16(&mut hl, value2);
+        (self.H, self.L) = hl.result();
+    }
+
+    /* LD A,(nnnn) */
+    fn instr__LD_A_iNNNN(&mut self) {
+        let address = self.PC();
+        let mut word_temp: u16 = self.memory.read_byte(address) as u16;
+        self.IncPC(1);
+        let address = self.PC();
+        word_temp |= (self.memory.read_byte(address) as u16) << 8;
+        self.IncPC(1);
+        self.A = self.memory.read_byte(word_temp);
+    }
+
+    /* DEC SP */
+    fn instr__DEC_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.DecSP();
+    }
+
+    /* INC A */
+    fn instr__INC_A(&mut self) {
+        self.incA();
+    }
+
+    /* DEC A */
+    fn instr__DEC_A(&mut self) {
+        self.decA();
+    }
+
+    /* LD A,nn */
+    fn instr__LD_A_NN(&mut self) {
+        let address = self.PC();
+        self.A = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* CCF */
+    fn instr__CCF(&mut self) {
+        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S))
+            | tern_op_b((self.F & FLAG_C) != 0, FLAG_H, FLAG_C)
+            | (self.A & (FLAG_3 | FLAG_5));
+    }
+
+    /* LD B,B */
+    fn instr__LD_B_B(&mut self) {}
+
+    /* LD B,C */
+    fn instr__LD_B_C(&mut self) {
+        self.B = self.C;
+    }
+
+    /* LD B,D */
+    fn instr__LD_B_D(&mut self) {
+        self.B = self.D;
+    }
+
+    /* LD B,E */
+    fn instr__LD_B_E(&mut self) {
+        self.B = self.E;
+    }
+
+    /* LD B,H */
+    fn instr__LD_B_H(&mut self) {
+        self.B = self.H;
+    }
+
+    /* LD B,L */
+    fn instr__LD_B_L(&mut self) {
+        self.B = self.L;
+    }
+
+    /* LD B,(HL) */
+    fn instr__LD_B_iHL(&mut self) {
+        self.B = self.memory.read_byte(self.HL());
+    }
+
+    /* LD B,A */
+    fn instr__LD_B_A(&mut self) {
+        self.B = self.A;
+    }
+
+    /* LD C,B */
+    fn instr__LD_C_B(&mut self) {
+        self.C = self.B;
+    }
+
+    /* LD C,C */
+    fn instr__LD_C_C(&mut self) {}
+
+    /* LD C,D */
+    fn instr__LD_C_D(&mut self) {
+        self.C = self.D;
+    }
+
+    /* LD C,E */
+    fn instr__LD_C_E(&mut self) {
+        self.C = self.E;
+    }
+
+    /* LD C,H */
+    fn instr__LD_C_H(&mut self) {
+        self.C = self.H;
+    }
+
+    /* LD C,L */
+    fn instr__LD_C_L(&mut self) {
+        self.C = self.L;
+    }
+
+    /* LD C,(HL) */
+    fn instr__LD_C_iHL(&mut self) {
+        self.C = self.memory.read_byte(self.HL());
+    }
+
+    /* LD C,A */
+    fn instr__LD_C_A(&mut self) {
+        self.C = self.A;
+    }
+
+    /* LD D,B */
+    fn instr__LD_D_B(&mut self) {
+        self.D = self.B;
+    }
+
+    /* LD D,C */
+    fn instr__LD_D_C(&mut self) {
+        self.D = self.C;
+    }
+
+    /* LD D,D */
+    fn instr__LD_D_D(&mut self) {}
+
+    /* LD D,E */
+    fn instr__LD_D_E(&mut self) {
+        self.D = self.E;
+    }
+
+    /* LD D,H */
+    fn instr__LD_D_H(&mut self) {
+        self.D = self.H;
+    }
+
+    /* LD D,L */
+    fn instr__LD_D_L(&mut self) {
+        self.D = self.L;
+    }
+
+    /* LD D,(HL) */
+    fn instr__LD_D_iHL(&mut self) {
+        self.D = self.memory.read_byte(self.HL());
+    }
+
+    /* LD D,A */
+    fn instr__LD_D_A(&mut self) {
+        self.D = self.A;
+    }
+
+    /* LD E,B */
+    fn instr__LD_E_B(&mut self) {
+        self.E = self.B;
+    }
+
+    /* LD E,C */
+    fn instr__LD_E_C(&mut self) {
+        self.E = self.C;
+    }
+
+    /* LD E,D */
+    fn instr__LD_E_D(&mut self) {
+        self.E = self.D;
+    }
+
+    /* LD E,E */
+    fn instr__LD_E_E(&mut self) {}
+
+    /* LD E,H */
+    fn instr__LD_E_H(&mut self) {
+        self.E = self.H;
+    }
+
+    /* LD E,L */
+    fn instr__LD_E_L(&mut self) {
+        self.E = self.L;
+    }
+
+    /* LD E,(HL) */
+    fn instr__LD_E_iHL(&mut self) {
+        self.E = self.memory.read_byte(self.HL());
+    }
+
+    /* LD E,A */
+    fn instr__LD_E_A(&mut self) {
+        self.E = self.A;
+    }
+
+    /* LD H,B */
+    fn instr__LD_H_B(&mut self) {
+        self.H = self.B;
+    }
+
+    /* LD H,C */
+    fn instr__LD_H_C(&mut self) {
+        self.H = self.C;
+    }
+
+    /* LD H,D */
+    fn instr__LD_H_D(&mut self) {
+        self.H = self.D;
+    }
+
+    /* LD H,E */
+    fn instr__LD_H_E(&mut self) {
+        self.H = self.E;
+    }
+
+    /* LD H,H */
+    fn instr__LD_H_H(&mut self) {}
+
+    /* LD H,L */
+    fn instr__LD_H_L(&mut self) {
+        self.H = self.L;
+    }
+
+    /* LD H,(HL) */
+    fn instr__LD_H_iHL(&mut self) {
+        self.H = self.memory.read_byte(self.HL());
+    }
+
+    /* LD H,A */
+    fn instr__LD_H_A(&mut self) {
+        self.H = self.A;
+    }
+
+    /* LD L,B */
+    fn instr__LD_L_B(&mut self) {
+        self.L = self.B;
+    }
+
+    /* LD L,C */
+    fn instr__LD_L_C(&mut self) {
+        self.L = self.C;
+    }
+
+    /* LD L,D */
+    fn instr__LD_L_D(&mut self) {
+        self.L = self.D;
+    }
+
+    /* LD L,E */
+    fn instr__LD_L_E(&mut self) {
+        self.L = self.E;
+    }
+
+    /* LD L,H */
+    fn instr__LD_L_H(&mut self) {
+        self.L = self.H;
+    }
+
+    /* LD L,L */
+    fn instr__LD_L_L(&mut self) {}
+
+    /* LD L,(HL) */
+    fn instr__LD_L_iHL(&mut self) {
+        self.L = self.memory.read_byte(self.HL());
+    }
+
+    /* LD L,A */
+    fn instr__LD_L_A(&mut self) {
+        self.L = self.A;
+    }
+
+    /* LD (HL),B */
+    fn instr__LD_iHL_B(&mut self) {
+        self.memory.write_byte(self.HL(), self.B);
+    }
+
+    /* LD (HL),C */
+    fn instr__LD_iHL_C(&mut self) {
+        self.memory.write_byte(self.HL(), self.C);
+    }
+
+    /* LD (HL),D */
+    fn instr__LD_iHL_D(&mut self) {
+        self.memory.write_byte(self.HL(), self.D);
+    }
+
+    /* LD (HL),E */
+    fn instr__LD_iHL_E(&mut self) {
+        self.memory.write_byte(self.HL(), self.E);
+    }
+
+    /* LD (HL),H */
+    fn instr__LD_iHL_H(&mut self) {
+        self.memory.write_byte(self.HL(), self.H);
+    }
+
+    /* LD (HL),L */
+    fn instr__LD_iHL_L(&mut self) {
+        self.memory.write_byte(self.HL(), self.L);
+    }
+
+    /* HALT */
+    fn instr__HALT(&mut self) {
+        self.halted = true;
+        self.DecPC(1);
+    }
+
+    /* LD (HL),A */
+    fn instr__LD_iHL_A(&mut self) {
+        self.memory.write_byte(self.HL(), self.A);
+    }
+
+    /* LD A,B */
+    fn instr__LD_A_B(&mut self) {
+        self.A = self.B;
+    }
+
+    /* LD A,C */
+    fn instr__LD_A_C(&mut self) {
+        self.A = self.C;
+    }
+
+    /* LD A,D */
+    fn instr__LD_A_D(&mut self) {
+        self.A = self.D;
+    }
+
+    /* LD A,E */
+    fn instr__LD_A_E(&mut self) {
+        self.A = self.E;
+    }
+
+    /* LD A,H */
+    fn instr__LD_A_H(&mut self) {
+        self.A = self.H;
+    }
+
+    /* LD A,L */
+    fn instr__LD_A_L(&mut self) {
+        self.A = self.L;
+    }
+
+    /* LD A,(HL) */
+    fn instr__LD_A_iHL(&mut self) {
+        self.A = self.memory.read_byte(self.HL());
+    }
+
+    /* LD A,A */
+    fn instr__LD_A_A(&mut self) {}
+
+    /* ADD A,B */
+    fn instr__ADD_A_B(&mut self) {
+        self.add(self.B);
+    }
+
+    /* ADD A,C */
+    fn instr__ADD_A_C(&mut self) {
+        self.add(self.C);
+    }
+
+    /* ADD A,D */
+    fn instr__ADD_A_D(&mut self) {
+        self.add(self.D);
+    }
+
+    /* ADD A,E */
+    fn instr__ADD_A_E(&mut self) {
+        self.add(self.E);
+    }
+
+    /* ADD A,H */
+    fn instr__ADD_A_H(&mut self) {
+        self.add(self.H);
+    }
+
+    /* ADD A,L */
+    fn instr__ADD_A_L(&mut self) {
+        self.add(self.L);
+    }
+
+    /* ADD A,(HL) */
+    fn instr__ADD_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.add(byte_temp);
+    }
+
+    /* ADD A,A */
+    fn instr__ADD_A_A(&mut self) {
+        self.add(self.A);
+    }
+
+    /* ADC A,B */
+    fn instr__ADC_A_B(&mut self) {
+        self.adc(self.B);
+    }
+
+    /* ADC A,C */
+    fn instr__ADC_A_C(&mut self) {
+        self.adc(self.C);
+    }
+
+    /* ADC A,D */
+    fn instr__ADC_A_D(&mut self) {
+        self.adc(self.D);
+    }
+
+    /* ADC A,E */
+    fn instr__ADC_A_E(&mut self) {
+        self.adc(self.E);
+    }
+
+    /* ADC A,H */
+    fn instr__ADC_A_H(&mut self) {
+        self.adc(self.H);
+    }
+
+    /* ADC A,L */
+    fn instr__ADC_A_L(&mut self) {
+        self.adc(self.L);
+    }
+
+    /* ADC A,(HL) */
+    fn instr__ADC_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.adc(byte_temp);
+    }
+
+    /* ADC A,A */
+    fn instr__ADC_A_A(&mut self) {
+        self.adc(self.A);
+    }
+
+    /* SUB A,B */
+    fn instr__SUB_A_B(&mut self) {
+        self.sub(self.B);
+    }
+
+    /* SUB A,C */
+    fn instr__SUB_A_C(&mut self) {
+        self.sub(self.C);
+    }
+
+    /* SUB A,D */
+    fn instr__SUB_A_D(&mut self) {
+        self.sub(self.D);
+    }
+
+    /* SUB A,E */
+    fn instr__SUB_A_E(&mut self) {
+        self.sub(self.E);
+    }
+
+    /* SUB A,H */
+    fn instr__SUB_A_H(&mut self) {
+        self.sub(self.H);
+    }
+
+    /* SUB A,L */
+    fn instr__SUB_A_L(&mut self) {
+        self.sub(self.L);
+    }
+
+    /* SUB A,(HL) */
+    fn instr__SUB_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.sub(byte_temp);
+    }
+
+    /* SUB A,A */
+    fn instr__SUB_A_A(&mut self) {
+        self.sub(self.A);
+    }
+
+    /* SBC A,B */
+    fn instr__SBC_A_B(&mut self) {
+        self.sbc(self.B);
+    }
+
+    /* SBC A,C */
+    fn instr__SBC_A_C(&mut self) {
+        self.sbc(self.C);
+    }
+
+    /* SBC A,D */
+    fn instr__SBC_A_D(&mut self) {
+        self.sbc(self.D);
+    }
+
+    /* SBC A,E */
+    fn instr__SBC_A_E(&mut self) {
+        self.sbc(self.E);
+    }
+
+    /* SBC A,H */
+    fn instr__SBC_A_H(&mut self) {
+        self.sbc(self.H);
+    }
+
+    /* SBC A,L */
+    fn instr__SBC_A_L(&mut self) {
+        self.sbc(self.L);
+    }
+
+    /* SBC A,(HL) */
+    fn instr__SBC_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.sbc(byte_temp);
+    }
+
+    /* SBC A,A */
+    fn instr__SBC_A_A(&mut self) {
+        self.sbc(self.A);
+    }
+
+    /* AND A,B */
+    fn instr__AND_A_B(&mut self) {
+        self.and(self.B);
+    }
+
+    /* AND A,C */
+    fn instr__AND_A_C(&mut self) {
+        self.and(self.C);
+    }
+
+    /* AND A,D */
+    fn instr__AND_A_D(&mut self) {
+        self.and(self.D);
+    }
+
+    /* AND A,E */
+    fn instr__AND_A_E(&mut self) {
+        self.and(self.E);
+    }
+
+    /* AND A,H */
+    fn instr__AND_A_H(&mut self) {
+        self.and(self.H);
+    }
+
+    /* AND A,L */
+    fn instr__AND_A_L(&mut self) {
+        self.and(self.L);
+    }
+
+    /* AND A,(HL) */
+    fn instr__AND_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.and(byte_temp);
+    }
+
+    /* AND A,A */
+    fn instr__AND_A_A(&mut self) {
+        self.and(self.A);
+    }
+
+    /* XOR A,B */
+    fn instr__XOR_A_B(&mut self) {
+        self.xor(self.B);
+    }
+
+    /* XOR A,C */
+    fn instr__XOR_A_C(&mut self) {
+        self.xor(self.C);
+    }
+
+    /* XOR A,D */
+    fn instr__XOR_A_D(&mut self) {
+        self.xor(self.D);
+    }
+
+    /* XOR A,E */
+    fn instr__XOR_A_E(&mut self) {
+        self.xor(self.E);
+    }
+
+    /* XOR A,H */
+    fn instr__XOR_A_H(&mut self) {
+        self.xor(self.H);
+    }
+
+    /* XOR A,L */
+    fn instr__XOR_A_L(&mut self) {
+        self.xor(self.L);
+    }
+
+    /* XOR A,(HL) */
+    fn instr__XOR_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.xor(byte_temp);
+    }
+
+    /* XOR A,A */
+    fn instr__XOR_A_A(&mut self) {
+        self.xor(self.A);
+    }
+
+    /* OR A,B */
+    fn instr__OR_A_B(&mut self) {
+        self.or(self.B);
+    }
+
+    /* OR A,C */
+    fn instr__OR_A_C(&mut self) {
+        self.or(self.C);
+    }
+
+    /* OR A,D */
+    fn instr__OR_A_D(&mut self) {
+        self.or(self.D);
+    }
+
+    /* OR A,E */
+    fn instr__OR_A_E(&mut self) {
+        self.or(self.E);
+    }
+
+    /* OR A,H */
+    fn instr__OR_A_H(&mut self) {
+        self.or(self.H);
+    }
+
+    /* OR A,L */
+    fn instr__OR_A_L(&mut self) {
+        self.or(self.L);
+    }
+
+    /* OR A,(HL) */
+    fn instr__OR_A_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+
+        self.or(byte_temp);
+    }
+
+    /* OR A,A */
+    fn instr__OR_A_A(&mut self) {
+        self.or(self.A);
+    }
+
+    /* CP B */
+    fn instr__CP_B(&mut self) {
+        self.cp(self.B);
+    }
+
+    /* CP C */
+    fn instr__CP_C(&mut self) {
+        self.cp(self.C);
+    }
+
+    /* CP D */
+    fn instr__CP_D(&mut self) {
+        self.cp(self.D);
+    }
+
+    /* CP E */
+    fn instr__CP_E(&mut self) {
+        self.cp(self.E);
+    }
+
+    /* CP H */
+    fn instr__CP_H(&mut self) {
+        self.cp(self.H);
+    }
+
+    /* CP L */
+    fn instr__CP_L(&mut self) {
+        self.cp(self.L);
+    }
+
+    /* CP (HL) */
+    fn instr__CP_iHL(&mut self) {
+        let address = self.HL();
+        let byte_temp: u8 = self.memory.read_byte(address);
+
+        self.cp(byte_temp);
+    }
+
+    /* CP A */
+    fn instr__CP_A(&mut self) {
+        self.cp(self.A);
+    }
+
+    /* RET NZ */
+    fn instr__RET_NZ(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_Z) == 0 {
+            self.ret();
+        }
+    }
+
+    /* POP BC */
+    fn instr__POP_BC(&mut self) {
+        (self.C, self.B) = self.pop16();
+    }
+
+    /* JP NZ,nnnn */
+    fn instr__JP_NZ_NNNN(&mut self) {
+        if (self.F & FLAG_Z) == 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* JP nnnn */
+    fn instr__JP_NNNN(&mut self) {
+        self.jp();
+    }
+
+    /* CALL NZ,nnnn */
+    fn instr__CALL_NZ_NNNN(&mut self) {
+        if (self.F & FLAG_Z) == 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* PUSH BC */
+    fn instr__PUSH_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.push16(self.C, self.B);
+    }
+
+    /* ADD A,nn */
+    fn instr__ADD_A_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.add(byte_temp);
+    }
+
+    /* RST 00 */
+    fn instr__RST_00(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x00);
+    }
+
+    /* RET Z */
+    fn instr__RET_Z(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_Z) != 0 {
+            self.ret();
+        }
+    }
+
+    /* RET */
+    fn instr__RET(&mut self) {
+        self.ret();
+    }
+
+    /* JP Z,nnnn */
+    fn instr__JP_Z_NNNN(&mut self) {
+        if (self.F & FLAG_Z) != 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* shift CB */
+    fn instr__SHIFT_CB(&mut self) {}
+
+    /* CALL Z,nnnn */
+    fn instr__CALL_Z_NNNN(&mut self) {
+        if (self.F & FLAG_Z) != 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* CALL nnnn */
+    fn instr__CALL_NNNN(&mut self) {
+        self.call();
+    }
+
+    /* ADC A,nn */
+    fn instr__ADC_A_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.adc(byte_temp);
+    }
+
+    /* RST 8 */
+    fn instr__RST_8(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x8);
+    }
+
+    /* RET NC */
+    fn instr__RET_NC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_C) == 0 {
+            self.ret();
+        }
+    }
+
+    /* POP DE */
+    fn instr__POP_DE(&mut self) {
+        (self.E, self.D) = self.pop16()
+    }
+
+    /* JP NC,nnnn */
+    fn instr__JP_NC_NNNN(&mut self) {
+        if (self.F & FLAG_C) == 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* OUT (nn),A */
+    fn instr__OUT_iNN_A(&mut self) {
+        let address = self.PC();
+        let out_temp: u16 = (self.memory.read_byte(address) as u16) + ((self.A as u16) << 8);
+        self.IncPC(1);
+        self.write_port(out_temp, self.A);
+    }
+
+    /* CALL NC,nnnn */
+    fn instr__CALL_NC_NNNN(&mut self) {
+        if (self.F & FLAG_C) == 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* PUSH DE */
+    fn instr__PUSH_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.push16(self.E, self.D);
+    }
+
+    /* SUB nn */
+    fn instr__SUB_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.sub(byte_temp);
+    }
+
+    /* RST 10 */
+    fn instr__RST_10(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x10);
+    }
+
+    /* RET C */
+    fn instr__RET_C(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_C) != 0 {
+            self.ret();
+        }
+    }
+
+    /* EXX */
+    fn instr__EXX(&mut self) {
+        let word_temp: u16 = self.BC();
+        self.SetBC(self.BC_());
+        self.SetBC_(word_temp);
+
+        let word_temp = self.DE();
+        self.SetDE(self.DE_());
+        self.SetDE_(word_temp);
+
+        let word_temp = self.HL();
+        self.SetHL(self.HL_());
+        self.SetHL_(word_temp);
+    }
+
+    /* JP C,nnnn */
+    fn instr__JP_C_NNNN(&mut self) {
+        if (self.F & FLAG_C) != 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* IN A,(nn) */
+    fn instr__IN_A_iNN(&mut self) {
+        let address = self.PC();
+        let in_temp: u16 = (self.memory.read_byte(address) as u16) + ((self.A as u16) << 8);
+        self.IncPC(1);
+        self.A = self.read_port(in_temp);
+    }
+
+    /* CALL C,nnnn */
+    fn instr__CALL_C_NNNN(&mut self) {
+        if (self.F & FLAG_C) != 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* shift DD */
+    fn instr__SHIFT_DD(&mut self) {}
+
+    /* SBC A,nn */
+    fn instr__SBC_A_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.sbc(byte_temp);
+    }
+
+    /* RST 18 */
+    fn instr__RST_18(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x18);
+    }
+
+    /* RET PO */
+    fn instr__RET_PO(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_P) == 0 {
+            self.ret();
+        }
+    }
+
+    /* POP HL */
+    fn instr__POP_HL(&mut self) {
+        (self.L, self.H) = self.pop16();
+    }
+
+    /* JP PO,nnnn */
+    fn instr__JP_PO_NNNN(&mut self) {
+        if (self.F & FLAG_P) == 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* EX (SP),HL */
+    fn instr__EX_iSP_HL(&mut self) {
+        let address = self.SP();
+        let byte_temp_l = self.memory.read_byte(address);
+        let sp = self.SP();
+        let byte_temp_h = self.memory.read_byte(sp + 1);
+        let sp = self.SP();
+        self.memory.contend_read_no_mreq(sp + 1, 1);
+        let sp = self.SP();
+        self.memory.write_byte(sp + 1, self.H);
+        let address = self.SP();
+        self.memory.write_byte(address, self.L);
+        let _address = self.SP();
+        self.memory.contend_write_no_mreq_loop(_address, 1, 2);
+        self.L = byte_temp_l;
+        self.H = byte_temp_h;
+    }
+
+    /* CALL PO,nnnn */
+    fn instr__CALL_PO_NNNN(&mut self) {
+        if (self.F & FLAG_P) == 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* PUSH HL */
+    fn instr__PUSH_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.push16(self.L, self.H);
+    }
+
+    /* AND nn */
+    fn instr__AND_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.and(byte_temp);
+    }
+
+    /* RST 20 */
+    fn instr__RST_20(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x20);
+    }
+
+    /* RET PE */
+    fn instr__RET_PE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_P) != 0 {
+            self.ret();
+        }
+    }
+
+    /* JP HL */
+    fn instr__JP_HL(&mut self) {
+        self.SetPC(self.HL());
+        /* NB: NOT INDIRECT! */
+    }
+
+    /* JP PE,nnnn */
+    fn instr__JP_PE_NNNN(&mut self) {
+        if (self.F & FLAG_P) != 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* EX DE,HL */
+    fn instr__EX_DE_HL(&mut self) {
+        let word_temp: u16 = self.DE();
+        self.SetDE(self.HL());
+        self.SetHL(word_temp);
+    }
+
+    /* CALL PE,nnnn */
+    fn instr__CALL_PE_NNNN(&mut self) {
+        if (self.F & FLAG_P) != 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* shift ED */
+    fn instr__SHIFT_ED(&mut self) {}
+
+    /* XOR A,nn */
+    fn instr__XOR_A_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.xor(byte_temp);
+    }
+
+    /* RST 28 */
+    fn instr__RST_28(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x28);
+    }
+
+    /* RET P */
+    fn instr__RET_P(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_S) == 0 {
+            self.ret();
+        }
+    }
+
+    /* POP AF */
+    fn instr__POP_AF(&mut self) {
+        (self.F, self.A) = self.pop16();
+    }
+
+    /* JP P,nnnn */
+    fn instr__JP_P_NNNN(&mut self) {
+        if (self.F & FLAG_S) == 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* DI */
+    fn instr__DI(&mut self) {
+        (self.IFF1, self.IFF2) = (0, 0);
+    }
+
+    /* CALL P,nnnn */
+    fn instr__CALL_P_NNNN(&mut self) {
+        if (self.F & FLAG_S) == 0 {
+            self.call();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* PUSH AF */
+    fn instr__PUSH_AF(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.push16(self.F, self.A);
+    }
+
+    /* OR nn */
+    fn instr__OR_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.or(byte_temp);
+    }
+
+    /* RST 30 */
+    fn instr__RST_30(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x30);
+    }
+
+    /* RET M */
+    fn instr__RET_M(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        if (self.F & FLAG_S) != 0 {
+            self.ret();
+        }
+    }
+
+    /* LD SP,HL */
+    fn instr__LD_SP_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.SetSP(self.HL());
+    }
+
+    /* JP M,nnnn */
+    fn instr__JP_M_NNNN(&mut self) {
+        if (self.F & FLAG_S) != 0 {
+            self.jp();
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* EI */
+    fn instr__EI(&mut self) {
+        /* Interrupts are not accepted immediately after an EI, but are
+        accepted after the next instruction */
+        (self.IFF1, self.IFF2) = (1, 1);
+        self.interrupts_enabled_at = self.t_states;
+        // eventAdd(self.Tstates + 1, z80InterruptEvent)
+    }
+
+    /* CALL M,nnnn */
+    fn instr__CALL_M_NNNN(&mut self) {
+        if (self.F & FLAG_S) != 0 {
+            self.call()
+        } else {
+            let _address = self.PC();
+            self.memory.contend_read(_address, 3);
+            let pc = self.PC();
+            self.memory.contend_read(pc + 1, 3);
+            self.IncPC(2);
+        }
+    }
+
+    /* shift FD */
+    fn instr__SHIFT_FD(&mut self) {}
+
+    /* CP nn */
+    fn instr__CP_NN(&mut self) {
+        let address = self.PC();
+        let byte_temp: u8 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.cp(byte_temp);
+    }
+
+    /* RST 38 */
+    fn instr__RST_38(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.rst(0x38);
+    }
+
+    /* RLC B */
+    fn instrCB__RLC_B(&mut self) {
+        self.B = self.rlc(self.B);
+    }
+
+    /* RLC C */
+    fn instrCB__RLC_C(&mut self) {
+        self.C = self.rlc(self.C);
+    }
+
+    /* RLC D */
+    fn instrCB__RLC_D(&mut self) {
+        self.D = self.rlc(self.D);
+    }
+
+    /* RLC E */
+    fn instrCB__RLC_E(&mut self) {
+        self.E = self.rlc(self.E);
+    }
+
+    /* RLC H */
+    fn instrCB__RLC_H(&mut self) {
+        self.H = self.rlc(self.H);
+    }
+
+    /* RLC L */
+    fn instrCB__RLC_L(&mut self) {
+        self.L = self.rlc(self.L);
+    }
+
+    /* RLC (HL) */
+    fn instrCB__RLC_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.rlc(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* RLC A */
+    fn instrCB__RLC_A(&mut self) {
+        self.A = self.rlc(self.A);
+    }
+
+    /* RRC B */
+    fn instrCB__RRC_B(&mut self) {
+        self.B = self.rrc(self.B);
+    }
+
+    /* RRC C */
+    fn instrCB__RRC_C(&mut self) {
+        self.C = self.rrc(self.C);
+    }
+
+    /* RRC D */
+    fn instrCB__RRC_D(&mut self) {
+        self.D = self.rrc(self.D);
+    }
+
+    /* RRC E */
+    fn instrCB__RRC_E(&mut self) {
+        self.E = self.rrc(self.E);
+    }
+
+    /* RRC H */
+    fn instrCB__RRC_H(&mut self) {
+        self.H = self.rrc(self.H);
+    }
+
+    /* RRC L */
+    fn instrCB__RRC_L(&mut self) {
+        self.L = self.rrc(self.L);
+    }
+
+    /* RRC (HL) */
+    fn instrCB__RRC_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.rrc(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* RRC A */
+    fn instrCB__RRC_A(&mut self) {
+        self.A = self.rrc(self.A);
+    }
+
+    /* RL B */
+    fn instrCB__RL_B(&mut self) {
+        self.B = self.rl(self.B);
+    }
+
+    /* RL C */
+    fn instrCB__RL_C(&mut self) {
+        self.C = self.rl(self.C);
+    }
+
+    /* RL D */
+    fn instrCB__RL_D(&mut self) {
+        self.D = self.rl(self.D);
+    }
+
+    /* RL E */
+    fn instrCB__RL_E(&mut self) {
+        self.E = self.rl(self.E);
+    }
+
+    /* RL H */
+    fn instrCB__RL_H(&mut self) {
+        self.H = self.rl(self.H);
+    }
+
+    /* RL L */
+    fn instrCB__RL_L(&mut self) {
+        self.L = self.rl(self.L);
+    }
+
+    /* RL (HL) */
+    fn instrCB__RL_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.rl(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* RL A */
+    fn instrCB__RL_A(&mut self) {
+        self.A = self.rl(self.A);
+    }
+
+    /* RR B */
+    fn instrCB__RR_B(&mut self) {
+        self.B = self.rr(self.B);
+    }
+
+    /* RR C */
+    fn instrCB__RR_C(&mut self) {
+        self.C = self.rr(self.C);
+    }
+
+    /* RR D */
+    fn instrCB__RR_D(&mut self) {
+        self.D = self.rr(self.D);
+    }
+
+    /* RR E */
+    fn instrCB__RR_E(&mut self) {
+        self.E = self.rr(self.E);
+    }
+
+    /* RR H */
+    fn instrCB__RR_H(&mut self) {
+        self.H = self.rr(self.H);
+    }
+
+    /* RR L */
+    fn instrCB__RR_L(&mut self) {
+        self.L = self.rr(self.L);
+    }
+
+    /* RR (HL) */
+    fn instrCB__RR_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.rr(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* RR A */
+    fn instrCB__RR_A(&mut self) {
+        self.A = self.rr(self.A);
+    }
+
+    /* SLA B */
+    fn instrCB__SLA_B(&mut self) {
+        self.B = self.sla(self.B);
+    }
+
+    /* SLA C */
+    fn instrCB__SLA_C(&mut self) {
+        self.C = self.sla(self.C);
+    }
+
+    /* SLA D */
+    fn instrCB__SLA_D(&mut self) {
+        self.D = self.sla(self.D);
+    }
+
+    /* SLA E */
+    fn instrCB__SLA_E(&mut self) {
+        self.E = self.sla(self.E);
+    }
+
+    /* SLA H */
+    fn instrCB__SLA_H(&mut self) {
+        self.H = self.sla(self.H);
+    }
+
+    /* SLA L */
+    fn instrCB__SLA_L(&mut self) {
+        self.L = self.sla(self.L);
+    }
+
+    /* SLA (HL) */
+    fn instrCB__SLA_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.sla(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* SLA A */
+    fn instrCB__SLA_A(&mut self) {
+        self.A = self.sla(self.A);
+    }
+
+    /* SRA B */
+    fn instrCB__SRA_B(&mut self) {
+        self.B = self.sra(self.B);
+    }
+
+    /* SRA C */
+    fn instrCB__SRA_C(&mut self) {
+        self.C = self.sra(self.C);
+    }
+
+    /* SRA D */
+    fn instrCB__SRA_D(&mut self) {
+        self.D = self.sra(self.D);
+    }
+
+    /* SRA E */
+    fn instrCB__SRA_E(&mut self) {
+        self.E = self.sra(self.E);
+    }
+
+    /* SRA H */
+    fn instrCB__SRA_H(&mut self) {
+        self.H = self.sra(self.H);
+    }
+
+    /* SRA L */
+    fn instrCB__SRA_L(&mut self) {
+        self.L = self.sra(self.L);
+    }
+
+    /* SRA (HL) */
+    fn instrCB__SRA_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.sra(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* SRA A */
+    fn instrCB__SRA_A(&mut self) {
+        self.A = self.sra(self.A);
+    }
+
+    /* SLL B */
+    fn instrCB__SLL_B(&mut self) {
+        self.B = self.sll(self.B);
+    }
+
+    /* SLL C */
+    fn instrCB__SLL_C(&mut self) {
+        self.C = self.sll(self.C);
+    }
+
+    /* SLL D */
+    fn instrCB__SLL_D(&mut self) {
+        self.D = self.sll(self.D);
+    }
+
+    /* SLL E */
+    fn instrCB__SLL_E(&mut self) {
+        self.E = self.sll(self.E);
+    }
+
+    /* SLL H */
+    fn instrCB__SLL_H(&mut self) {
+        self.H = self.sll(self.H);
+    }
+
+    /* SLL L */
+    fn instrCB__SLL_L(&mut self) {
+        self.L = self.sll(self.L);
+    }
+
+    /* SLL (HL) */
+    fn instrCB__SLL_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.sll(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* SLL A */
+    fn instrCB__SLL_A(&mut self) {
+        self.A = self.sll(self.A);
+    }
+
+    /* SRL B */
+    fn instrCB__SRL_B(&mut self) {
+        self.B = self.srl(self.B);
+    }
+
+    /* SRL C */
+    fn instrCB__SRL_C(&mut self) {
+        self.C = self.srl(self.C);
+    }
+
+    /* SRL D */
+    fn instrCB__SRL_D(&mut self) {
+        self.D = self.srl(self.D);
+    }
+
+    /* SRL E */
+    fn instrCB__SRL_E(&mut self) {
+        self.E = self.srl(self.E);
+    }
+
+    /* SRL H */
+    fn instrCB__SRL_H(&mut self) {
+        self.H = self.srl(self.H);
+    }
+
+    /* SRL L */
+    fn instrCB__SRL_L(&mut self) {
+        self.L = self.srl(self.L);
+    }
+
+    /* SRL (HL) */
+    fn instrCB__SRL_iHL(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        byte_temp = self.srl(byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
+    }
+
+    /* SRL A */
+    fn instrCB__SRL_A(&mut self) {
+        self.A = self.srl(self.A);
+    }
+
+    /* BIT 0,B */
+    fn instrCB__BIT_0_B(&mut self) {
+        self.bit(0, self.B);
+    }
+
+    /* BIT 0,C */
+    fn instrCB__BIT_0_C(&mut self) {
+        self.bit(0, self.C);
+    }
+
+    /* BIT 0,D */
+    fn instrCB__BIT_0_D(&mut self) {
+        self.bit(0, self.D);
+    }
+
+    /* BIT 0,E */
+    fn instrCB__BIT_0_E(&mut self) {
+        self.bit(0, self.E);
+    }
+
+    /* BIT 0,H */
+    fn instrCB__BIT_0_H(&mut self) {
+        self.bit(0, self.H);
+    }
+
+    /* BIT 0,L */
+    fn instrCB__BIT_0_L(&mut self) {
+        self.bit(0, self.L);
+    }
+
+    /* BIT 0,(HL) */
+    fn instrCB__BIT_0_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(0, byte_temp)
+    }
+
+    /* BIT 0,A */
+    fn instrCB__BIT_0_A(&mut self) {
+        self.bit(0, self.A)
+    }
+
+    /* BIT 1,B */
+    fn instrCB__BIT_1_B(&mut self) {
+        self.bit(1, self.B)
+    }
+
+    /* BIT 1,C */
+    fn instrCB__BIT_1_C(&mut self) {
+        self.bit(1, self.C)
+    }
+
+    /* BIT 1,D */
+    fn instrCB__BIT_1_D(&mut self) {
+        self.bit(1, self.D)
+    }
+
+    /* BIT 1,E */
+    fn instrCB__BIT_1_E(&mut self) {
+        self.bit(1, self.E)
+    }
+
+    /* BIT 1,H */
+    fn instrCB__BIT_1_H(&mut self) {
+        self.bit(1, self.H)
+    }
+
+    /* BIT 1,L */
+    fn instrCB__BIT_1_L(&mut self) {
+        self.bit(1, self.L)
+    }
+
+    /* BIT 1,(HL) */
+    fn instrCB__BIT_1_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(1, byte_temp);
+    }
+
+    /* BIT 1,A */
+    fn instrCB__BIT_1_A(&mut self) {
+        self.bit(1, self.A);
+    }
+
+    /* BIT 2,B */
+    fn instrCB__BIT_2_B(&mut self) {
+        self.bit(2, self.B);
+    }
+
+    /* BIT 2,C */
+    fn instrCB__BIT_2_C(&mut self) {
+        self.bit(2, self.C);
+    }
+
+    /* BIT 2,D */
+    fn instrCB__BIT_2_D(&mut self) {
+        self.bit(2, self.D);
+    }
+
+    /* BIT 2,E */
+    fn instrCB__BIT_2_E(&mut self) {
+        self.bit(2, self.E);
+    }
+
+    /* BIT 2,H */
+    fn instrCB__BIT_2_H(&mut self) {
+        self.bit(2, self.H);
+    }
+
+    /* BIT 2,L */
+    fn instrCB__BIT_2_L(&mut self) {
+        self.bit(2, self.L);
+    }
+
+    /* BIT 2,(HL) */
+    fn instrCB__BIT_2_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(2, byte_temp);
+    }
+
+    /* BIT 2,A */
+    fn instrCB__BIT_2_A(&mut self) {
+        self.bit(2, self.A);
+    }
+
+    /* BIT 3,B */
+    fn instrCB__BIT_3_B(&mut self) {
+        self.bit(3, self.B);
+    }
+
+    /* BIT 3,C */
+    fn instrCB__BIT_3_C(&mut self) {
+        self.bit(3, self.C);
+    }
+
+    /* BIT 3,D */
+    fn instrCB__BIT_3_D(&mut self) {
+        self.bit(3, self.D)
+    }
+
+    /* BIT 3,E */
+    fn instrCB__BIT_3_E(&mut self) {
+        self.bit(3, self.E)
+    }
+
+    /* BIT 3,H */
+    fn instrCB__BIT_3_H(&mut self) {
+        self.bit(3, self.H)
+    }
+
+    /* BIT 3,L */
+    fn instrCB__BIT_3_L(&mut self) {
+        self.bit(3, self.L)
+    }
+
+    /* BIT 3,(HL) */
+    fn instrCB__BIT_3_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(3, byte_temp);
+    }
+
+    /* BIT 3,A */
+    fn instrCB__BIT_3_A(&mut self) {
+        self.bit(3, self.A);
+    }
+
+    /* BIT 4,B */
+    fn instrCB__BIT_4_B(&mut self) {
+        self.bit(4, self.B);
+    }
+
+    /* BIT 4,C */
+    fn instrCB__BIT_4_C(&mut self) {
+        self.bit(4, self.C);
+    }
+
+    /* BIT 4,D */
+    fn instrCB__BIT_4_D(&mut self) {
+        self.bit(4, self.D);
+    }
+
+    /* BIT 4,E */
+    fn instrCB__BIT_4_E(&mut self) {
+        self.bit(4, self.E);
+    }
+
+    /* BIT 4,H */
+    fn instrCB__BIT_4_H(&mut self) {
+        self.bit(4, self.H);
+    }
+
+    /* BIT 4,L */
+    fn instrCB__BIT_4_L(&mut self) {
+        self.bit(4, self.L);
+    }
+
+    /* BIT 4,(HL) */
+    fn instrCB__BIT_4_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(4, byte_temp);
+    }
+
+    /* BIT 4,A */
+    fn instrCB__BIT_4_A(&mut self) {
+        self.bit(4, self.A);
+    }
+
+    /* BIT 5,B */
+    fn instrCB__BIT_5_B(&mut self) {
+        self.bit(5, self.B);
+    }
+
+    /* BIT 5,C */
+    fn instrCB__BIT_5_C(&mut self) {
+        self.bit(5, self.C);
+    }
+
+    /* BIT 5,D */
+    fn instrCB__BIT_5_D(&mut self) {
+        self.bit(5, self.D);
+    }
+
+    /* BIT 5,E */
+    fn instrCB__BIT_5_E(&mut self) {
+        self.bit(5, self.E);
+    }
+
+    /* BIT 5,H */
+    fn instrCB__BIT_5_H(&mut self) {
+        self.bit(5, self.H);
+    }
+
+    /* BIT 5,L */
+    fn instrCB__BIT_5_L(&mut self) {
+        self.bit(5, self.L);
+    }
+
+    /* BIT 5,(HL) */
+    fn instrCB__BIT_5_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(5, byte_temp);
+    }
+
+    /* BIT 5,A */
+    fn instrCB__BIT_5_A(&mut self) {
+        self.bit(5, self.A);
+    }
+
+    /* BIT 6,B */
+    fn instrCB__BIT_6_B(&mut self) {
+        self.bit(6, self.B);
+    }
+
+    /* BIT 6,C */
+    fn instrCB__BIT_6_C(&mut self) {
+        self.bit(6, self.C);
+    }
+
+    /* BIT 6,D */
+    fn instrCB__BIT_6_D(&mut self) {
+        self.bit(6, self.D);
+    }
+
+    /* BIT 6,E */
+    fn instrCB__BIT_6_E(&mut self) {
+        self.bit(6, self.E);
+    }
+
+    /* BIT 6,H */
+    fn instrCB__BIT_6_H(&mut self) {
+        self.bit(6, self.H)
+    }
+
+    /* BIT 6,L */
+    fn instrCB__BIT_6_L(&mut self) {
+        self.bit(6, self.L)
+    }
+
+    /* BIT 6,(HL) */
+    fn instrCB__BIT_6_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(6, byte_temp);
+    }
+
+    /* BIT 6,A */
+    fn instrCB__BIT_6_A(&mut self) {
+        self.bit(6, self.A);
+    }
+
+    /* BIT 7,B */
+    fn instrCB__BIT_7_B(&mut self) {
+        self.bit(7, self.B);
+    }
+
+    /* BIT 7,C */
+    fn instrCB__BIT_7_C(&mut self) {
+        self.bit(7, self.C);
+    }
+
+    /* BIT 7,D */
+    fn instrCB__BIT_7_D(&mut self) {
+        self.bit(7, self.D);
+    }
+
+    /* BIT 7,E */
+    fn instrCB__BIT_7_E(&mut self) {
+        self.bit(7, self.E);
+    }
+
+    /* BIT 7,H */
+    fn instrCB__BIT_7_H(&mut self) {
+        self.bit(7, self.H);
+    }
+
+    /* BIT 7,L */
+    fn instrCB__BIT_7_L(&mut self) {
+        self.bit(7, self.L);
+    }
+
+    /* BIT 7,(HL) */
+    fn instrCB__BIT_7_iHL(&mut self) {
+        let byte_temp = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.bit(7, byte_temp);
+    }
+
+    /* BIT 7,A */
+    fn instrCB__BIT_7_A(&mut self) {
+        self.bit(7, self.A);
+    }
+
+    /* RES 0,B */
+    fn instrCB__RES_0_B(&mut self) {
+        self.B &= 0xfe;
+    }
+
+    /* RES 0,C */
+    fn instrCB__RES_0_C(&mut self) {
+        self.C &= 0xfe;
+    }
+
+    /* RES 0,D */
+    fn instrCB__RES_0_D(&mut self) {
+        self.D &= 0xfe;
+    }
+
+    /* RES 0,E */
+    fn instrCB__RES_0_E(&mut self) {
+        self.E &= 0xfe;
+    }
+
+    /* RES 0,H */
+    fn instrCB__RES_0_H(&mut self) {
+        self.H &= 0xfe;
+    }
+
+    /* RES 0,L */
+    fn instrCB__RES_0_L(&mut self) {
+        self.L &= 0xfe;
+    }
+
+    /* RES 0,(HL) */
+    fn instrCB__RES_0_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xfe);
+    }
+
+    /* RES 0,A */
+    fn instrCB__RES_0_A(&mut self) {
+        self.A &= 0xfe;
+    }
+
+    /* RES 1,B */
+    fn instrCB__RES_1_B(&mut self) {
+        self.B &= 0xfd;
+    }
+
+    /* RES 1,C */
+    fn instrCB__RES_1_C(&mut self) {
+        self.C &= 0xfd;
+    }
+
+    /* RES 1,D */
+    fn instrCB__RES_1_D(&mut self) {
+        self.D &= 0xfd;
+    }
+
+    /* RES 1,E */
+    fn instrCB__RES_1_E(&mut self) {
+        self.E &= 0xfd;
+    }
+
+    /* RES 1,H */
+    fn instrCB__RES_1_H(&mut self) {
+        self.H &= 0xfd;
+    }
+
+    /* RES 1,L */
+    fn instrCB__RES_1_L(&mut self) {
+        self.L &= 0xfd;
+    }
+
+    /* RES 1,(HL) */
+    fn instrCB__RES_1_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xfd);
+    }
+
+    /* RES 1,A */
+    fn instrCB__RES_1_A(&mut self) {
+        self.A &= 0xfd;
+    }
+
+    /* RES 2,B */
+    fn instrCB__RES_2_B(&mut self) {
+        self.B &= 0xfb;
+    }
+
+    /* RES 2,C */
+    fn instrCB__RES_2_C(&mut self) {
+        self.C &= 0xfb;
+    }
+
+    /* RES 2,D */
+    fn instrCB__RES_2_D(&mut self) {
+        self.D &= 0xfb;
+    }
+
+    /* RES 2,E */
+    fn instrCB__RES_2_E(&mut self) {
+        self.E &= 0xfb;
+    }
+
+    /* RES 2,H */
+    fn instrCB__RES_2_H(&mut self) {
+        self.H &= 0xfb;
+    }
+
+    /* RES 2,L */
+    fn instrCB__RES_2_L(&mut self) {
+        self.L &= 0xfb;
+    }
+
+    /* RES 2,(HL) */
+    fn instrCB__RES_2_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xfb)
+    }
+
+    /* RES 2,A */
+    fn instrCB__RES_2_A(&mut self) {
+        self.A &= 0xfb
+    }
+
+    /* RES 3,B */
+    fn instrCB__RES_3_B(&mut self) {
+        self.B &= 0xf7
+    }
+
+    /* RES 3,C */
+    fn instrCB__RES_3_C(&mut self) {
+        self.C &= 0xf7
+    }
+
+    /* RES 3,D */
+    fn instrCB__RES_3_D(&mut self) {
+        self.D &= 0xf7
+    }
+
+    /* RES 3,E */
+    fn instrCB__RES_3_E(&mut self) {
+        self.E &= 0xf7
+    }
+
+    /* RES 3,H */
+    fn instrCB__RES_3_H(&mut self) {
+        self.H &= 0xf7
+    }
+
+    /* RES 3,L */
+    fn instrCB__RES_3_L(&mut self) {
+        self.L &= 0xf7
+    }
+
+    /* RES 3,(HL) */
+    fn instrCB__RES_3_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xf7);
+    }
+
+    /* RES 3,A */
+    fn instrCB__RES_3_A(&mut self) {
+        self.A &= 0xf7;
+    }
+
+    /* RES 4,B */
+    fn instrCB__RES_4_B(&mut self) {
+        self.B &= 0xef;
+    }
+
+    /* RES 4,C */
+    fn instrCB__RES_4_C(&mut self) {
+        self.C &= 0xef;
+    }
+
+    /* RES 4,D */
+    fn instrCB__RES_4_D(&mut self) {
+        self.D &= 0xef;
+    }
+
+    /* RES 4,E */
+    fn instrCB__RES_4_E(&mut self) {
+        self.E &= 0xef;
+    }
+
+    /* RES 4,H */
+    fn instrCB__RES_4_H(&mut self) {
+        self.H &= 0xef;
+    }
+
+    /* RES 4,L */
+    fn instrCB__RES_4_L(&mut self) {
+        self.L &= 0xef;
+    }
+
+    /* RES 4,(HL) */
+    fn instrCB__RES_4_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xef);
+    }
+
+    /* RES 4,A */
+    fn instrCB__RES_4_A(&mut self) {
+        self.A &= 0xef;
+    }
+
+    /* RES 5,B */
+    fn instrCB__RES_5_B(&mut self) {
+        self.B &= 0xdf;
+    }
+
+    /* RES 5,C */
+    fn instrCB__RES_5_C(&mut self) {
+        self.C &= 0xdf;
+    }
+
+    /* RES 5,D */
+    fn instrCB__RES_5_D(&mut self) {
+        self.D &= 0xdf;
+    }
+
+    /* RES 5,E */
+    fn instrCB__RES_5_E(&mut self) {
+        self.E &= 0xdf;
+    }
+
+    /* RES 5,H */
+    fn instrCB__RES_5_H(&mut self) {
+        self.H &= 0xdf;
+    }
+
+    /* RES 5,L */
+    fn instrCB__RES_5_L(&mut self) {
+        self.L &= 0xdf;
+    }
+
+    /* RES 5,(HL) */
+    fn instrCB__RES_5_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xdf);
+    }
+
+    /* RES 5,A */
+    fn instrCB__RES_5_A(&mut self) {
+        self.A &= 0xdf;
+    }
+
+    /* RES 6,B */
+    fn instrCB__RES_6_B(&mut self) {
+        self.B &= 0xbf
+    }
+
+    /* RES 6,C */
+    fn instrCB__RES_6_C(&mut self) {
+        self.C &= 0xbf
+    }
+
+    /* RES 6,D */
+    fn instrCB__RES_6_D(&mut self) {
+        self.D &= 0xbf
+    }
+
+    /* RES 6,E */
+    fn instrCB__RES_6_E(&mut self) {
+        self.E &= 0xbf
+    }
+
+    /* RES 6,H */
+    fn instrCB__RES_6_H(&mut self) {
+        self.H &= 0xbf
+    }
+
+    /* RES 6,L */
+    fn instrCB__RES_6_L(&mut self) {
+        self.L &= 0xbf
+    }
+
+    /* RES 6,(HL) */
+    fn instrCB__RES_6_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0xbf);
+    }
+
+    /* RES 6,A */
+    fn instrCB__RES_6_A(&mut self) {
+        self.A &= 0xbf;
+    }
+
+    /* RES 7,B */
+    fn instrCB__RES_7_B(&mut self) {
+        self.B &= 0x7f;
+    }
+
+    /* RES 7,C */
+    fn instrCB__RES_7_C(&mut self) {
+        self.C &= 0x7f;
+    }
+
+    /* RES 7,D */
+    fn instrCB__RES_7_D(&mut self) {
+        self.D &= 0x7f;
+    }
+
+    /* RES 7,E */
+    fn instrCB__RES_7_E(&mut self) {
+        self.E &= 0x7f;
+    }
+
+    /* RES 7,H */
+    fn instrCB__RES_7_H(&mut self) {
+        self.H &= 0x7f;
+    }
+
+    /* RES 7,L */
+    fn instrCB__RES_7_L(&mut self) {
+        self.L &= 0x7f;
+    }
+
+    /* RES 7,(HL) */
+    fn instrCB__RES_7_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp & 0x7f);
+    }
+
+    /* RES 7,A */
+    fn instrCB__RES_7_A(&mut self) {
+        self.A &= 0x7f;
+    }
+
+    /* SET 0,B */
+    fn instrCB__SET_0_B(&mut self) {
+        self.B |= 0x01;
+    }
+
+    /* SET 0,C */
+    fn instrCB__SET_0_C(&mut self) {
+        self.C |= 0x01;
+    }
+
+    /* SET 0,D */
+    fn instrCB__SET_0_D(&mut self) {
+        self.D |= 0x01;
+    }
+
+    /* SET 0,E */
+    fn instrCB__SET_0_E(&mut self) {
+        self.E |= 0x01;
+    }
+
+    /* SET 0,H */
+    fn instrCB__SET_0_H(&mut self) {
+        self.H |= 0x01;
+    }
+
+    /* SET 0,L */
+    fn instrCB__SET_0_L(&mut self) {
+        self.L |= 0x01;
+    }
+
+    /* SET 0,(HL) */
+    fn instrCB__SET_0_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x01);
+    }
+
+    /* SET 0,A */
+    fn instrCB__SET_0_A(&mut self) {
+        self.A |= 0x01;
+    }
+
+    /* SET 1,B */
+    fn instrCB__SET_1_B(&mut self) {
+        self.B |= 0x02;
+    }
+
+    /* SET 1,C */
+    fn instrCB__SET_1_C(&mut self) {
+        self.C |= 0x02;
+    }
+
+    /* SET 1,D */
+    fn instrCB__SET_1_D(&mut self) {
+        self.D |= 0x02;
+    }
+
+    /* SET 1,E */
+    fn instrCB__SET_1_E(&mut self) {
+        self.E |= 0x02;
+    }
+
+    /* SET 1,H */
+    fn instrCB__SET_1_H(&mut self) {
+        self.H |= 0x02;
+    }
+
+    /* SET 1,L */
+    fn instrCB__SET_1_L(&mut self) {
+        self.L |= 0x02;
+    }
+
+    /* SET 1,(HL) */
+    fn instrCB__SET_1_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x02)
+    }
+
+    /* SET 1,A */
+    fn instrCB__SET_1_A(&mut self) {
+        self.A |= 0x02;
+    }
+
+    /* SET 2,B */
+    fn instrCB__SET_2_B(&mut self) {
+        self.B |= 0x04;
+    }
+
+    /* SET 2,C */
+    fn instrCB__SET_2_C(&mut self) {
+        self.C |= 0x04;
+    }
+
+    /* SET 2,D */
+    fn instrCB__SET_2_D(&mut self) {
+        self.D |= 0x04;
+    }
+
+    /* SET 2,E */
+    fn instrCB__SET_2_E(&mut self) {
+        self.E |= 0x04;
+    }
+
+    /* SET 2,H */
+    fn instrCB__SET_2_H(&mut self) {
+        self.H |= 0x04;
+    }
+
+    /* SET 2,L */
+    fn instrCB__SET_2_L(&mut self) {
+        self.L |= 0x04;
+    }
+
+    /* SET 2,(HL) */
+    fn instrCB__SET_2_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x04)
+    }
+
+    /* SET 2,A */
+    fn instrCB__SET_2_A(&mut self) {
+        self.A |= 0x04;
+    }
+
+    /* SET 3,B */
+    fn instrCB__SET_3_B(&mut self) {
+        self.B |= 0x08;
+    }
+
+    /* SET 3,C */
+    fn instrCB__SET_3_C(&mut self) {
+        self.C |= 0x08;
+    }
+
+    /* SET 3,D */
+    fn instrCB__SET_3_D(&mut self) {
+        self.D |= 0x08;
+    }
+
+    /* SET 3,E */
+    fn instrCB__SET_3_E(&mut self) {
+        self.E |= 0x08;
+    }
+
+    /* SET 3,H */
+    fn instrCB__SET_3_H(&mut self) {
+        self.H |= 0x08;
+    }
+
+    /* SET 3,L */
+    fn instrCB__SET_3_L(&mut self) {
+        self.L |= 0x08;
+    }
+
+    /* SET 3,(HL) */
+    fn instrCB__SET_3_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x08)
+    }
+
+    /* SET 3,A */
+    fn instrCB__SET_3_A(&mut self) {
+        self.A |= 0x08;
+    }
+
+    /* SET 4,B */
+    fn instrCB__SET_4_B(&mut self) {
+        self.B |= 0x10;
+    }
+
+    /* SET 4,C */
+    fn instrCB__SET_4_C(&mut self) {
+        self.C |= 0x10;
+    }
+
+    /* SET 4,D */
+    fn instrCB__SET_4_D(&mut self) {
+        self.D |= 0x10;
+    }
+
+    /* SET 4,E */
+    fn instrCB__SET_4_E(&mut self) {
+        self.E |= 0x10;
+    }
+
+    /* SET 4,H */
+    fn instrCB__SET_4_H(&mut self) {
+        self.H |= 0x10;
+    }
+
+    /* SET 4,L */
+    fn instrCB__SET_4_L(&mut self) {
+        self.L |= 0x10;
+    }
+
+    /* SET 4,(HL) */
+    fn instrCB__SET_4_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x10)
+    }
+
+    /* SET 4,A */
+    fn instrCB__SET_4_A(&mut self) {
+        self.A |= 0x10;
+    }
+
+    /* SET 5,B */
+    fn instrCB__SET_5_B(&mut self) {
+        self.B |= 0x20;
+    }
+
+    /* SET 5,C */
+    fn instrCB__SET_5_C(&mut self) {
+        self.C |= 0x20;
+    }
+
+    /* SET 5,D */
+    fn instrCB__SET_5_D(&mut self) {
+        self.D |= 0x20;
+    }
+
+    /* SET 5,E */
+    fn instrCB__SET_5_E(&mut self) {
+        self.E |= 0x20;
+    }
+
+    /* SET 5,H */
+    fn instrCB__SET_5_H(&mut self) {
+        self.H |= 0x20;
+    }
+
+    /* SET 5,L */
+    fn instrCB__SET_5_L(&mut self) {
+        self.L |= 0x20;
+    }
+
+    /* SET 5,(HL) */
+    fn instrCB__SET_5_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x20)
+    }
+
+    /* SET 5,A */
+    fn instrCB__SET_5_A(&mut self) {
+        self.A |= 0x20;
+    }
+
+    /* SET 6,B */
+    fn instrCB__SET_6_B(&mut self) {
+        self.B |= 0x40;
+    }
+
+    /* SET 6,C */
+    fn instrCB__SET_6_C(&mut self) {
+        self.C |= 0x40;
+    }
+
+    /* SET 6,D */
+    fn instrCB__SET_6_D(&mut self) {
+        self.D |= 0x40;
+    }
+
+    /* SET 6,E */
+    fn instrCB__SET_6_E(&mut self) {
+        self.E |= 0x40;
+    }
+
+    /* SET 6,H */
+    fn instrCB__SET_6_H(&mut self) {
+        self.H |= 0x40;
+    }
+
+    /* SET 6,L */
+    fn instrCB__SET_6_L(&mut self) {
+        self.L |= 0x40;
+    }
+
+    /* SET 6,(HL) */
+    fn instrCB__SET_6_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x40)
+    }
+
+    /* SET 6,A */
+    fn instrCB__SET_6_A(&mut self) {
+        self.A |= 0x40;
+    }
+
+    /* SET 7,B */
+    fn instrCB__SET_7_B(&mut self) {
+        self.B |= 0x80;
+    }
+
+    /* SET 7,C */
+    fn instrCB__SET_7_C(&mut self) {
+        self.C |= 0x80;
+    }
+
+    /* SET 7,D */
+    fn instrCB__SET_7_D(&mut self) {
+        self.D |= 0x80;
+    }
+
+    /* SET 7,E */
+    fn instrCB__SET_7_E(&mut self) {
+        self.E |= 0x80;
+    }
+
+    /* SET 7,H */
+    fn instrCB__SET_7_H(&mut self) {
+        self.H |= 0x80;
+    }
+
+    /* SET 7,L */
+    fn instrCB__SET_7_L(&mut self) {
+        self.L |= 0x80;
+    }
+
+    /* SET 7,(HL) */
+    fn instrCB__SET_7_iHL(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.memory.write_byte(self.HL(), byte_temp | 0x80)
+    }
+
+    /* SET 7,A */
+    fn instrCB__SET_7_A(&mut self) {
+        self.A |= 0x80;
+    }
+
+    /* IN B,(C) */
+    fn instrED__IN_B_iC(&mut self) {
+        // self.in(&self.B, self.BC())
+        let bc = self.BC();
+        self.B = self.in_u8_ex(bc);
+    }
+
+    /* OUT (C),B */
+    fn instrED__OUT_iC_B(&mut self) {
+        self.write_port(self.BC(), self.B);
+    }
+
+    /* SBC HL,BC */
+    fn instrED__SBC_HL_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        self.sbc16(self.BC());
+    }
+
+    /* LD (nnnn),BC */
+    fn instrED__LD_iNNNN_BC(&mut self) {
+        self.ld16nnrr(self.C, self.B);
+        // break
+    }
+
+    /* NEG */
+    fn instrED__NEG(&mut self) {
+        let byte_temp = self.A;
+        self.A = 0;
+        self.sub(byte_temp);
+    }
+
+    /* RETN */
+    fn instrED__RETN(&mut self) {
+        self.IFF1 = self.IFF2;
+        self.ret();
+    }
+
+    /* IM 0 */
+    fn instrED__IM_0(&mut self) {
+        self.IM = 0;
+    }
+
+    /* LD I,A */
+    fn instrED__LD_I_A(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.I = self.A;
+    }
+
+    /* IN C,(C) */
+    fn instrED__IN_C_iC(&mut self) {
+        self.C = self.in_u8_ex(self.BC());
+    }
+
+    /* OUT (C),C */
+    fn instrED__OUT_iC_C(&mut self) {
+        self.write_port(self.BC(), self.C);
+    }
+
+    /* ADC HL,BC */
+    fn instrED__ADC_HL_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        self.adc16(self.BC());
+    }
+
+    /* LD BC,(nnnn) */
+    fn instrED__LD_BC_iNNNN(&mut self) {
+        (self.C, self.B) = self.ld16rrnn_ex();
+        // break
+    }
+
+    /* LD R,A */
+    fn instrED__LD_R_A(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        /* Keep the RZX instruction counter right */
+        self.rzx_instructions_offset += (self.R as isize) - (self.A as isize);
+        (self.R, self.R7) = ((self.A as u16), self.A);
+    }
+
+    /* IN D,(C) */
+    fn instrED__IN_D_iC(&mut self) {
+        self.D = self.in_u8_ex(self.BC());
+    }
+
+    /* OUT (C),D */
+    fn instrED__OUT_iC_D(&mut self) {
+        self.write_port(self.BC(), self.D);
+    }
+
+    /* SBC HL,DE */
+    fn instrED__SBC_HL_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        self.sbc16(self.DE());
+    }
+
+    /* LD (nnnn),DE */
+    fn instrED__LD_iNNNN_DE(&mut self) {
+        self.ld16nnrr(self.E, self.D);
+        // break
+    }
+
+    /* IM 1 */
+    fn instrED__IM_1(&mut self) {
+        self.IM = 1;
+    }
+
+    /* LD A,I */
+    fn instrED__LD_A_I(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.A = self.I;
+        self.F = (self.F & FLAG_C)
+            | self.tables.sz53_table[self.A as usize]
+            | tern_op_b(self.IFF2 != 0, FLAG_V, 0);
+    }
+
+    /* IN E,(C) */
+    fn instrED__IN_E_iC(&mut self) {
+        let port = self.BC();
+        self.E = self.in_u8_ex(port);
+    }
+
+    /* OUT (C),E */
+    fn instrED__OUT_iC_E(&mut self) {
+        self.write_port(self.BC(), self.E);
+    }
+
+    /* ADC HL,DE */
+    fn instrED__ADC_HL_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        self.adc16(self.DE());
+    }
+
+    /* LD DE,(nnnn) */
+    fn instrED__LD_DE_iNNNN(&mut self) {
+        (self.E, self.D) = self.ld16rrnn_ex();
+        // break
+    }
+
+    /* IM 2 */
+    fn instrED__IM_2(&mut self) {
+        self.IM = 2;
+    }
+
+    /* LD A,R */
+    fn instrED__LD_A_R(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.A = (self.R & 0x7f) as u8 | (self.R7 & 0x80);
+        self.F = (self.F & FLAG_C)
+            | self.tables.sz53_table[self.A as usize]
+            | tern_op_b(self.IFF2 != 0, FLAG_V, 0);
+    }
+
+    /* IN H,(C) */
+    fn instrED__IN_H_iC(&mut self) {
+        self.H = self.in_u8_ex(self.BC());
+    }
+
+    /* OUT (C),H */
+    fn instrED__OUT_iC_H(&mut self) {
+        self.write_port(self.BC(), self.H);
+    }
+
+    /* SBC HL,HL */
+    fn instrED__SBC_HL_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        self.sbc16(self.HL())
+    }
+
+    /* LD (nnnn),HL */
+    fn instrED__LD_iNNNN_HL(&mut self) {
+        self.ld16nnrr(self.L, self.H)
+        // break
+    }
+
+    /* RRD */
+    fn instrED__RRD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq_loop(self.HL(), 1, 4);
+        self.memory
+            .write_byte(self.HL(), (self.A << 4) | (byte_temp >> 4));
+        self.A = (self.A & 0xf0) | (byte_temp & 0x0f);
+        self.F = (self.F & FLAG_C) | self.tables.sz53p_table[self.A as usize];
+    }
+
+    /* IN L,(C) */
+    fn instrED__IN_L_iC(&mut self) {
+        self.L = self.in_u8_ex(self.BC());
+    }
+
+    /* OUT (C),L */
+    fn instrED__OUT_iC_L(&mut self) {
+        self.write_port(self.BC(), self.L);
+    }
+
+    /* ADC HL,HL */
+    fn instrED__ADC_HL_HL(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        self.adc16(self.HL());
+    }
+
+    /* LD HL,(nnnn) */
+    fn instrED__LD_HL_iNNNN(&mut self) {
+        (self.L, self.H) = self.ld16rrnn_ex();
+        // break
+    }
+
+    /* RLD */
+    fn instrED__RLD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq_loop(self.HL(), 1, 4);
+        self.memory
+            .write_byte(self.HL(), (byte_temp << 4) | (self.A & 0x0f));
+        self.A = (self.A & 0xf0) | (byte_temp >> 4);
+        self.F = (self.F & FLAG_C) | self.tables.sz53p_table[self.A as usize];
+    }
+
+    /* IN F,(C) */
+    fn instrED__IN_F_iC(&mut self) {
+        let _byte_temp: u8 = self.in_u8_ex(self.BC());
+    }
+
+    /* OUT (C),0 */
+    fn instrED__OUT_iC_0(&mut self) {
+        self.write_port(self.BC(), 0);
+    }
+
+    /* SBC HL,SP */
+    fn instrED__SBC_HL_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        let value = self.SP();
+        self.sbc16(value);
+    }
+
+    /* LD (nnnn),SP */
+    fn instrED__LD_iNNNN_SP(&mut self) {
+        let (sph, spl) = split_word(self.sp);
+        self.ld16nnrr(spl, sph);
+        // break
+    }
+
+    /* IN A,(C) */
+    fn instrED__IN_A_iC(&mut self) {
+        self.A = self.in_u8_ex(self.BC());
+    }
+
+    /* OUT (C),A */
+    fn instrED__OUT_iC_A(&mut self) {
+        self.write_port(self.BC(), self.A);
+    }
+
+    /* ADC HL,SP */
+    fn instrED__ADC_HL_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        let value = self.SP();
+        self.adc16(value);
+    }
+
+    /* LD SP,(nnnn) */
+    fn instrED__LD_SP_iNNNN(&mut self) {
+        // let (sph, spl) = splitWord(self.SP());
+        let (spl, sph) = self.ld16rrnn_ex();
+        self.SetSP(join_bytes(sph, spl));
+        // break
+    }
+
+    /* LDI */
+    fn instrED__LDI(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.DecBC();
+        self.memory.write_byte(self.DE(), byte_temp);
+        self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
+        self.IncDE();
+        self.IncHL();
+        byte_temp += self.A;
+        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+            | tern_op_b(self.BC() != 0, FLAG_V, 0)
+            | (byte_temp & FLAG_3)
+            | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
+    }
+
+    /* CPI */
+    fn instrED__CPI(&mut self) {
+        let value: u8 = self.memory.read_byte(self.HL());
+        let mut byte_temp: u8 = self.A - value;
+        let lookup: u8 =
+            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
+        self.IncHL();
+        self.DecBC();
+        self.F = (self.F & FLAG_C)
+            | tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N)
+            | HALF_CARRY_SUB_TABLE[lookup as usize]
+            | tern_op_b(byte_temp != 0, 0, FLAG_Z)
+            | (byte_temp & FLAG_S);
+        if (self.F & FLAG_H) != 0 {
+            byte_temp -= 1;
+        }
+        self.F |= (byte_temp & FLAG_3) | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
+    }
+
+    /* INI */
+    fn instrED__INI(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let in_i_temp: u8 = self.read_port(self.BC());
+        self.memory.write_byte(self.HL(), in_i_temp);
+
+        self.B = self.B.wrapping_sub(1);
+        self.IncHL();
+        let in_i_temp2: u8 = in_i_temp.wrapping_add(self.C).wrapping_add(1);
+        self.F = tern_op_b((in_i_temp & 0x80) != 0, FLAG_N, 0)
+            | tern_op_b(in_i_temp2 < in_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((in_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+    }
+
+    /* OUTI */
+    fn instrED__OUTI(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let out_i_temp: u8 = self.memory.read_byte(self.HL());
+        self.B = self.B.wrapping_sub(1); /* This does happen first, despite what the specs say */
+        self.write_port(self.BC(), out_i_temp);
+
+        self.IncHL();
+        let out_i_temp2: u8 = out_i_temp.wrapping_add(self.L); // + self.L;
+        self.F = tern_op_b((out_i_temp & 0x80) != 0, FLAG_N, 0)
+            | tern_op_b(out_i_temp2 < out_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((out_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+    }
+
+    /* LDD */
+    fn instrED__LDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.DecBC();
+        self.memory.write_byte(self.DE(), byte_temp);
+        self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
+        self.DecDE();
+        self.DecHL();
+        byte_temp += self.A;
+        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+            | tern_op_b(self.BC() != 0, FLAG_V, 0)
+            | (byte_temp & FLAG_3)
+            | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
+    }
+
+    /* CPD */
+    fn instrED__CPD(&mut self) {
+        let value: u8 = self.memory.read_byte(self.HL());
+        let mut byte_temp: u8 = self.A - value;
+        let lookup: u8 =
+            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
+        self.DecHL();
+        self.DecBC();
+        self.F = (self.F & FLAG_C)
+            | tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N)
+            | HALF_CARRY_SUB_TABLE[lookup as usize]
+            | tern_op_b(byte_temp != 0, 0, FLAG_Z)
+            | (byte_temp & FLAG_S);
+        if (self.F & FLAG_H) != 0 {
+            byte_temp -= 1;
+        }
+        self.F |= (byte_temp & FLAG_3) | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0)
+    }
+
+    /* IND */
+    fn instrED__IND(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let in_i_temp: u8 = self.read_port(self.BC());
+        self.memory.write_byte(self.HL(), in_i_temp);
+
+        self.B = self.B.wrapping_sub(1);
+        self.DecHL();
+        let in_i_temp2: u8 = in_i_temp + self.C - 1;
+        self.F = tern_op_b((in_i_temp & 0x80) != 0, FLAG_N, 0)
+            | tern_op_b(in_i_temp2 < in_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((in_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize]
+    }
+
+    /* OUTD */
+    fn instrED__OUTD(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let out_i_temp: u8 = self.memory.read_byte(self.HL());
+        self.B = self.B.wrapping_sub(1); /* This does happen first, despite what the specs say */
+        self.write_port(self.BC(), out_i_temp);
+
+        self.DecHL();
+        let out_i_temp2: u8 = out_i_temp + self.L;
+        self.F = tern_op_b((out_i_temp & 0x80) != 0, FLAG_N, 0)
+            | tern_op_b(out_i_temp2 < out_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((out_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+    }
+
+    /* LDIR */
+    fn instrED__LDIR(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.write_byte(self.DE(), byte_temp);
+        self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
+        self.DecBC();
+        byte_temp = byte_temp.wrapping_add(self.A);
+        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+            | tern_op_b(self.BC() != 0, FLAG_V, 0)
+            | (byte_temp & FLAG_3)
+            | tern_op_b(byte_temp & 0x02 != 0, FLAG_5, 0);
+        if self.BC() != 0 {
+            self.memory.contend_write_no_mreq_loop(self.DE(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 23;
+        } else {
+            self.cycles += 18;
+        }
+        self.IncHL();
+        self.IncDE();
+    }
+
+    /* CPIR */
+    fn instrED__CPIR(&mut self) {
+        let value: u8 = self.memory.read_byte(self.HL());
+        let mut byte_temp: u8 = self.A - value;
+        let lookup: u8 =
+            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
+        self.DecBC();
+        self.F = (self.F & FLAG_C)
+            | (tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N))
+            | HALF_CARRY_SUB_TABLE[lookup as usize]
+            | (tern_op_b(byte_temp != 0, 0, FLAG_Z))
+            | (byte_temp & FLAG_S);
+        if (self.F & FLAG_H) != 0 {
+            byte_temp -= 1;
+        }
+        self.F |= (byte_temp & FLAG_3) | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
+        if (self.F & (FLAG_V | FLAG_Z)) == FLAG_V {
+            self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 18;
+        } else {
+            self.cycles += 23;
+        }
+        self.IncHL();
+    }
+
+    /* INIR */
+    fn instrED__INIR(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let in_i_temp: u8 = self.read_port(self.BC());
+        self.memory.write_byte(self.HL(), in_i_temp);
+
+        self.B = self.B.wrapping_sub(1);
+        let in_i_temp2: u8 = in_i_temp + self.C + 1;
+        self.F = tern_op_b(in_i_temp & 0x80 != 0, FLAG_N, 0)
+            | tern_op_b(in_i_temp2 < in_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((in_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+
+        if self.B != 0 {
+            self.memory.contend_write_no_mreq_loop(self.HL(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 23;
+        } else {
+            self.cycles += 18;
+        }
+        self.IncHL();
+    }
+
+    /* OTIR */
+    fn instrED__OTIR(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let out_i_temp: u8 = self.memory.read_byte(self.HL());
+        self.B = self.B.wrapping_sub(1); /* This does happen first, despite what the specs say */
+        self.write_port(self.BC(), out_i_temp);
+
+        self.IncHL();
+        let out_i_temp2: u8 = out_i_temp.wrapping_add(self.L);
+
+        self.F = tern_op_b((out_i_temp & 0x80) != 0, FLAG_N, 0)
+            | tern_op_b(out_i_temp2 < out_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((out_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+
+        if self.B != 0 {
+            self.memory.contend_read_no_mreq_loop(self.BC(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 23;
+        } else {
+            self.cycles += 18;
+        }
+    }
+
+    /* LDDR */
+    fn instrED__LDDR(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.write_byte(self.DE(), byte_temp);
+        self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
+        self.DecBC();
+        byte_temp = byte_temp.wrapping_add(self.A);
+        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+            | tern_op_b(self.BC() != 0, FLAG_V, 0)
+            | (byte_temp & FLAG_3)
+            | tern_op_b(byte_temp & 0x02 != 0, FLAG_5, 0);
+        if self.BC() != 0 {
+            self.memory.contend_write_no_mreq_loop(self.DE(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 23;
+        } else {
+            self.cycles += 18;
+        }
+        self.DecHL();
+        self.DecDE();
+    }
+
+    /* CPDR */
+    fn instrED__CPDR(&mut self) {
+        let value: u8 = self.memory.read_byte(self.HL());
+        let mut byte_temp: u8 = self.A - value;
+        let lookup: u8 =
+            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
+        self.DecBC();
+        self.F = (self.F & FLAG_C)
+            | (tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N))
+            | HALF_CARRY_SUB_TABLE[lookup as usize]
+            | (tern_op_b(byte_temp != 0, 0, FLAG_Z))
+            | (byte_temp & FLAG_S);
+        if (self.F & FLAG_H) != 0 {
+            byte_temp -= 1;
+        }
+        self.F |= (byte_temp & FLAG_3) | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
+        if (self.F & (FLAG_V | FLAG_Z)) == FLAG_V {
+            self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 18;
+        } else {
+            self.cycles += 23;
+        }
+        self.DecHL();
+    }
+
+    /* INDR */
+    fn instrED__INDR(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let in_i_temp: u8 = self.read_port(self.BC());
+        self.memory.write_byte(self.HL(), in_i_temp);
+
+        self.B = self.B.wrapping_sub(1);
+        let in_i_temp2: u8 = in_i_temp + self.C - 1;
+        self.F = tern_op_b(in_i_temp & 0x80 != 0, FLAG_N, 0)
+            | tern_op_b(in_i_temp2 < in_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((in_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+
+        if self.B != 0 {
+            self.memory.contend_write_no_mreq_loop(self.HL(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 23;
+        } else {
+            self.cycles += 18;
+        }
+        self.DecHL();
+    }
+
+    /* OTDR */
+    fn instrED__OTDR(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        let address = self.HL();
+        let out_i_temp: u8 = self.memory.read_byte(address);
+        self.B = self.B.wrapping_sub(1); /* This does happen first, despite what the specs say */
+        self.write_port(self.BC(), out_i_temp);
+
+        self.DecHL();
+        let out_i_temp2: u8 = out_i_temp + self.L;
+        self.F = tern_op_b((out_i_temp & 0x80) != 0, FLAG_N, 0)
+            | tern_op_b(out_i_temp2 < out_i_temp, FLAG_H | FLAG_C, 0)
+            | tern_op_b(
+                self.tables.parity_table[((out_i_temp2 & 0x07) ^ self.B) as usize] != 0,
+                FLAG_P,
+                0,
+            )
+            | self.tables.sz53_table[self.B as usize];
+
+        if self.B != 0 {
+            self.memory.contend_read_no_mreq_loop(self.BC(), 1, 5);
+            self.DecPC(2);
+            self.cycles += 23;
+        } else {
+            self.cycles += 18;
+        }
+    }
+
+    /* slttrap */
+    fn instrED__SLTTRAP(&mut self) {
+        self.slt_trap(self.HL() as i16, self.A);
+    }
+
+    /* ADD ix,BC */
+    fn instrDD__ADD_REG_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.ix, self.BC())
+        let mut ix = Register16::new(self.IXH, self.IXL);
+        let value2 = self.BC();
+        self.add16(&mut ix, value2);
+        (self.IXH, self.IXL) = ix.result();
+    }
+
+    /* ADD ix,DE */
+    fn instrDD__ADD_REG_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.ix, self.DE())
+        let mut ix = Register16::new(self.IXH, self.IXL);
+        let value2 = self.DE();
+        self.add16(&mut ix, value2);
+        (self.IXH, self.IXL) = ix.result();
+    }
+
+    /* LD ix,nnnn */
+    fn instrDD__LD_REG_NNNN(&mut self) {
+        let address = self.PC();
+        let b1 = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let b2 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.SetIX(join_bytes(b2, b1));
+    }
+
+    /* LD (nnnn),ix */
+    fn instrDD__LD_iNNNN_REG(&mut self) {
+        self.ld16nnrr(self.IXL, self.IXH)
+        // break
+    }
+
+    /* INC ix */
+    fn instrDD__INC_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncIX()
+    }
+
+    /* INC IXH */
+    fn instrDD__INC_REGH(&mut self) {
+        self.incIXH()
+    }
+
+    /* DEC IXH */
+    fn instrDD__DEC_REGH(&mut self) {
+        self.decIXH()
+    }
+
+    /* LD IXH,nn */
+    fn instrDD__LD_REGH_NN(&mut self) {
+        let address = self.PC();
+        self.IXH = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* ADD ix,ix */
+    fn instrDD__ADD_REG_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.ix, self.IX());
+        let mut ix = Register16::new(self.IXH, self.IXL);
+        let value2 = self.IX();
+        self.add16(&mut ix, value2);
+        (self.IXH, self.IXL) = ix.result();
+    }
+
+    /* LD ix,(nnnn) */
+    fn instrDD__LD_REG_iNNNN(&mut self) {
+        (self.IXL, self.IXH) = self.ld16rrnn_ex();
+        // break
+    }
+
+    /* DEC ix */
+    fn instrDD__DEC_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.DecIX()
+    }
+
+    /* INC IXL */
+    fn instrDD__INC_REGL(&mut self) {
+        self.incIXL()
+    }
+
+    /* DEC IXL */
+    fn instrDD__DEC_REGL(&mut self) {
+        self.decIXL()
+    }
+
+    /* LD IXL,nn */
+    fn instrDD__LD_REGL_NN(&mut self) {
+        let address = self.PC();
+        self.IXL = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* INC (ix+dd) */
+    fn instrDD__INC_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let word_temp: u16 = self.IX() + sign_extend(offset) as u16;
+        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
+        self.memory.contend_read_no_mreq(word_temp, 1);
+        self.inc(&mut byte_temp);
+        self.memory.write_byte(word_temp, byte_temp)
+    }
+
+    /* DEC (ix+dd) */
+    fn instrDD__DEC_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let word_temp: u16 = self.IX() + (sign_extend(offset) as u16);
+        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
+        self.memory.contend_read_no_mreq(word_temp, 1);
+        self.dec(&mut byte_temp);
+        self.memory.write_byte(word_temp, byte_temp);
+    }
+
+    /* LD (ix+dd),nn */
+    fn instrDD__LD_iREGpDD_NN(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let value = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), value);
+    }
+
+    /* ADD ix,SP */
+    fn instrDD__ADD_REG_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.ix, self.SP());
+        let mut ix = Register16::new(self.IXH, self.IXL);
+        let value2 = self.SP();
+        self.add16(&mut ix, value2);
+        (self.IXH, self.IXL) = ix.result();
+    }
+
+    /* LD B,IXH */
+    fn instrDD__LD_B_REGH(&mut self) {
+        self.B = self.IXH
+    }
+
+    /* LD B,IXL */
+    fn instrDD__LD_B_REGL(&mut self) {
+        self.B = self.IXL
+    }
+
+    /* LD B,(ix+dd) */
+    fn instrDD__LD_B_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.B = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* LD C,IXH */
+    fn instrDD__LD_C_REGH(&mut self) {
+        self.C = self.IXH
+    }
+
+    /* LD C,IXL */
+    fn instrDD__LD_C_REGL(&mut self) {
+        self.C = self.IXL
+    }
+
+    /* LD C,(ix+dd) */
+    fn instrDD__LD_C_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.C = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* LD D,IXH */
+    fn instrDD__LD_D_REGH(&mut self) {
+        self.D = self.IXH
+    }
+
+    /* LD D,IXL */
+    fn instrDD__LD_D_REGL(&mut self) {
+        self.D = self.IXL
+    }
+
+    /* LD D,(ix+dd) */
+    fn instrDD__LD_D_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.D = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* LD E,IXH */
+    fn instrDD__LD_E_REGH(&mut self) {
+        self.E = self.IXH
+    }
+
+    /* LD E,IXL */
+    fn instrDD__LD_E_REGL(&mut self) {
+        self.E = self.IXL
+    }
+
+    /* LD E,(ix+dd) */
+    fn instrDD__LD_E_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.E = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* LD IXH,B */
+    fn instrDD__LD_REGH_B(&mut self) {
+        self.IXH = self.B
+    }
+
+    /* LD IXH,C */
+    fn instrDD__LD_REGH_C(&mut self) {
+        self.IXH = self.C
+    }
+
+    /* LD IXH,D */
+    fn instrDD__LD_REGH_D(&mut self) {
+        self.IXH = self.D
+    }
+
+    /* LD IXH,E */
+    fn instrDD__LD_REGH_E(&mut self) {
+        self.IXH = self.E
+    }
+
+    /* LD IXH,IXH */
+    fn instrDD__LD_REGH_REGH(&mut self) {}
+
+    /* LD IXH,IXL */
+    fn instrDD__LD_REGH_REGL(&mut self) {
+        self.IXH = self.IXL
+    }
+
+    /* LD H,(ix+dd) */
+    fn instrDD__LD_H_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.H = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* LD IXH,A */
+    fn instrDD__LD_REGH_A(&mut self) {
+        self.IXH = self.A
+    }
+
+    /* LD IXL,B */
+    fn instrDD__LD_REGL_B(&mut self) {
+        self.IXL = self.B
+    }
+
+    /* LD IXL,C */
+    fn instrDD__LD_REGL_C(&mut self) {
+        self.IXL = self.C
+    }
+
+    /* LD IXL,D */
+    fn instrDD__LD_REGL_D(&mut self) {
+        self.IXL = self.D
+    }
+
+    /* LD IXL,E */
+    fn instrDD__LD_REGL_E(&mut self) {
+        self.IXL = self.E
+    }
+
+    /* LD IXL,IXH */
+    fn instrDD__LD_REGL_REGH(&mut self) {
+        self.IXL = self.IXH
+    }
+
+    /* LD IXL,IXL */
+    fn instrDD__LD_REGL_REGL(&mut self) {}
+
+    /* LD L,(ix+dd) */
+    fn instrDD__LD_L_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.L = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* LD IXL,A */
+    fn instrDD__LD_REGL_A(&mut self) {
+        self.IXL = self.A
+    }
+
+    /* LD (ix+dd),B */
+    fn instrDD__LD_iREGpDD_B(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.B)
+    }
+
+    /* LD (ix+dd),C */
+    fn instrDD__LD_iREGpDD_C(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.C)
+    }
+
+    /* LD (ix+dd),D */
+    fn instrDD__LD_iREGpDD_D(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.D)
+    }
+
+    /* LD (ix+dd),E */
+    fn instrDD__LD_iREGpDD_E(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.E)
+    }
+
+    /* LD (ix+dd),H */
+    fn instrDD__LD_iREGpDD_H(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.H)
+    }
+
+    /* LD (ix+dd),L */
+    fn instrDD__LD_iREGpDD_L(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.L)
+    }
+
+    /* LD (ix+dd),A */
+    fn instrDD__LD_iREGpDD_A(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.A)
+    }
+
+    /* LD A,IXH */
+    fn instrDD__LD_A_REGH(&mut self) {
+        self.A = self.IXH
+    }
+
+    /* LD A,IXL */
+    fn instrDD__LD_A_REGL(&mut self) {
+        self.A = self.IXL
+    }
+
+    /* LD A,(ix+dd) */
+    fn instrDD__LD_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.A = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+    }
+
+    /* ADD A,IXH */
+    fn instrDD__ADD_A_REGH(&mut self) {
+        self.add(self.IXH)
+    }
+
+    /* ADD A,IXL */
+    fn instrDD__ADD_A_REGL(&mut self) {
+        self.add(self.IXL)
+    }
+
+    /* ADD A,(ix+dd) */
+    fn instrDD__ADD_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.add(byte_temp)
+    }
+
+    /* ADC A,IXH */
+    fn instrDD__ADC_A_REGH(&mut self) {
+        self.adc(self.IXH)
+    }
+
+    /* ADC A,IXL */
+    fn instrDD__ADC_A_REGL(&mut self) {
+        self.adc(self.IXL)
+    }
+
+    /* ADC A,(ix+dd) */
+    fn instrDD__ADC_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.adc(byte_temp)
+    }
+
+    /* SUB A,IXH */
+    fn instrDD__SUB_A_REGH(&mut self) {
+        self.sub(self.IXH)
+    }
+
+    /* SUB A,IXL */
+    fn instrDD__SUB_A_REGL(&mut self) {
+        self.sub(self.IXL)
+    }
+
+    /* SUB A,(ix+dd) */
+    fn instrDD__SUB_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.sub(byte_temp)
+    }
+
+    /* SBC A,IXH */
+    fn instrDD__SBC_A_REGH(&mut self) {
+        self.sbc(self.IXH)
+    }
+
+    /* SBC A,IXL */
+    fn instrDD__SBC_A_REGL(&mut self) {
+        self.sbc(self.IXL)
+    }
+
+    /* SBC A,(ix+dd) */
+    fn instrDD__SBC_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.sbc(byte_temp)
+    }
+
+    /* AND A,IXH */
+    fn instrDD__AND_A_REGH(&mut self) {
+        self.and(self.IXH)
+    }
+
+    /* AND A,IXL */
+    fn instrDD__AND_A_REGL(&mut self) {
+        self.and(self.IXL)
+    }
+
+    /* AND A,(ix+dd) */
+    fn instrDD__AND_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.and(byte_temp)
+    }
+
+    /* XOR A,IXH */
+    fn instrDD__XOR_A_REGH(&mut self) {
+        self.xor(self.IXH)
+    }
+
+    /* XOR A,IXL */
+    fn instrDD__XOR_A_REGL(&mut self) {
+        self.xor(self.IXL)
+    }
+
+    /* XOR A,(ix+dd) */
+    fn instrDD__XOR_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.xor(byte_temp)
+    }
+
+    /* OR A,IXH */
+    fn instrDD__OR_A_REGH(&mut self) {
+        self.or(self.IXH)
+    }
+
+    /* OR A,IXL */
+    fn instrDD__OR_A_REGL(&mut self) {
+        self.or(self.IXL)
+    }
+
+    /* OR A,(ix+dd) */
+    fn instrDD__OR_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.or(byte_temp)
+    }
+
+    /* CP A,IXH */
+    fn instrDD__CP_A_REGH(&mut self) {
+        self.cp(self.IXH)
+    }
+
+    /* CP A,IXL */
+    fn instrDD__CP_A_REGL(&mut self) {
+        self.cp(self.IXL)
+    }
+
+    /* CP A,(ix+dd) */
+    fn instrDD__CP_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let ix = self.IX();
+        let byte_temp: u8 = self.memory.read_byte(ix + (sign_extend(offset) as u16));
+        self.cp(byte_temp);
+    }
+
+    /* shift DDFDCB */
+    fn instrDD__SHIFT_DDFDCB(&mut self) {}
+
+    /* POP ix */
+    fn instrDD__POP_REG(&mut self) {
+        (self.IXL, self.IXH) = self.pop16();
+    }
+
+    /* EX (SP),ix */
+    fn instrDD__EX_iSP_REG(&mut self) {
+        let address = self.SP();
+        let byte_temp_l = self.memory.read_byte(address);
+        let sp = self.SP();
+        let byte_temp_h = self.memory.read_byte(sp + 1);
+        let sp = self.SP();
+        self.memory.contend_read_no_mreq(sp + 1, 1);
+        let sp = self.SP();
+        self.memory.write_byte(sp + 1, self.IXH);
+        let address = self.SP();
+        self.memory.write_byte(address, self.IXL);
+        let _address = self.SP();
+        self.memory.contend_write_no_mreq_loop(_address, 1, 2);
+        self.IXL = byte_temp_l;
+        self.IXH = byte_temp_h;
+    }
+
+    /* PUSH ix */
+    fn instrDD__PUSH_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.push16(self.IXL, self.IXH);
+    }
+
+    /* JP ix */
+    fn instrDD__JP_REG(&mut self) {
+        self.SetPC(self.IX()); /* NB: NOT INDIRECT! */
+    }
+
+    /* LD SP,ix */
+    fn instrDD__LD_SP_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.SetSP(self.IX());
+    }
+
+    /* ADD iy,BC */
+    fn instrFD__ADD_REG_BC(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.iy, self.BC());
+        let mut iy = Register16::new(self.IYH, self.IYL);
+        let value2 = self.BC();
+        self.add16(&mut iy, value2);
+        (self.IYH, self.IYL) = iy.result();
+    }
+
+    /* ADD iy,DE */
+    fn instrFD__ADD_REG_DE(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.iy, self.DE());
+        let mut iy = Register16::new(self.IYH, self.IYL);
+        let value2 = self.DE();
+        self.add16(&mut iy, value2);
+        (self.IYH, self.IYL) = iy.result();
+    }
+
+    /* LD iy,nnnn */
+    fn instrFD__LD_REG_NNNN(&mut self) {
+        let address = self.PC();
+        let b1 = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let b2 = self.memory.read_byte(address);
+        self.IncPC(1);
+        self.SetIY(join_bytes(b2, b1));
+    }
+
+    /* LD (nnnn),iy */
+    fn instrFD__LD_iNNNN_REG(&mut self) {
+        self.ld16nnrr(self.IYL, self.IYH)
+        // break
+    }
+
+    /* INC iy */
+    fn instrFD__INC_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncIY()
+    }
+
+    /* INC IYH */
+    fn instrFD__INC_REGH(&mut self) {
+        self.incIYH()
+    }
+
+    /* DEC IYH */
+    fn instrFD__DEC_REGH(&mut self) {
+        self.decIYH()
+    }
+
+    /* LD IYH,nn */
+    fn instrFD__LD_REGH_NN(&mut self) {
+        let address = self.PC();
+        self.IYH = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* ADD iy,iy */
+    fn instrFD__ADD_REG_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.iy, self.IY())
+        let mut iy = Register16::new(self.IYH, self.IYL);
+        let value2 = self.IY();
+        self.add16(&mut iy, value2);
+        (self.IYH, self.IYL) = iy.result();
+    }
+
+    /* LD iy,(nnnn) */
+    fn instrFD__LD_REG_iNNNN(&mut self) {
+        (self.IYL, self.IYH) = self.ld16rrnn_ex();
+        // break
+    }
+
+    /* DEC iy */
+    fn instrFD__DEC_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.DecIY()
+    }
+
+    /* INC IYL */
+    fn instrFD__INC_REGL(&mut self) {
+        self.incIYL()
+    }
+
+    /* DEC IYL */
+    fn instrFD__DEC_REGL(&mut self) {
+        self.decIYL()
+    }
+
+    /* LD IYL,nn */
+    fn instrFD__LD_REGL_NN(&mut self) {
+        let address = self.PC();
+        self.IYL = self.memory.read_byte(address);
+        self.IncPC(1);
+    }
+
+    /* INC (iy+dd) */
+    fn instrFD__INC_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let word_temp: u16 = self.IY() + (sign_extend(offset) as u16);
+        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
+        self.memory.contend_read_no_mreq(word_temp, 1);
+        self.inc(&mut byte_temp);
+        self.memory.write_byte(word_temp, byte_temp);
+    }
+
+    /* DEC (iy+dd) */
+    fn instrFD__DEC_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let word_temp: u16 = self.IY() + (sign_extend(offset) as u16);
+        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
+        self.memory.contend_read_no_mreq(word_temp, 1);
+        self.dec(&mut byte_temp);
+        self.memory.write_byte(word_temp, byte_temp)
+    }
+
+    /* LD (iy+dd),nn */
+    fn instrFD__LD_iREGpDD_NN(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        self.IncPC(1);
+        let address = self.PC();
+        let value = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), value)
+    }
+
+    /* ADD iy,SP */
+    fn instrFD__ADD_REG_SP(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+        // self.add16(self.iy, self.SP())
+        let mut iy = Register16::new(self.IYH, self.IYL);
+        let value2 = self.SP();
+        self.add16(&mut iy, value2);
+        (self.IYH, self.IYL) = iy.result();
+    }
+
+    /* LD B,IYH */
+    fn instrFD__LD_B_REGH(&mut self) {
+        self.B = self.IYH
+    }
+
+    /* LD B,IYL */
+    fn instrFD__LD_B_REGL(&mut self) {
+        self.B = self.IYL
+    }
+
+    /* LD B,(iy+dd) */
+    fn instrFD__LD_B_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.B = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+    }
+
+    /* LD C,IYH */
+    fn instrFD__LD_C_REGH(&mut self) {
+        self.C = self.IYH
+    }
+
+    /* LD C,IYL */
+    fn instrFD__LD_C_REGL(&mut self) {
+        self.C = self.IYL
+    }
+
+    /* LD C,(iy+dd) */
+    fn instrFD__LD_C_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.C = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+    }
+
+    /* LD D,IYH */
+    fn instrFD__LD_D_REGH(&mut self) {
+        self.D = self.IYH
+    }
+
+    /* LD D,IYL */
+    fn instrFD__LD_D_REGL(&mut self) {
+        self.D = self.IYL
+    }
+
+    /* LD D,(iy+dd) */
+    fn instrFD__LD_D_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.D = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+    }
+
+    /* LD E,IYH */
+    fn instrFD__LD_E_REGH(&mut self) {
+        self.E = self.IYH
+    }
+
+    /* LD E,IYL */
+    fn instrFD__LD_E_REGL(&mut self) {
+        self.E = self.IYL
+    }
+
+    /* LD E,(iy+dd) */
+    fn instrFD__LD_E_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.E = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+    }
+
+    /* LD IYH,B */
+    fn instrFD__LD_REGH_B(&mut self) {
+        self.IYH = self.B
+    }
+
+    /* LD IYH,C */
+    fn instrFD__LD_REGH_C(&mut self) {
+        self.IYH = self.C
+    }
+
+    /* LD IYH,D */
+    fn instrFD__LD_REGH_D(&mut self) {
+        self.IYH = self.D
+    }
+
+    /* LD IYH,E */
+    fn instrFD__LD_REGH_E(&mut self) {
+        self.IYH = self.E
+    }
+
+    /* LD IYH,IYH */
+    fn instrFD__LD_REGH_REGH(&mut self) {}
+
+    /* LD IYH,IYL */
+    fn instrFD__LD_REGH_REGL(&mut self) {
+        self.IYH = self.IYL
+    }
+
+    /* LD H,(iy+dd) */
+    fn instrFD__LD_H_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.H = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+    }
+
+    /* LD IYH,A */
+    fn instrFD__LD_REGH_A(&mut self) {
+        self.IYH = self.A
+    }
+
+    /* LD IYL,B */
+    fn instrFD__LD_REGL_B(&mut self) {
+        self.IYL = self.B
+    }
+
+    /* LD IYL,C */
+    fn instrFD__LD_REGL_C(&mut self) {
+        self.IYL = self.C
+    }
+
+    /* LD IYL,D */
+    fn instrFD__LD_REGL_D(&mut self) {
+        self.IYL = self.D
+    }
+
+    /* LD IYL,E */
+    fn instrFD__LD_REGL_E(&mut self) {
+        self.IYL = self.E
+    }
+
+    /* LD IYL,IYH */
+    fn instrFD__LD_REGL_REGH(&mut self) {
+        self.IYL = self.IYH
+    }
+
+    /* LD IYL,IYL */
+    fn instrFD__LD_REGL_REGL(&mut self) {}
+
+    /* LD L,(iy+dd) */
+    fn instrFD__LD_L_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.L = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+    }
+
+    /* LD IYL,A */
+    fn instrFD__LD_REGL_A(&mut self) {
+        self.IYL = self.A
+    }
+
+    /* LD (iy+dd),B */
+    fn instrFD__LD_iREGpDD_B(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.B);
+    }
+
+    /* LD (iy+dd),C */
+    fn instrFD__LD_iREGpDD_C(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.C);
+    }
+
+    /* LD (iy+dd),D */
+    fn instrFD__LD_iREGpDD_D(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.D);
+    }
+
+    /* LD (iy+dd),E */
+    fn instrFD__LD_iREGpDD_E(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.E);
+    }
+
+    /* LD (iy+dd),H */
+    fn instrFD__LD_iREGpDD_H(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.H);
+    }
+
+    /* LD (iy+dd),L */
+    fn instrFD__LD_iREGpDD_L(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.L);
+    }
+
+    /* LD (iy+dd),A */
+    fn instrFD__LD_iREGpDD_A(&mut self) {
+        let address = self.PC();
+        let offset = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.memory
+            .write_byte(self.IY() + (sign_extend(offset) as u16), self.A)
+    }
+
+    /* LD A,IYH */
+    fn instrFD__LD_A_REGH(&mut self) {
+        self.A = self.IYH
+    }
+
+    /* LD A,IYL */
+    fn instrFD__LD_A_REGL(&mut self) {
+        self.A = self.IYL
+    }
+
+    /* LD A,(iy+dd) */
+    fn instrFD__LD_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        self.A = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16))
+    }
+
+    /* ADD A,IYH */
+    fn instrFD__ADD_A_REGH(&mut self) {
+        self.add(self.IYH)
+    }
+
+    /* ADD A,IYL */
+    fn instrFD__ADD_A_REGL(&mut self) {
+        self.add(self.IYL)
+    }
+
+    /* ADD A,(iy+dd) */
+    fn instrFD__ADD_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.add(byte_temp)
+    }
+
+    /* ADC A,IYH */
+    fn instrFD__ADC_A_REGH(&mut self) {
+        self.adc(self.IYH)
+    }
+
+    /* ADC A,IYL */
+    fn instrFD__ADC_A_REGL(&mut self) {
+        self.adc(self.IYL)
+    }
+
+    /* ADC A,(iy+dd) */
+    fn instrFD__ADC_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.adc(byte_temp)
+    }
+
+    /* SUB A,IYH */
+    fn instrFD__SUB_A_REGH(&mut self) {
+        self.sub(self.IYH)
+    }
+
+    /* SUB A,IYL */
+    fn instrFD__SUB_A_REGL(&mut self) {
+        self.sub(self.IYL)
+    }
+
+    /* SUB A,(iy+dd) */
+    fn instrFD__SUB_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.sub(byte_temp)
+    }
+
+    /* SBC A,IYH */
+    fn instrFD__SBC_A_REGH(&mut self) {
+        self.sbc(self.IYH)
+    }
+
+    /* SBC A,IYL */
+    fn instrFD__SBC_A_REGL(&mut self) {
+        self.sbc(self.IYL)
+    }
+
+    /* SBC A,(iy+dd) */
+    fn instrFD__SBC_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.sbc(byte_temp)
+    }
+
+    /* AND A,IYH */
+    fn instrFD__AND_A_REGH(&mut self) {
+        self.and(self.IYH)
+    }
+
+    /* AND A,IYL */
+    fn instrFD__AND_A_REGL(&mut self) {
+        self.and(self.IYL)
+    }
+
+    /* AND A,(iy+dd) */
+    fn instrFD__AND_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.and(byte_temp)
+    }
+
+    /* XOR A,IYH */
+    fn instrFD__XOR_A_REGH(&mut self) {
+        self.xor(self.IYH)
+    }
+
+    /* XOR A,IYL */
+    fn instrFD__XOR_A_REGL(&mut self) {
+        self.xor(self.IYL)
+    }
+
+    /* XOR A,(iy+dd) */
+    fn instrFD__XOR_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.xor(byte_temp)
+    }
+
+    /* OR A,IYH */
+    fn instrFD__OR_A_REGH(&mut self) {
+        self.or(self.IYH)
+    }
+
+    /* OR A,IYL */
+    fn instrFD__OR_A_REGL(&mut self) {
+        self.or(self.IYL)
+    }
+
+    /* OR A,(iy+dd) */
+    fn instrFD__OR_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.or(byte_temp)
+    }
+
+    /* CP A,IYH */
+    fn instrFD__CP_A_REGH(&mut self) {
+        self.cp(self.IYH)
+    }
+
+    /* CP A,IYL */
+    fn instrFD__CP_A_REGL(&mut self) {
+        self.cp(self.IYL)
+    }
+
+    /* CP A,(iy+dd) */
+    fn instrFD__CP_A_iREGpDD(&mut self) {
+        let address = self.PC();
+        let offset: u8 = self.memory.read_byte(address);
+        let _address = self.PC();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+        self.IncPC(1);
+        let byte_temp: u8 = self
+            .memory
+            .read_byte(self.IY() + (sign_extend(offset) as u16));
+        self.cp(byte_temp)
+    }
+
+    /* shift DDFDCB */
+    fn instrFD__SHIFT_DDFDCB(&mut self) {}
+
+    /* POP iy */
+    fn instrFD__POP_REG(&mut self) {
+        (self.IYL, self.IYH) = self.pop16();
+    }
+
+    /* EX (SP),iy */
+    fn instrFD__EX_iSP_REG(&mut self) {
+        let address = self.SP();
+        let byte_temp_l = self.memory.read_byte(address);
+        let address = self.SP() + 1;
+        let byte_temp_h = self.memory.read_byte(address);
+        let _address = self.SP() + 1;
+        self.memory.contend_read_no_mreq(_address, 1);
+        let address = self.SP() + 1;
+        self.memory.write_byte(address, self.IYH);
+        let address = self.SP();
+        self.memory.write_byte(address, self.IYL);
+        let _address = self.SP();
+        self.memory.contend_write_no_mreq_loop(_address, 1, 2);
+        self.IYL = byte_temp_l;
+        self.IYH = byte_temp_h;
+    }
+
+    /* PUSH iy */
+    fn instrFD__PUSH_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.push16(self.IYL, self.IYH);
+    }
+
+    /* JP iy */
+    fn instrFD__JP_REG(&mut self) {
+        self.SetPC(self.IY()); /* NB: NOT INDIRECT! */
+    }
+
+    /* LD SP,iy */
+    fn instrFD__LD_SP_REG(&mut self) {
+        let _address = self.IR();
+        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+        self.SetSP(self.IY());
+    }
+
+    /* LD B,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_B_RLC_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.rlc(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_C_RLC_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.rlc(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_D_RLC_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.rlc(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_E_RLC_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.rlc(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_H_RLC_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.rlc(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_L_RLC_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.rlc(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RLC (REGISTER+dd) */
+    fn instrDDCB__RLC_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.rlc(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp);
+    }
+
+    /* LD A,RLC (REGISTER+dd) */
+    fn instrDDCB__LD_A_RLC_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.rlc(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_B_RRC_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.rrc(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_C_RRC_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.rrc(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_D_RRC_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.rrc(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_E_RRC_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.rrc(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_H_RRC_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.rrc(self.H);
+        self.memory.write_byte(self.temp_addr, self.H)
+    }
+
+    /* LD L,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_L_RRC_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.rrc(self.L);
+        self.memory.write_byte(self.temp_addr, self.L)
+    }
+
+    /* RRC (REGISTER+dd) */
+    fn instrDDCB__RRC_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.rrc(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp)
+    }
+
+    /* LD A,RRC (REGISTER+dd) */
+    fn instrDDCB__LD_A_RRC_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.rrc(self.A);
+        self.memory.write_byte(self.temp_addr, self.A)
+    }
+
+    /* LD B,RL (REGISTER+dd) */
+    fn instrDDCB__LD_B_RL_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.rl(self.B);
+        self.memory.write_byte(self.temp_addr, self.B)
+    }
+
+    /* LD C,RL (REGISTER+dd) */
+    fn instrDDCB__LD_C_RL_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.rl(self.C);
+        self.memory.write_byte(self.temp_addr, self.C)
+    }
+
+    /* LD D,RL (REGISTER+dd) */
+    fn instrDDCB__LD_D_RL_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.rl(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RL (REGISTER+dd) */
+    fn instrDDCB__LD_E_RL_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.rl(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RL (REGISTER+dd) */
+    fn instrDDCB__LD_H_RL_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.rl(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RL (REGISTER+dd) */
+    fn instrDDCB__LD_L_RL_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.rl(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RL (REGISTER+dd) */
+    fn instrDDCB__RL_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.rl(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp);
+    }
+
+    /* LD A,RL (REGISTER+dd) */
+    fn instrDDCB__LD_A_RL_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.rl(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RR (REGISTER+dd) */
+    fn instrDDCB__LD_B_RR_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.rr(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RR (REGISTER+dd) */
+    fn instrDDCB__LD_C_RR_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.rr(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RR (REGISTER+dd) */
+    fn instrDDCB__LD_D_RR_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.rr(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RR (REGISTER+dd) */
+    fn instrDDCB__LD_E_RR_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.rr(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RR (REGISTER+dd) */
+    fn instrDDCB__LD_H_RR_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.rr(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RR (REGISTER+dd) */
+    fn instrDDCB__LD_L_RR_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.rr(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RR (REGISTER+dd) */
+    fn instrDDCB__RR_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.rr(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp)
+    }
+
+    /* LD A,RR (REGISTER+dd) */
+    fn instrDDCB__LD_A_RR_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.rr(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_B_SLA_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.sla(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_C_SLA_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.sla(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_D_SLA_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.sla(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_E_SLA_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.sla(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_H_SLA_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.sla(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_L_SLA_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.sla(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SLA (REGISTER+dd) */
+    fn instrDDCB__SLA_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.sla(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp);
+    }
+
+    /* LD A,SLA (REGISTER+dd) */
+    fn instrDDCB__LD_A_SLA_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.sla(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_B_SRA_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.sra(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_C_SRA_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.sra(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_D_SRA_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.sra(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_E_SRA_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.sra(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_H_SRA_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.sra(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_L_SRA_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.sra(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SRA (REGISTER+dd) */
+    fn instrDDCB__SRA_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.sra(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp);
+    }
+
+    /* LD A,SRA (REGISTER+dd) */
+    fn instrDDCB__LD_A_SRA_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.sra(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_B_SLL_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.sll(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_C_SLL_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.sll(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_D_SLL_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.sll(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_E_SLL_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.sll(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_H_SLL_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.sll(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_L_SLL_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.sll(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SLL (REGISTER+dd) */
+    fn instrDDCB__SLL_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.sll(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp);
+    }
+
+    /* LD A,SLL (REGISTER+dd) */
+    fn instrDDCB__LD_A_SLL_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.sll(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_B_SRL_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.B = self.srl(self.B);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_C_SRL_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.C = self.srl(self.C);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_D_SRL_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.D = self.srl(self.D);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_E_SRL_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.E = self.srl(self.E);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_H_SRL_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.H = self.srl(self.H);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_L_SRL_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.L = self.srl(self.L);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SRL (REGISTER+dd) */
+    fn instrDDCB__SRL_iREGpDD(&mut self) {
+        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        byte_temp = self.srl(byte_temp);
+        self.memory.write_byte(self.temp_addr, byte_temp);
+    }
+
+    /* LD A,SRL (REGISTER+dd) */
+    fn instrDDCB__LD_A_SRL_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.A = self.srl(self.A);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* BIT 0,(REGISTER+dd) */
+    fn instrDDCB__BIT_0_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(0, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 1,(REGISTER+dd) */
+    fn instrDDCB__BIT_1_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(1, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 2,(REGISTER+dd) */
+    fn instrDDCB__BIT_2_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(2, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 3,(REGISTER+dd) */
+    fn instrDDCB__BIT_3_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(3, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 4,(REGISTER+dd) */
+    fn instrDDCB__BIT_4_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(4, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 5,(REGISTER+dd) */
+    fn instrDDCB__BIT_5_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(5, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 6,(REGISTER+dd) */
+    fn instrDDCB__BIT_6_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(6, byte_temp, self.temp_addr);
+    }
+
+    /* BIT 7,(REGISTER+dd) */
+    fn instrDDCB__BIT_7_iREGpDD(&mut self) {
+        let byte_temp = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.biti(7, byte_temp, self.temp_addr);
+    }
+
+    /* LD B,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_0_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_0_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_0_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_0_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_0_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_0_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 0,(REGISTER+dd) */
+    fn instrDDCB__RES_0_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xfe);
+    }
+
+    /* LD A,RES 0,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_0_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xfe;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_1_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_1_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_1_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_1_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_1_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_1_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 1,(REGISTER+dd) */
+    fn instrDDCB__RES_1_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xfd);
+    }
+
+    /* LD A,RES 1,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_1_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xfd;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_2_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_2_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_2_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_2_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_2_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_2_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 2,(REGISTER+dd) */
+    fn instrDDCB__RES_2_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xfb);
+    }
+
+    /* LD A,RES 2,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_2_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xfb;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_3_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_3_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C)
+    }
+
+    /* LD D,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_3_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_3_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_3_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_3_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 3,(REGISTER+dd) */
+    fn instrDDCB__RES_3_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xf7)
+    }
+
+    /* LD A,RES 3,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_3_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xf7;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_4_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_4_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_4_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_4_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_4_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_4_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 4,(REGISTER+dd) */
+    fn instrDDCB__RES_4_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xef);
+    }
+
+    /* LD A,RES 4,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_4_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xef;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_5_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_5_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_5_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_5_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_5_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_5_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 5,(REGISTER+dd) */
+    fn instrDDCB__RES_5_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xdf);
+    }
+
+    /* LD A,RES 5,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_5_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xdf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_6_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_6_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_6_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_6_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_6_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_6_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 6,(REGISTER+dd) */
+    fn instrDDCB__RES_6_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0xbf);
+    }
+
+    /* LD A,RES 6,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_6_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0xbf;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_B_RES_7_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_C_RES_7_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_D_RES_7_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_E_RES_7_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_H_RES_7_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_L_RES_7_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* RES 7,(REGISTER+dd) */
+    fn instrDDCB__RES_7_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp & 0x7f);
+    }
+
+    /* LD A,RES 7,(REGISTER+dd) */
+    fn instrDDCB__LD_A_RES_7_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) & 0x7f;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_0_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_0_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_0_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_0_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_0_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_0_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SET 0,(REGISTER+dd) */
+    fn instrDDCB__SET_0_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x01);
+    }
+
+    /* LD A,SET 0,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_0_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x01;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_1_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_1_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_1_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_1_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_1_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_1_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SET 1,(REGISTER+dd) */
+    fn instrDDCB__SET_1_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x02);
+    }
+
+    /* LD A,SET 1,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_1_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x02;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_2_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_2_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_2_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_2_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_2_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_2_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SET 2,(REGISTER+dd) */
+    fn instrDDCB__SET_2_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x04);
+    }
+
+    /* LD A,SET 2,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_2_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x04;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_3_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_3_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_3_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_3_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_3_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_3_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SET 3,(REGISTER+dd) */
+    fn instrDDCB__SET_3_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x08);
+    }
+
+    /* LD A,SET 3,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_3_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x08;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_4_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B);
+    }
+
+    /* LD C,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_4_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C);
+    }
+
+    /* LD D,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_4_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D);
+    }
+
+    /* LD E,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_4_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E);
+    }
+
+    /* LD H,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_4_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H);
+    }
+
+    /* LD L,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_4_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L);
+    }
+
+    /* SET 4,(REGISTER+dd) */
+    fn instrDDCB__SET_4_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x10);
+    }
+
+    /* LD A,SET 4,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_4_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x10;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A);
+    }
+
+    /* LD B,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_5_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B)
+    }
+
+    /* LD C,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_5_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C)
+    }
+
+    /* LD D,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_5_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D)
+    }
+
+    /* LD E,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_5_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E)
+    }
+
+    /* LD H,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_5_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H)
+    }
+
+    /* LD L,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_5_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L)
+    }
+
+    /* SET 5,(REGISTER+dd) */
+    fn instrDDCB__SET_5_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x20)
+    }
+
+    /* LD A,SET 5,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_5_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x20;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A)
+    }
+
+    /* LD B,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_6_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B)
+    }
+
+    /* LD C,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_6_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C)
+    }
+
+    /* LD D,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_6_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D)
+    }
+
+    /* LD E,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_6_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E)
+    }
+
+    /* LD H,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_6_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H)
+    }
+
+    /* LD L,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_6_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L)
+    }
+
+    /* SET 6,(REGISTER+dd) */
+    fn instrDDCB__SET_6_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x40)
+    }
+
+    /* LD A,SET 6,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_6_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x40;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A)
+    }
+
+    /* LD B,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_B_SET_7_iREGpDD(&mut self) {
+        self.B = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.B)
+    }
+
+    /* LD C,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_C_SET_7_iREGpDD(&mut self) {
+        self.C = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.C)
+    }
+
+    /* LD D,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_D_SET_7_iREGpDD(&mut self) {
+        self.D = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.D)
+    }
+
+    /* LD E,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_E_SET_7_iREGpDD(&mut self) {
+        self.E = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.E)
+    }
+
+    /* LD H,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_H_SET_7_iREGpDD(&mut self) {
+        self.H = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.H)
+    }
+
+    /* LD L,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_L_SET_7_iREGpDD(&mut self) {
+        self.L = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.L)
+    }
+
+    /* SET 7,(REGISTER+dd) */
+    fn instrDDCB__SET_7_iREGpDD(&mut self) {
+        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, byte_temp | 0x80)
+    }
+
+    /* LD A,SET 7,(REGISTER+dd) */
+    fn instrDDCB__LD_A_SET_7_iREGpDD(&mut self) {
+        self.A = self.memory.read_byte(self.temp_addr) | 0x80;
+        self.memory.contend_read_no_mreq(self.temp_addr, 1);
+        self.memory.write_byte(self.temp_addr, self.A)
+    }
+}

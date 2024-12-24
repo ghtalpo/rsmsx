@@ -1,0 +1,268 @@
+use std::io::Read;
+use std::{cell::RefCell, fs::File, rc::Rc};
+
+use crate::libs::cartridges::MapperKonami4;
+
+use super::cartridges::{get_cart_type, CartType, MapperASCII8, MapperKonami5};
+use super::ppi::PPI;
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum MapperType {
+    None = 0,
+    Konami4,
+    Konami5,
+    Ascii8kb,
+}
+
+pub trait Mapper {
+    fn read_byte(&self, address: u16) -> u8;
+    fn write_byte(&mut self, address: u16, value: u8);
+}
+
+// TODO: Secondary mapper (0xFFFF)
+pub type MemoryAccessor = Rc<RefCell<Memory>>;
+
+pub struct Memory {
+    contents: Vec<u8>, //[u8; 4 * 4 * 0x4000],
+    can_write: [bool; 4 * 4],
+    // mapper: Option<&'a (dyn Mapper + 'a)>,
+    // mapper: Box<dyn Mapper>,
+    mapper_type: MapperType,
+    slot_mapper: isize,
+    ppi: Rc<RefCell<PPI>>,
+    mapper_konami4: MapperKonami4,
+    mapper_konami5: MapperKonami5,
+    mapper_ascii8: MapperASCII8,
+}
+
+impl Memory {
+    pub fn new(ppi: Rc<RefCell<PPI>>) -> Self {
+        Self {
+            contents: vec![0; 4 * 4 * 0x4000],
+            can_write: [true; 4 * 4],
+            slot_mapper: -1,
+            // mapper: None,
+            mapper_type: MapperType::None,
+            mapper_konami4: MapperKonami4::new(),
+            mapper_konami5: MapperKonami5::new(),
+            mapper_ascii8: MapperASCII8::new(),
+            ppi,
+        }
+    }
+    pub fn save_state(&self) -> Memory {
+        let mut m = Memory::new(self.ppi.clone());
+        m.contents = self.contents.clone();
+        m.can_write = self.can_write;
+        m.slot_mapper = self.slot_mapper;
+        // m.mapper = self.mapper;
+        m.mapper_type = self.mapper_type;
+        m.mapper_konami4 = self.mapper_konami4.clone();
+        m.mapper_konami5 = self.mapper_konami5.clone();
+        m.mapper_ascii8 = self.mapper_ascii8.clone();
+        m
+    }
+    pub fn restore_state(&mut self, m: Memory) {
+        self.contents = m.contents.clone();
+        self.can_write = m.can_write;
+        self.slot_mapper = m.slot_mapper;
+        // self.mapper = m.mapper;
+        self.mapper_type = m.mapper_type;
+        self.mapper_konami4 = m.mapper_konami4.clone();
+        self.mapper_konami5 = m.mapper_konami5.clone();
+        self.mapper_ascii8 = m.mapper_ascii8.clone();
+        self.ppi = m.ppi;
+    }
+    pub fn load_bios_basic(&mut self, fname: &str) {
+        let mut f = File::open(fname).unwrap();
+        let mut buffer = Vec::new();
+        f.read_to_end(&mut buffer).unwrap();
+        self.load(&buffer, 0, 0);
+        if buffer.len() > 0x4000 {
+            // Load BASIC, if present
+            self.load(&buffer[0x4000..], 1, 0);
+        }
+    }
+
+    pub fn load_rom(&mut self, fname: &str, slot: usize, mapper_type: &str) {
+        let mut f = File::open(fname).unwrap();
+        let mut buffer = Vec::new();
+        f.read_to_end(&mut buffer).unwrap();
+        match get_cart_type(&buffer) {
+            CartType::KONAMI4 => {
+                log::info!("Loading ROM {} to slot 1 as type KONAMI4", fname);
+                // let mapper = MapperKonami4::new(&buffer);
+                // self.setMapper(&mapper, slot);
+                self.mapper_konami4.init(&buffer);
+                self.set_mapper_type(MapperType::Konami4, slot);
+                return;
+            }
+            CartType::KONAMI5 => {
+                log::info!("Loading ROM {} to slot 1 as type KONAMI5", fname);
+                self.mapper_konami5.init(&buffer);
+                self.set_mapper_type(MapperType::Konami5, slot);
+                return;
+            }
+            CartType::ASCII8KB => {
+                log::info!("Loading ROM {} to slot 1 as type ASCII8KB", fname);
+                self.mapper_ascii8.init(&buffer);
+                self.set_mapper_type(MapperType::Ascii8kb, slot);
+                return;
+            }
+            CartType::NORMAL => {
+                log::info!("Cartridge is type NORMAL");
+            }
+            _ => {
+                unimplemented!()
+            }
+        }
+        log::info!("Trying to load as a standard cartridge...");
+
+        if !mapper_type.is_empty() && mapper_type == "KONAMI4" {
+            // mapper := NewMapperKonami4(buffer)
+            // self.setMapper(mapper, slot)
+            self.mapper_konami4.init(&buffer);
+            self.set_mapper_type(MapperType::Konami4, slot);
+            return;
+        }
+        let num_of_pages = buffer.len() / 0x4000;
+        match num_of_pages {
+            1 => {
+                // Load ROM to page 1, slot 1
+                // TODO: mirrored????
+                log::info!("Loading ROM {} to slot 1 (16KB)", fname);
+                self.load(&buffer, 1, slot);
+            }
+            2 => {
+                // Load ROM to slot 1. Mirrored pg1&pg2 <=> pg3&pg4
+                log::info!("Loading ROM {} to slot 1 (32KB)", fname);
+                self.load(&buffer, 0, slot);
+                self.load(&buffer, 1, slot);
+                self.load(&buffer[0x4000..], 2, slot);
+                self.load(&buffer[0x4000..], 3, slot);
+            }
+            4 => {
+                log::info!("Loading ROM {} to slot 1 (64KB)", fname);
+                self.load(&buffer, 0, slot);
+                self.load(&buffer[0x4000..], 1, slot);
+                self.load(&buffer[0x8000..], 2, slot);
+                self.load(&buffer[0xC000..], 3, slot);
+            }
+            _ => {
+                log::error!("ROM size not supported")
+            }
+        }
+    }
+
+    // Loads 16k (one page)
+    pub fn load(&mut self, data: &[u8], page: usize, slot: usize) {
+        let base_addr = (page * 4 + slot) * 0x4000;
+        self.contents[base_addr..(0x4000 + base_addr)].copy_from_slice(&data[..0x4000]);
+        self.can_write[page * 4 + slot] = false;
+    }
+
+    // pub fn setMapper(&mut self, mapper: &dyn Mapper, slot: isize) {
+    //     log::info!("Loading MegaROM in slot {}", slot);
+    //     self.mapper = Some(mapper);
+    //     self.slotMapper = slot;
+    // }
+    pub fn set_mapper_type(&mut self, mapper_type: MapperType, slot: usize) {
+        log::info!("Loading MegaROM in slot {}", slot);
+        // self.mapper = Some(mapper);
+        self.mapper_type = mapper_type;
+        self.slot_mapper = slot as isize;
+    }
+
+    pub fn read_byte(&self, address: u16) -> u8 {
+        self.read_byte_internal(address)
+    }
+
+    // ReadByteInternal reads a byte from address without taking
+    // into account contention.
+    pub fn read_byte_internal(&self, address: u16) -> u8 {
+        let page = (address / 0x4000) as usize;
+        let slot = self.ppi.borrow().pg_slots[page];
+
+        // if self.mapper != nil && self.slotMapper == slot && (page == 1 || page == 2) {
+        if self.mapper_type != MapperType::None
+            && self.slot_mapper == slot
+            && (page == 1 || page == 2)
+        {
+            // return self.mapper.readByte(address);
+            return self.mapper_read_byte(address);
+        }
+
+        let delta = (address as usize) - page * 0x4000;
+        // return self.contents[page][slot as usize][delta];
+        self.contents[(page * 4 + slot as usize) * 0x4000 + delta]
+    }
+
+    fn mapper_read_byte(&self, address: u16) -> u8 {
+        match self.mapper_type {
+            MapperType::Konami4 => self.mapper_konami4.read_byte(address),
+            MapperType::Konami5 => self.mapper_konami5.read_byte(address),
+            MapperType::Ascii8kb => self.mapper_ascii8.read_byte(address),
+            _ => {
+                unimplemented!()
+            }
+        }
+    }
+
+    // WriteByte writes a byte at address taking into account
+    // contention.
+    pub fn write_byte(&mut self, address: u16, value: u8) {
+        self.write_byte_internal(address, value)
+    }
+
+    // WriteByteInternal writes a byte at address without taking
+    // into account contention.
+    fn write_byte_internal(&mut self, address: u16, value: u8) {
+        let page = (address / 0x4000) as usize;
+        let slot = self.ppi.borrow().pg_slots[page];
+
+        if self.mapper_type != MapperType::None
+            && self.slot_mapper == slot
+            && (page == 1 || page == 2)
+        {
+            // self.mapper.writeByte(address, value);
+            self.mapper_write_byte(address, value);
+            return;
+        }
+
+        if self.can_write[page * 4 + slot as usize] {
+            let delta = (address as usize) - page * 0x4000;
+            // return self.contents[page][slot as usize][delta];
+            self.contents[(page * 4 + slot as usize) * 0x4000 + delta] = value;
+        }
+    }
+
+    fn mapper_write_byte(&mut self, address: u16, value: u8) {
+        match self.mapper_type {
+            MapperType::Konami4 => self.mapper_konami4.write_byte(address, value),
+            MapperType::Konami5 => self.mapper_konami5.write_byte(address, value),
+            MapperType::Ascii8kb => self.mapper_ascii8.write_byte(address, value),
+            _ => {
+                unimplemented!()
+            }
+        }
+    }
+
+    pub fn contend_read(&mut self, _address: u16, _time: isize) {
+        //panic("ContendRead not implemented")
+    }
+
+    pub fn contend_read_no_mreq(&mut self, _address: u16, _time: isize) {
+        //panic("ContendReadNoMreq not implemented")
+    }
+
+    pub fn contend_read_no_mreq_loop(&mut self, _address: u16, _time: isize, _count: usize) {
+        //panic("ContendReadNoMreq_loop not implemented")
+    }
+
+    pub fn contend_write_no_mreq(&mut self, _address: u16, _time: isize) {
+        //panic("ContendWriteNoMreq not implemented")
+    }
+
+    pub fn contend_write_no_mreq_loop(&mut self, _address: u16, _time: isize, _count: usize) {
+        //panic("ContendWriteNoMreq_loop not implemented")
+    }
+}
