@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use rsmsx::libs::{
-    graphics::GraphicsNull, memory::Memory, ports::Ports, ppi::PPI, psg::PSG, sound::SoundNull,
+    graphics::NullGraphics, memory::Memory, ports::Ports, ppi::PPI, psg::PSG, sound::NullSound,
     vdp::Vdp, z80::z80_base::Z80,
 };
 
@@ -43,9 +43,9 @@ fn check_cycles(ar: &[u8]) -> isize {
         memory.write_byte(i as u16, ar[i]);
     }
     // let ports = new(Ports);
-    let sound = SoundNull::new();
+    let sound = NullSound::new();
     let psg = PSG::new(Rc::new(RefCell::new(sound)));
-    let graphics = GraphicsNull::new(false);
+    let graphics = NullGraphics::new(false);
     let vdp = Rc::new(RefCell::new(Vdp::new(Rc::new(RefCell::new(graphics)))));
     let ports = Ports::new(vdp.clone(), ppi.clone(), psg);
     let mut cpu_z80 = Z80::new(memory, ports);

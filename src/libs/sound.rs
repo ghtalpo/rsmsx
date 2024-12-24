@@ -16,20 +16,20 @@ pub trait SoundDriver {
     fn play(&mut self, channel: usize) -> Result<String, String>;
 }
 
-pub struct SoundNull {}
+pub struct NullSound {}
 
-impl Default for SoundNull {
+impl Default for NullSound {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl SoundNull {
+impl NullSound {
     pub fn new() -> Self {
         Self {}
     }
 }
-impl SoundDriver for SoundNull {
+impl SoundDriver for NullSound {
     fn add_channel(&mut self, _channel: usize) -> Result<String, String> {
         Ok("null sound driver".to_string())
     }

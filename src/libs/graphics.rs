@@ -24,13 +24,13 @@ pub trait GraphicsDriver {
 
 /// null driver for test without graphics
 #[derive(Clone)]
-pub struct GraphicsNull {}
-impl GraphicsNull {
+pub struct NullGraphics {}
+impl NullGraphics {
     pub fn new(_quality: bool) -> Self {
         Self {}
     }
 }
-impl GraphicsDriver for GraphicsNull {
+impl GraphicsDriver for NullGraphics {
     fn init(&mut self) {}
     fn render(&mut self) {}
     fn set_logical_resolution(&mut self, _scr_mode: u8) {}
