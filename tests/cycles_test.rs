@@ -36,13 +36,11 @@ fn test3() {
 }
 
 fn check_cycles(ar: &[u8]) -> isize {
-    // let memory = NewMemory();
     let ppi = Rc::new(RefCell::new(PPI::new()));
     let mut memory = Memory::new(ppi.clone());
-    for i in 0..ar.len() {
-        memory.write_byte(i as u16, ar[i]);
+    for (i, item) in ar.iter().enumerate() {
+        memory.write_byte(i as u16, *item);
     }
-    // let ports = new(Ports);
     let sound = NullSound::new();
     let psg = PSG::new(Rc::new(RefCell::new(sound)));
     let graphics = NullGraphics::new(false);
@@ -52,10 +50,6 @@ fn check_cycles(ar: &[u8]) -> isize {
     cpu_z80.reset();
     cpu_z80.SetPC(0);
     cpu_z80.reset_cycles();
-
-    // for i := 0; i < len(ar); i++ {
-    // 	memory.WriteByte(uint16(i), ar[i])
-    // }
 
     while !cpu_z80.is_halted() {
         cpu_z80.do_opcode()

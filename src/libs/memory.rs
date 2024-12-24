@@ -7,6 +7,12 @@ use super::cartridges::{get_cart_type, CartType, MapperASCII8, MapperKonami5};
 use super::ppi::PPI;
 
 pub struct NullMapper {}
+impl Default for NullMapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NullMapper {
     pub fn new() -> Self {
         Self {}
