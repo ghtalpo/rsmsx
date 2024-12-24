@@ -40,7 +40,7 @@ Next, get the source and the dependencies if necessary:
 
 And, you just build the program:
 
-    $ cd yourgoworkspace/src/github.com/ghtalpo/rsmsx
+    $ cd yourworkspace/rsmsx
     $ cargo build --release
 
 Happy hacking!!!
