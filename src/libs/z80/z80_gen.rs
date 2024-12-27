@@ -25,476 +25,174 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use super::z80_base::{join_bytes, split_word, tern_op_b, FLAG_C, FLAG_H, FLAG_N, FLAG_V, Z80};
 
+macro_rules! fn_inc_reg {
+    ($fn:tt, $r:ident) => {
+        pub(crate) fn $fn(&mut self) {
+            self.$r = self.$r.wrapping_add(1);
+            self.F = self.F & FLAG_C
+                | tern_op_b(self.$r == 0x80, FLAG_V, 0)
+                | tern_op_b((self.$r & 0x0f) != 0, 0, FLAG_H)
+                | self.tables.sz53_table[self.$r as usize];
+        }
+    };
+}
+
+macro_rules! fn_dec_reg {
+    ($fn:tt, $r:ident) => {
+        pub(crate) fn $fn(&mut self) {
+            self.F = self.F & FLAG_C | tern_op_b(self.$r & 0x0f != 0, 0, FLAG_H) | FLAG_N;
+            self.$r = self.$r.wrapping_sub(1);
+            self.F |=
+                tern_op_b(self.$r == 0x7f, FLAG_V, 0) | self.tables.sz53_table[self.$r as usize];
+        }
+    };
+}
+
+macro_rules! fn_get_reg16 {
+    ($fn:tt, $rh:ident, $rl:ident) => {
+        pub(crate) fn $fn(&self) -> u16 {
+            // return self.bc.get();
+            join_bytes(self.$rh, self.$rl)
+        }
+    };
+}
+
+macro_rules! fn_set_reg16 {
+    ($fn:tt, $rh:ident, $rl:ident) => {
+        pub(crate) fn $fn(&mut self, value: u16) {
+            // return self.bc.get();
+            (self.$rh, self.$rl) = split_word(value);
+        }
+    };
+}
+
+macro_rules! fn_dec_reg16 {
+    ($fn:tt, $r:ident, $fs:ident) => {
+        pub(crate) fn $fn(&mut self) {
+            // self.bc.dec()
+            let r = self.$r();
+            self.$fs(r - 1);
+        }
+    };
+}
+
+macro_rules! fn_inc_reg16 {
+    ($fn:tt, $r:ident, $fs:ident) => {
+        pub(crate) fn $fn(&mut self) {
+            // self.bc.inc()
+            let r = self.$r();
+            self.$fs(r + 1);
+        }
+    };
+}
+
 #[allow(non_snake_case, dead_code)]
 impl Z80 {
-    pub(crate) fn incA(&mut self) {
-        self.A = self.A.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.A == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.A & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.A as usize];
-    }
+    fn_inc_reg!(incA, A);
+    fn_dec_reg!(decA, A);
 
-    pub(crate) fn decA(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.A & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.A = self.A.wrapping_sub(1);
-        self.F |= (tern_op_b(self.A == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.A as usize];
-    }
+    fn_inc_reg!(incB, B);
+    fn_dec_reg!(decB, B);
 
-    pub(crate) fn incB(&mut self) {
-        self.B = self.B.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.B == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.B & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.B as usize];
-    }
+    fn_inc_reg!(incC, C);
+    fn_dec_reg!(decC, C);
 
-    pub(crate) fn decB(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.B & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.B = self.B.wrapping_sub(1);
-        self.F |= (tern_op_b(self.B == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.B as usize];
-    }
+    fn_inc_reg!(incD, D);
+    fn_dec_reg!(decD, D);
 
-    pub(crate) fn incC(&mut self) {
-        self.C = self.C.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.C == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.C & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.C as usize];
-    }
+    fn_inc_reg!(incE, E);
+    fn_dec_reg!(decE, E);
 
-    pub(crate) fn decC(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.C & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.C = self.C.wrapping_sub(1);
-        self.F |= (tern_op_b(self.C == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.C as usize];
-    }
+    fn_inc_reg!(incF, F);
+    fn_dec_reg!(decF, F);
 
-    pub(crate) fn incD(&mut self) {
-        self.D = self.D.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.D == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.D & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.D as usize];
-    }
+    fn_inc_reg!(incH, H);
+    fn_dec_reg!(decH, H);
 
-    pub(crate) fn decD(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.D & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.D = self.D.wrapping_sub(1);
-        self.F |= (tern_op_b(self.D == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.D as usize];
-    }
+    fn_inc_reg!(incI, I);
+    fn_dec_reg!(decI, I);
 
-    pub(crate) fn incE(&mut self) {
-        self.E = self.E.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.E == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.E & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.E as usize];
-    }
+    fn_inc_reg!(incL, L);
+    fn_dec_reg!(decL, L);
 
-    pub(crate) fn decE(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.E & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.E = self.E.wrapping_sub(1);
-        self.F |= (tern_op_b(self.E == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.E as usize];
-    }
+    fn_inc_reg!(incR7, R7);
+    fn_dec_reg!(decR7, R7);
 
-    pub(crate) fn incF(&mut self) {
-        self.F = self.F.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.F == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.F & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.F as usize];
-    }
+    fn_inc_reg!(incA_, A_);
+    fn_dec_reg!(decA_, A_);
 
-    pub(crate) fn decF(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.F & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.F = self.F.wrapping_sub(1);
-        self.F |= (tern_op_b(self.F == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.F as usize];
-    }
+    fn_inc_reg!(incB_, B_);
+    fn_dec_reg!(decB_, B_);
 
-    pub(crate) fn incH(&mut self) {
-        self.H = self.H.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.H == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.H & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.H as usize];
-    }
+    fn_inc_reg!(incC_, C_);
+    fn_dec_reg!(decC_, C_);
 
-    pub(crate) fn decH(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.H & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.H = self.H.wrapping_sub(1);
-        self.F |= (tern_op_b(self.H == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.H as usize];
-    }
+    fn_inc_reg!(incD_, D_);
+    fn_dec_reg!(decD_, D_);
 
-    pub(crate) fn incI(&mut self) {
-        self.I = self.I.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.I == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.I & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.I as usize];
-    }
+    fn_inc_reg!(incE_, E_);
+    fn_dec_reg!(decE_, E_);
 
-    pub(crate) fn decI(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.I & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.I = self.I.wrapping_sub(1);
-        self.F |= (tern_op_b(self.I == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.I as usize];
-    }
+    fn_inc_reg!(incF_, F_);
+    fn_dec_reg!(decF_, F_);
 
-    pub(crate) fn incL(&mut self) {
-        self.L = self.L.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.L == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.L & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.L as usize];
-    }
+    fn_inc_reg!(incH_, H_);
+    fn_dec_reg!(decH_, H_);
 
-    pub(crate) fn decL(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.L & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.L = self.L.wrapping_sub(1);
-        self.F |= (tern_op_b(self.L == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.L as usize];
-    }
+    fn_inc_reg!(incL_, L_);
+    fn_dec_reg!(decL_, L_);
 
-    pub(crate) fn incR7(&mut self) {
-        self.R7 = self.R7.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.R7 == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.R7 & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.R7 as usize];
-    }
+    fn_inc_reg!(incIXL, IXL);
+    fn_dec_reg!(decIXL, IXL);
 
-    pub(crate) fn decR7(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.R7 & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.R7 = self.R7.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.R7 == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.R7 as usize];
-    }
+    fn_inc_reg!(incIXH, IXH);
+    fn_dec_reg!(decIXH, IXH);
 
-    pub(crate) fn incA_(&mut self) {
-        self.A_ = self.A_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.A_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.A_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.A_ as usize];
-    }
+    fn_inc_reg!(incIYL, IYL);
+    fn_dec_reg!(decIYL, IYL);
 
-    pub(crate) fn decA_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.A_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.A_ = self.A_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.A_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.A_ as usize];
-    }
-
-    pub(crate) fn incB_(&mut self) {
-        self.B_ = self.B_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.B_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.B_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.B_ as usize];
-    }
-
-    pub(crate) fn decB_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.B_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.B_ = self.B_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.B_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.B_ as usize];
-    }
-
-    pub(crate) fn incC_(&mut self) {
-        self.C_ = self.C_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.C_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.C_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.C_ as usize];
-    }
-
-    pub(crate) fn decC_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.C_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.C_ = self.C_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.C_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.C_ as usize];
-    }
-
-    pub(crate) fn incD_(&mut self) {
-        self.D_ = self.D_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.D_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.D_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.D_ as usize];
-    }
-
-    pub(crate) fn decD_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.D_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.D_ = self.D_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.D_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.D_ as usize];
-    }
-
-    pub(crate) fn incE_(&mut self) {
-        self.E_ = self.E_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.E_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.E_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.E_ as usize];
-    }
-
-    pub(crate) fn decE_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.E_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.E_ = self.E_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.E_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.E_ as usize];
-    }
-
-    pub(crate) fn incF_(&mut self) {
-        self.F_ = self.F_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.F_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.F_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.F_ as usize];
-    }
-
-    pub(crate) fn decF_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.F_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.F_ = self.F_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.F_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.F_ as usize];
-    }
-
-    pub(crate) fn incH_(&mut self) {
-        self.H_ = self.H_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.H_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.H_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.H_ as usize];
-    }
-
-    pub(crate) fn decH_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.H_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.H_ = self.H_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.H_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.H_ as usize];
-    }
-
-    pub(crate) fn incL_(&mut self) {
-        self.L_ = self.L_.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.L_ == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.L_ & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.L_ as usize];
-    }
-
-    pub(crate) fn decL_(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.L_ & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.L_ = self.L_.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.L_ == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.L_ as usize];
-    }
-
-    pub(crate) fn incIXL(&mut self) {
-        self.IXL = self.IXL.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.IXL == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.IXL & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.IXL as usize];
-    }
-
-    pub(crate) fn decIXL(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.IXL & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.IXL = self.IXL.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.IXL == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.IXL as usize];
-    }
-
-    pub(crate) fn incIXH(&mut self) {
-        self.IXH = self.IXH.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.IXH == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.IXH & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.IXH as usize];
-    }
-
-    pub(crate) fn decIXH(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.IXH & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.IXH = self.IXH.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.IXH == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.IXH as usize];
-    }
-
-    pub(crate) fn incIYL(&mut self) {
-        self.IYL = self.IYL.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.IYL == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.IYL & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.IYL as usize];
-    }
-
-    pub(crate) fn decIYL(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.IYL & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.IYL = self.IYL.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.IYL == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.IYL as usize];
-    }
-
-    pub(crate) fn incIYH(&mut self) {
-        self.IYH = self.IYH.wrapping_add(1);
-        self.F = (self.F & FLAG_C)
-            | (tern_op_b(self.IYH == 0x80, FLAG_V, 0))
-            | (tern_op_b((self.IYH & 0x0f) != 0, 0, FLAG_H))
-            | self.tables.sz53_table[self.IYH as usize];
-    }
-
-    pub(crate) fn decIYH(&mut self) {
-        self.F = (self.F & FLAG_C) | (tern_op_b(self.IYH & 0x0f != 0, 0, FLAG_H)) | FLAG_N;
-        self.IYH = self.IYH.wrapping_sub(1);
-        self.F |=
-            (tern_op_b(self.IYH == 0x7f, FLAG_V, 0)) | self.tables.sz53_table[self.IYH as usize];
-    }
+    fn_inc_reg!(incIYH, IYH);
+    fn_dec_reg!(decIYH, IYH);
 
     // Generated getters/setters and INC/DEC functions for 16bit registers
 
-    pub(crate) fn BC(&self) -> u16 {
-        // return self.bc.get();
-        join_bytes(self.B, self.C)
-    }
+    fn_get_reg16!(BC, B, C);
+    fn_set_reg16!(SetBC, B, C);
+    fn_dec_reg16!(DecBC, BC, SetBC);
+    fn_inc_reg16!(IncBC, BC, SetBC);
 
-    pub(crate) fn SetBC(&mut self, value: u16) {
-        // self.bc.set(value)
-        (self.B, self.C) = split_word(value);
-    }
+    fn_get_reg16!(DE, D, E);
+    fn_set_reg16!(SetDE, D, E);
+    fn_dec_reg16!(DecDE, DE, SetDE);
+    fn_inc_reg16!(IncDE, DE, SetDE);
 
-    pub(crate) fn DecBC(&mut self) {
-        // self.bc.dec()
-        let r = self.BC();
-        self.SetBC(r - 1);
-    }
+    fn_get_reg16!(HL, H, L);
+    fn_set_reg16!(SetHL, H, L);
+    fn_dec_reg16!(DecHL, HL, SetHL);
+    fn_inc_reg16!(IncHL, HL, SetHL);
 
-    pub(crate) fn IncBC(&mut self) {
-        // self.bc.inc()
-        let r = self.BC();
-        self.SetBC(r + 1);
-    }
+    fn_get_reg16!(BC_, B_, C_);
+    fn_set_reg16!(SetBC_, B_, C_);
+    fn_dec_reg16!(DecBC_, BC_, SetBC_);
+    fn_inc_reg16!(IncBC_, BC_, SetBC_);
 
-    pub(crate) fn DE(&self) -> u16 {
-        join_bytes(self.D, self.E)
-    }
+    fn_get_reg16!(DE_, D_, E_);
+    fn_set_reg16!(SetDE_, D_, E_);
+    fn_dec_reg16!(DecDE_, DE_, SetDE_);
+    fn_inc_reg16!(IncDE_, DE_, SetDE_);
 
-    pub(crate) fn SetDE(&mut self, value: u16) {
-        (self.D, self.E) = split_word(value);
-    }
+    fn_get_reg16!(HL_, H_, L_);
+    fn_set_reg16!(SetHL_, H_, L_);
+    fn_dec_reg16!(DecHL_, HL_, SetHL_);
+    fn_inc_reg16!(IncHL_, HL_, SetHL_);
 
-    pub(crate) fn DecDE(&mut self) {
-        let r = self.DE();
-        self.SetDE(r - 1);
-    }
+    fn_get_reg16!(IX, IXH, IXL);
+    fn_set_reg16!(SetIX, IXH, IXL);
+    fn_dec_reg16!(DecIX, IX, SetIX);
+    fn_inc_reg16!(IncIX, IX, SetIX);
 
-    pub(crate) fn IncDE(&mut self) {
-        let r = self.DE();
-        self.SetDE(r + 1);
-    }
-
-    pub(crate) fn HL(&self) -> u16 {
-        join_bytes(self.H, self.L)
-    }
-
-    pub(crate) fn SetHL(&mut self, value: u16) {
-        (self.H, self.L) = split_word(value);
-    }
-
-    pub(crate) fn DecHL(&mut self) {
-        let r = self.HL();
-        self.SetHL(r - 1);
-    }
-
-    pub(crate) fn IncHL(&mut self) {
-        let r = self.HL();
-        self.SetHL(r + 1);
-    }
-
-    pub(crate) fn BC_(&self) -> u16 {
-        join_bytes(self.B_, self.C_)
-    }
-
-    pub(crate) fn SetBC_(&mut self, value: u16) {
-        (self.B_, self.C_) = split_word(value);
-    }
-
-    pub(crate) fn DecBC_(&mut self) {
-        let r = self.BC_();
-        self.SetBC_(r - 1);
-    }
-
-    pub(crate) fn IncBC_(&mut self) {
-        let r = self.BC_();
-        self.SetBC_(r + 1);
-    }
-
-    pub(crate) fn DE_(&self) -> u16 {
-        join_bytes(self.D_, self.E_)
-    }
-
-    pub(crate) fn SetDE_(&mut self, value: u16) {
-        (self.D_, self.E_) = split_word(value);
-    }
-
-    pub(crate) fn DecDE_(&mut self) {
-        let r = self.DE_();
-        self.SetDE_(r - 1);
-    }
-
-    pub(crate) fn IncDE_(&mut self) {
-        let r = self.DE_();
-        self.SetDE_(r + 1);
-    }
-
-    pub(crate) fn HL_(&self) -> u16 {
-        join_bytes(self.H_, self.L_)
-    }
-
-    pub(crate) fn SetHL_(&mut self, value: u16) {
-        (self.H_, self.L_) = split_word(value);
-    }
-
-    pub(crate) fn DecHL_(&mut self) {
-        let r = self.HL_();
-        self.SetHL_(r - 1);
-    }
-
-    pub(crate) fn IncHL_(&mut self) {
-        let r = self.HL_();
-        self.SetHL_(r + 1);
-    }
-
-    pub(crate) fn IX(&self) -> u16 {
-        join_bytes(self.IXH, self.IXL)
-    }
-
-    pub(crate) fn SetIX(&mut self, value: u16) {
-        (self.IXH, self.IXL) = split_word(value);
-    }
-
-    pub(crate) fn DecIX(&mut self) {
-        let r = self.IX();
-        self.SetIX(r - 1);
-    }
-
-    pub(crate) fn IncIX(&mut self) {
-        let r = self.IX();
-        self.SetIX(r + 1);
-    }
-
-    pub(crate) fn IY(&self) -> u16 {
-        join_bytes(self.IYH, self.IYL)
-    }
-
-    pub(crate) fn SetIY(&mut self, value: u16) {
-        (self.IYH, self.IYL) = split_word(value);
-    }
-
-    pub(crate) fn DecIY(&mut self) {
-        let r = self.IY();
-        self.SetIY(r - 1);
-    }
-
-    pub(crate) fn IncIY(&mut self) {
-        let r = self.IY();
-        self.SetIY(r + 1);
-    }
+    fn_get_reg16!(IY, IYH, IYL);
+    fn_set_reg16!(SetIY, IYH, IYL);
+    fn_dec_reg16!(DecIY, IY, SetIY);
+    fn_inc_reg16!(IncIY, IY, SetIY);
 }

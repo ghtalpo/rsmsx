@@ -414,7 +414,7 @@ impl Z80 {
     }
 
     pub fn dec(&mut self, value: &mut u8) {
-        self.F = (self.F & FLAG_C) | tern_op_b((*value & 0x0f) != 0, 0, FLAG_H) | FLAG_N;
+        self.F = self.F & FLAG_C | tern_op_b((*value & 0x0f) != 0, 0, FLAG_H) | FLAG_N;
         *value = (*value).wrapping_sub(1);
         self.F |= tern_op_b(*value == 0x7f, FLAG_V, 0) | self.tables.sz53_table[*value as usize];
     }
@@ -673,7 +673,7 @@ impl Z80 {
     }
 
     pub fn bit(&mut self, bit: u8, value: u8) {
-        self.F = (self.F & FLAG_C) | FLAG_H | (value & (FLAG_3 | FLAG_5));
+        self.F = self.F & FLAG_C | FLAG_H | value & (FLAG_3 | FLAG_5);
         if value & (0x01 << bit) == 0 {
             self.F |= FLAG_P | FLAG_Z;
         }
@@ -683,7 +683,7 @@ impl Z80 {
     }
 
     pub fn biti(&mut self, bit: u8, value: u8, address: u16) {
-        self.F = (self.F & FLAG_C) | FLAG_H | ((address >> 8) as u8 & (FLAG_3 | FLAG_5));
+        self.F = self.F & FLAG_C | FLAG_H | (address >> 8) as u8 & (FLAG_3 | FLAG_5);
         if value & (0x01 << bit) == 0 {
             self.F |= FLAG_P | FLAG_Z;
         }
@@ -729,7 +729,7 @@ impl Z80 {
 
     pub fn in_u8_ex(&mut self, port: u16) -> u8 {
         let reg = self.read_port(port);
-        self.F = (self.F & FLAG_C) | self.tables.sz53p_table[reg as usize];
+        self.F = self.F & FLAG_C | self.tables.sz53p_table[reg as usize];
         reg
     }
 

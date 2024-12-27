@@ -6390,7 +6390,7 @@ impl Z80 {
     /* RLA */
     fn instr__RLA(&mut self) {
         let byte_temp: u8 = self.A;
-        self.A = (self.A << 1) | (self.F & FLAG_C);
+        self.A = (self.A << 1) | self.F & FLAG_C;
         self.F =
             (self.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.A & (FLAG_3 | FLAG_5)) | (byte_temp >> 7);
     }
@@ -6588,7 +6588,7 @@ impl Z80 {
 
     /* JR NC,offset */
     fn instr__JR_NC_OFFSET(&mut self) {
-        if (self.F & FLAG_C) == 0 {
+        if self.F & FLAG_C == 0 {
             self.jr();
         } else {
             let _address = self.PC();
@@ -6628,24 +6628,20 @@ impl Z80 {
 
     /* INC (HL) */
     fn instr__INC_iHL(&mut self) {
-        {
-            let mut byte_temp: u8 = self.memory.read_byte(self.HL());
-            self.memory.contend_read_no_mreq(self.HL(), 1);
-            self.inc(&mut byte_temp);
-            self.memory.write_byte(self.HL(), byte_temp);
-        }
+        let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+        self.memory.contend_read_no_mreq(self.HL(), 1);
+        self.inc(&mut byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
     }
 
     /* DEC (HL) */
     fn instr__DEC_iHL(&mut self) {
-        {
-            let address = self.HL();
-            let mut byte_temp: u8 = self.memory.read_byte(address);
-            let _address = self.HL();
-            self.memory.contend_read_no_mreq(_address, 1);
-            self.dec(&mut byte_temp);
-            self.memory.write_byte(self.HL(), byte_temp);
-        }
+        let address = self.HL();
+        let mut byte_temp: u8 = self.memory.read_byte(address);
+        let _address = self.HL();
+        self.memory.contend_read_no_mreq(_address, 1);
+        self.dec(&mut byte_temp);
+        self.memory.write_byte(self.HL(), byte_temp);
     }
 
     /* LD (HL),nn */
@@ -6664,7 +6660,7 @@ impl Z80 {
 
     /* JR C,offset */
     fn instr__JR_C_OFFSET(&mut self) {
-        if (self.F & FLAG_C) != 0 {
+        if self.F & FLAG_C != 0 {
             self.jr();
         } else {
             let _address = self.PC();
@@ -6722,7 +6718,7 @@ impl Z80 {
     /* CCF */
     fn instr__CCF(&mut self) {
         self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S))
-            | tern_op_b((self.F & FLAG_C) != 0, FLAG_H, FLAG_C)
+            | tern_op_b(self.F & FLAG_C != 0, FLAG_H, FLAG_C)
             | (self.A & (FLAG_3 | FLAG_5));
     }
 
@@ -7504,7 +7500,7 @@ impl Z80 {
     fn instr__RET_NC(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
-        if (self.F & FLAG_C) == 0 {
+        if self.F & FLAG_C == 0 {
             self.ret();
         }
     }
@@ -7516,7 +7512,7 @@ impl Z80 {
 
     /* JP NC,nnnn */
     fn instr__JP_NC_NNNN(&mut self) {
-        if (self.F & FLAG_C) == 0 {
+        if self.F & FLAG_C == 0 {
             self.jp();
         } else {
             let _address = self.PC();
@@ -7537,7 +7533,7 @@ impl Z80 {
 
     /* CALL NC,nnnn */
     fn instr__CALL_NC_NNNN(&mut self) {
-        if (self.F & FLAG_C) == 0 {
+        if self.F & FLAG_C == 0 {
             self.call();
         } else {
             let _address = self.PC();
@@ -7574,7 +7570,7 @@ impl Z80 {
     fn instr__RET_C(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
-        if (self.F & FLAG_C) != 0 {
+        if self.F & FLAG_C != 0 {
             self.ret();
         }
     }
@@ -7596,7 +7592,7 @@ impl Z80 {
 
     /* JP C,nnnn */
     fn instr__JP_C_NNNN(&mut self) {
-        if (self.F & FLAG_C) != 0 {
+        if self.F & FLAG_C != 0 {
             self.jp();
         } else {
             let _address = self.PC();
@@ -7617,7 +7613,7 @@ impl Z80 {
 
     /* CALL C,nnnn */
     fn instr__CALL_C_NNNN(&mut self) {
-        if (self.F & FLAG_C) != 0 {
+        if self.F & FLAG_C != 0 {
             self.call();
         } else {
             let _address = self.PC();
@@ -9395,7 +9391,7 @@ impl Z80 {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.A = self.I;
-        self.F = (self.F & FLAG_C)
+        self.F = self.F & FLAG_C
             | self.tables.sz53_table[self.A as usize]
             | tern_op_b(self.IFF2 != 0, FLAG_V, 0);
     }
@@ -9434,7 +9430,7 @@ impl Z80 {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.A = (self.R & 0x7f) as u8 | (self.R7 & 0x80);
-        self.F = (self.F & FLAG_C)
+        self.F = self.F & FLAG_C
             | self.tables.sz53_table[self.A as usize]
             | tern_op_b(self.IFF2 != 0, FLAG_V, 0);
     }
@@ -9468,8 +9464,8 @@ impl Z80 {
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 4);
         self.memory
             .write_byte(self.HL(), (self.A << 4) | (byte_temp >> 4));
-        self.A = (self.A & 0xf0) | (byte_temp & 0x0f);
-        self.F = (self.F & FLAG_C) | self.tables.sz53p_table[self.A as usize];
+        self.A = self.A & 0xf0 | byte_temp & 0x0f;
+        self.F = self.F & FLAG_C | self.tables.sz53p_table[self.A as usize];
     }
 
     /* IN L,(C) */
@@ -9502,7 +9498,7 @@ impl Z80 {
         self.memory
             .write_byte(self.HL(), (byte_temp << 4) | (self.A & 0x0f));
         self.A = (self.A & 0xf0) | (byte_temp >> 4);
-        self.F = (self.F & FLAG_C) | self.tables.sz53p_table[self.A as usize];
+        self.F = self.F & FLAG_C | self.tables.sz53p_table[self.A as usize];
     }
 
     /* IN F,(C) */
@@ -9575,16 +9571,15 @@ impl Z80 {
     fn instrED__CPI(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.A - value;
-        let lookup: u8 =
-            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        let lookup: u8 = ((self.A & 0x08) >> 3) | ((value & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
         self.IncHL();
         self.DecBC();
-        self.F = (self.F & FLAG_C)
+        self.F = self.F & FLAG_C
             | tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N)
             | HALF_CARRY_SUB_TABLE[lookup as usize]
             | tern_op_b(byte_temp != 0, 0, FLAG_Z)
-            | (byte_temp & FLAG_S);
+            | byte_temp & FLAG_S;
         if (self.F & FLAG_H) != 0 {
             byte_temp -= 1;
         }
@@ -9650,16 +9645,15 @@ impl Z80 {
     fn instrED__CPD(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.A - value;
-        let lookup: u8 =
-            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        let lookup: u8 = ((self.A & 0x08) >> 3) | ((value & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
         self.DecHL();
         self.DecBC();
-        self.F = (self.F & FLAG_C)
+        self.F = self.F & FLAG_C
             | tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N)
             | HALF_CARRY_SUB_TABLE[lookup as usize]
             | tern_op_b(byte_temp != 0, 0, FLAG_Z)
-            | (byte_temp & FLAG_S);
+            | byte_temp & FLAG_S;
         if (self.F & FLAG_H) != 0 {
             byte_temp -= 1;
         }
@@ -9732,15 +9726,14 @@ impl Z80 {
     fn instrED__CPIR(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.A - value;
-        let lookup: u8 =
-            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        let lookup: u8 = ((self.A & 0x08) >> 3) | ((value & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
         self.DecBC();
-        self.F = (self.F & FLAG_C)
+        self.F = self.F & FLAG_C
             | (tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N))
             | HALF_CARRY_SUB_TABLE[lookup as usize]
             | (tern_op_b(byte_temp != 0, 0, FLAG_Z))
-            | (byte_temp & FLAG_S);
+            | byte_temp & FLAG_S;
         if (self.F & FLAG_H) != 0 {
             byte_temp -= 1;
         }
@@ -9838,15 +9831,14 @@ impl Z80 {
     fn instrED__CPDR(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.A - value;
-        let lookup: u8 =
-            ((self.A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
+        let lookup: u8 = ((self.A & 0x08) >> 3) | ((value & 0x08) >> 2) | ((byte_temp & 0x08) >> 1);
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
         self.DecBC();
-        self.F = (self.F & FLAG_C)
+        self.F = self.F & FLAG_C
             | (tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N))
             | HALF_CARRY_SUB_TABLE[lookup as usize]
             | (tern_op_b(byte_temp != 0, 0, FLAG_Z))
-            | (byte_temp & FLAG_S);
+            | byte_temp & FLAG_S;
         if (self.F & FLAG_H) != 0 {
             byte_temp -= 1;
         }
