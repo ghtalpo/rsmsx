@@ -130,6 +130,7 @@ impl GraphicsDriver for Graphics {
                 &self.graphics_tex320
             }
         };
+        current_texture.set_filter(get_filter_mode(self.quality));
         draw_texture_ex(
             current_texture,
             ((self.x0) * self.zoom as i16).into(),
