@@ -30,6 +30,44 @@ use super::{
     z80_tables::HALF_CARRY_SUB_TABLE,
 };
 
+macro_rules! fn_instr_ld_r16_nnnn {
+    ($fn:tt, $r:ident, $fs:ident) => {
+        fn $fn(&mut self) {
+            let address = self.PC();
+            let b1 = self.memory.read_byte(address);
+            self.IncPC(1);
+            let address = self.PC();
+            let b2 = self.memory.read_byte(address);
+            self.IncPC(1);
+            self.$fs(join_bytes(b2, b1));
+        }
+    };
+}
+
+macro_rules! fn_instr_ld_r8_nn {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            let address = self.PC();
+            self.$r = self.memory.read_byte(address);
+            self.IncPC(1);
+        }
+    };
+}
+
+macro_rules! fn_instr_add_hl_r16 {
+    ($fn:tt, $r16:ident) => {
+        fn $fn(&mut self) {
+            let _address = self.IR();
+            self.memory.contend_read_no_mreq_loop(_address, 1, 7);
+            // self.add16(self.hl, self.BC());
+            let mut hl = Register16::new(self.H, self.L);
+            let value2 = self.$r16();
+            self.add16(&mut hl, value2);
+            (self.H, self.L) = hl.result();
+        }
+    };
+}
+
 // */
 #[allow(non_snake_case)]
 impl Z80 {
@@ -6227,15 +6265,7 @@ impl Z80 {
     /* NOP */
     fn instr__NOP(&mut self) {}
     /* LD BC,nnnn */
-    fn instr__LD_BC_NNNN(&mut self) {
-        let address = self.PC();
-        let b1 = self.memory.read_byte(address);
-        self.IncPC(1);
-        let address = self.PC();
-        let b2 = self.memory.read_byte(address);
-        self.IncPC(1);
-        self.SetBC(join_bytes(b2, b1));
-    }
+    fn_instr_ld_r16_nnnn!(instr__LD_BC_NNNN, BC, SetBC);
 
     /* LD (BC),A */
     fn instr__LD_iBC_A(&mut self) {
@@ -6261,11 +6291,7 @@ impl Z80 {
     }
 
     /* LD B,nn */
-    fn instr__LD_B_NN(&mut self) {
-        let address = self.PC();
-        self.B = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_B_NN, B);
 
     /* RLCA */
     fn instr__RLCA(&mut self) {
@@ -6284,15 +6310,7 @@ impl Z80 {
     }
 
     /* ADD HL,BC */
-    fn instr__ADD_HL_BC(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
-        // self.add16(self.hl, self.BC());
-        let mut hl = Register16::new(self.H, self.L);
-        let value2 = self.BC();
-        self.add16(&mut hl, value2);
-        (self.H, self.L) = hl.result();
-    }
+    fn_instr_add_hl_r16!(instr__ADD_HL_BC, BC);
 
     /* LD A,(BC) */
     fn instr__LD_A_iBC(&mut self) {
@@ -6318,11 +6336,7 @@ impl Z80 {
     }
 
     /* LD C,nn */
-    fn instr__LD_C_NN(&mut self) {
-        let address = self.PC();
-        self.C = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_C_NN, C);
 
     /* RRCA */
     fn instr__RRCA(&mut self) {
@@ -6348,15 +6362,7 @@ impl Z80 {
     }
 
     /* LD DE,nnnn */
-    fn instr__LD_DE_NNNN(&mut self) {
-        let address = self.PC();
-        let b1 = self.memory.read_byte(address);
-        self.IncPC(1);
-        let address = self.PC();
-        let b2 = self.memory.read_byte(address);
-        self.IncPC(1);
-        self.SetDE(join_bytes(b2, b1));
-    }
+    fn_instr_ld_r16_nnnn!(instr__LD_DE_NNNN, DE, SetDE);
 
     /* LD (DE),A */
     fn instr__LD_iDE_A(&mut self) {
@@ -6381,11 +6387,7 @@ impl Z80 {
     }
 
     /* LD D,nn */
-    fn instr__LD_D_NN(&mut self) {
-        let address = self.PC();
-        self.D = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_D_NN, D);
 
     /* RLA */
     fn instr__RLA(&mut self) {
@@ -6402,15 +6404,7 @@ impl Z80 {
     }
 
     /* ADD HL,DE */
-    fn instr__ADD_HL_DE(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
-        // self.add16(self.hl, self.DE());
-        let mut hl = Register16::new(self.H, self.L);
-        let value2 = self.DE();
-        self.add16(&mut hl, value2);
-        (self.H, self.L) = hl.result();
-    }
+    fn_instr_add_hl_r16!(instr__ADD_HL_DE, DE);
 
     /* LD A,(DE) */
     fn instr__LD_A_iDE(&mut self) {
@@ -6435,11 +6429,7 @@ impl Z80 {
     }
 
     /* LD E,nn */
-    fn instr__LD_E_NN(&mut self) {
-        let address = self.PC();
-        self.E = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_E_NN, E);
 
     /* RRA */
     fn instr__RRA(&mut self) {
@@ -6462,15 +6452,7 @@ impl Z80 {
     }
 
     /* LD HL,nnnn */
-    fn instr__LD_HL_NNNN(&mut self) {
-        let address = self.PC();
-        let b1 = self.memory.read_byte(address);
-        self.IncPC(1);
-        let address = self.PC();
-        let b2 = self.memory.read_byte(address);
-        self.IncPC(1);
-        self.SetHL(join_bytes(b2, b1));
-    }
+    fn_instr_ld_r16_nnnn!(instr__LD_HL_NNNN, HL, SetHL);
 
     /* LD (nnnn),HL */
     fn instr__LD_iNNNN_HL(&mut self) {
@@ -6496,11 +6478,7 @@ impl Z80 {
     }
 
     /* LD H,nn */
-    fn instr__LD_H_NN(&mut self) {
-        let address = self.PC();
-        self.H = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_H_NN, H);
 
     /* DAA */
     fn instr__DAA(&mut self) {
@@ -6537,15 +6515,7 @@ impl Z80 {
     }
 
     /* ADD HL,HL */
-    fn instr__ADD_HL_HL(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
-        // self.add16(self.hl, self.HL());
-        let mut hl = Register16::new(self.H, self.L);
-        let value2 = self.HL();
-        self.add16(&mut hl, value2);
-        (self.H, self.L) = hl.result();
-    }
+    fn_instr_add_hl_r16!(instr__ADD_HL_HL, HL);
 
     /* LD HL,(nnnn) */
     fn instr__LD_HL_iNNNN(&mut self) {
@@ -6572,11 +6542,7 @@ impl Z80 {
     }
 
     /* LD L,nn */
-    fn instr__LD_L_NN(&mut self) {
-        let address = self.PC();
-        self.L = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_L_NN, L);
 
     /* CPL */
     fn instr__CPL(&mut self) {
@@ -6598,15 +6564,7 @@ impl Z80 {
     }
 
     /* LD SP,nnnn */
-    fn instr__LD_SP_NNNN(&mut self) {
-        let address = self.PC();
-        let b1 = self.memory.read_byte(address);
-        self.IncPC(1);
-        let address = self.PC();
-        let b2 = self.memory.read_byte(address);
-        self.IncPC(1);
-        self.SetSP(join_bytes(b2, b1));
-    }
+    fn_instr_ld_r16_nnnn!(instr__LD_SP_NNNN, SP, SetSP);
 
     /* LD (nnnn),A */
     fn instr__LD_iNNNN_A(&mut self) {
@@ -6670,15 +6628,7 @@ impl Z80 {
     }
 
     /* ADD HL,SP */
-    fn instr__ADD_HL_SP(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 7);
-        // self.add16(self.hl, self.SP());
-        let mut hl = Register16::new(self.H, self.L);
-        let value2 = self.SP();
-        self.add16(&mut hl, value2);
-        (self.H, self.L) = hl.result();
-    }
+    fn_instr_add_hl_r16!(instr__ADD_HL_SP, SP);
 
     /* LD A,(nnnn) */
     fn instr__LD_A_iNNNN(&mut self) {
@@ -6709,11 +6659,7 @@ impl Z80 {
     }
 
     /* LD A,nn */
-    fn instr__LD_A_NN(&mut self) {
-        let address = self.PC();
-        self.A = self.memory.read_byte(address);
-        self.IncPC(1);
-    }
+    fn_instr_ld_r8_nn!(instr__LD_A_NN, A);
 
     /* CCF */
     fn instr__CCF(&mut self) {
