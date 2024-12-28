@@ -60,12 +60,8 @@ impl PPI {
                 // log::info!("Get slots: {:02x}", self.slots);
                 self.slots
             }
-            0xaa => {
-                self.reg_c
-            }
-            0xa9 => {
-                key_matrix((self.reg_c & 0x0f).into())
-            }
+            0xaa => self.reg_c,
+            0xa9 => key_matrix((self.reg_c & 0x0f).into()),
             _ => {
                 log::error!("PPI: not implemented: in({:02x})", ad);
                 unimplemented!()

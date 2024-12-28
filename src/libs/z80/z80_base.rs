@@ -489,9 +489,9 @@ impl Z80 {
 
     pub fn adc(&mut self, value: u8) {
         let adc_temp: u16 = (self.A as u16) + (value as u16) + (((self.F) & FLAG_C) as u16);
-        let lookup: u8 = ((((self.A as u16) & 0x88) >> 3)
-            | (((value as u16) & 0x88) >> 2)
-            | ((adc_temp & 0x88) >> 1)) as u8;
+        let lookup: u8 = (((self.A as u16) & 0x88) >> 3
+            | ((value as u16) & 0x88) >> 2
+            | (adc_temp & 0x88) >> 1) as u8;
 
         self.A = adc_temp as u8;
 
@@ -512,22 +512,22 @@ impl Z80 {
 
         self.F = tern_op_b((add16_temp & 0x10000) != 0, FLAG_C, 0)
             | OVERFLOW_ADD_TABLE[(lookup >> 4) as usize]
-            | (self.H & (FLAG_3 | FLAG_5 | FLAG_S))
+            | self.H & (FLAG_3 | FLAG_5 | FLAG_S)
             | HALF_CARRY_ADD_TABLE[(lookup & 0x07) as usize]
             | tern_op_b(self.HL() != 0, 0, FLAG_Z);
     }
 
     pub fn add16(&mut self, value1: &mut Register16, value2: u16) {
         let add16_temp: usize = (value1.get() as usize) + (value2 as usize);
-        let lookup: u8 = (((value1.get() & 0x0800) >> 11)
-            | ((value2 & 0x0800) >> 10)
+        let lookup: u8 = ((value1.get() & 0x0800) >> 11
+            | (value2 & 0x0800) >> 10
             | ((add16_temp as u16) & 0x0800) >> 9) as u8;
 
         value1.set(add16_temp as u16);
 
-        self.F = (self.F & (FLAG_V | FLAG_Z | FLAG_S))
+        self.F = self.F & (FLAG_V | FLAG_Z | FLAG_S)
             | tern_op_b((add16_temp & 0x10000) != 0, FLAG_C, 0)
-            | (((add16_temp >> 8) as u8) & (FLAG_3 | FLAG_5))
+            | ((add16_temp >> 8) as u8) & (FLAG_3 | FLAG_5)
             | HALF_CARRY_ADD_TABLE[lookup as usize];
     }
 
@@ -623,9 +623,9 @@ impl Z80 {
         let sub16_temp: usize = (self.HL() as usize)
             .wrapping_sub(value as usize)
             .wrapping_sub((self.F & FLAG_C) as usize);
-        let lookup: u8 = (((self.HL() & 0x8800) >> 11)
-            | ((value & 0x8800) >> 10)
-            | (((sub16_temp as u16) & 0x8800) >> 9))
+        let lookup: u8 = ((self.HL() & 0x8800) >> 11
+            | (value & 0x8800) >> 10
+            | ((sub16_temp as u16) & 0x8800) >> 9)
             .try_into()
             .unwrap();
 
@@ -634,7 +634,7 @@ impl Z80 {
         self.F = tern_op_b((sub16_temp & 0x10000) != 0, FLAG_C, 0)
             | FLAG_N
             | OVERFLOW_SUB_TABLE[lookup as usize >> 4]
-            | (self.H & (FLAG_3 | FLAG_5 | FLAG_S))
+            | self.H & (FLAG_3 | FLAG_5 | FLAG_S)
             | HALF_CARRY_SUB_TABLE[(lookup & 0x07) as usize]
             | tern_op_b(self.HL() != 0, 0, FLAG_Z);
     }
@@ -708,8 +708,7 @@ impl Z80 {
 
     pub fn cp(&mut self, value: u8) {
         let cp_temp: u16 = (self.A as u16).wrapping_sub(value as u16);
-        let lookup: u8 =
-            ((self.A & 0x88) >> 3) | ((value & 0x88) >> 2) | ((cp_temp & 0x88) >> 1) as u8;
+        let lookup: u8 = (self.A & 0x88) >> 3 | (value & 0x88) >> 2 | ((cp_temp & 0x88) >> 1) as u8;
         self.F = tern_op_b(
             (cp_temp & 0x100) != 0,
             FLAG_C,
@@ -717,7 +716,7 @@ impl Z80 {
         ) | FLAG_N
             | HALF_CARRY_SUB_TABLE[(lookup & 0x07) as usize]
             | OVERFLOW_SUB_TABLE[(lookup >> 4) as usize]
-            | (value & (FLAG_3 | FLAG_5))
+            | value & (FLAG_3 | FLAG_5)
             | (cp_temp as u8 & FLAG_S);
     }
 
@@ -787,7 +786,7 @@ impl Z80 {
     pub fn IR(&mut self) -> u16 {
         let mut ir: u16 = 0;
         ir |= (self.I as u16) << 8;
-        ir |= (self.R7 as u16 & 0x80) | (self.R & 0x7f);
+        ir |= self.R7 as u16 & 0x80 | self.R & 0x7f;
         ir
     }
 
@@ -847,7 +846,7 @@ impl Z80 {
             0xcb => {
                 self.memory.contend_read(self.pc, 3);
                 self.temp_addr =
-                    self.IX() + (sign_extend(self.memory.read_byte_internal(self.pc))) as u16;
+                    self.IX() + sign_extend(self.memory.read_byte_internal(self.pc)) as u16;
                 self.pc += 1;
                 self.memory.contend_read(self.pc, 3);
                 let opcode3: u8 = self.memory.read_byte_internal(self.pc);
@@ -890,7 +889,7 @@ impl Z80 {
             0xcb => {
                 self.memory.contend_read(self.pc, 3);
                 self.temp_addr =
-                    self.IY() + (sign_extend(self.memory.read_byte_internal(self.pc))) as u16;
+                    self.IY() + sign_extend(self.memory.read_byte_internal(self.pc)) as u16;
                 self.pc += 1;
                 self.memory.contend_read(self.pc, 3);
                 let opcode3: u8 = self.memory.read_byte_internal(self.pc);

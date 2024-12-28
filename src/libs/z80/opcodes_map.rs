@@ -6879,9 +6879,8 @@ impl Z80 {
     fn instr__RRA(&mut self) {
         let byte_temp: u8 = self.A;
         self.A = (self.A >> 1) | (self.F << 7);
-        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S))
-            | (self.A & (FLAG_3 | FLAG_5))
-            | (byte_temp & FLAG_C);
+        self.F =
+            self.F & (FLAG_P | FLAG_Z | FLAG_S) | self.A & (FLAG_3 | FLAG_5) | byte_temp & FLAG_C;
     }
 
     /* JR NZ,offset */
@@ -6968,8 +6967,8 @@ impl Z80 {
     /* CPL */
     fn instr__CPL(&mut self) {
         self.A ^= 0xff;
-        self.F = (self.F & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S))
-            | (self.A & (FLAG_3 | FLAG_5))
+        self.F = self.F & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S)
+            | self.A & (FLAG_3 | FLAG_5)
             | (FLAG_N | FLAG_H);
     }
 
@@ -7072,9 +7071,9 @@ impl Z80 {
 
     /* CCF */
     fn instr__CCF(&mut self) {
-        self.F = (self.F & (FLAG_P | FLAG_Z | FLAG_S))
+        self.F = self.F & (FLAG_P | FLAG_Z | FLAG_S)
             | tern_op_b(self.F & FLAG_C != 0, FLAG_H, FLAG_C)
-            | (self.A & (FLAG_3 | FLAG_5));
+            | self.A & (FLAG_3 | FLAG_5);
     }
 
     /* LD B,B */
@@ -9734,9 +9733,9 @@ impl Z80 {
         self.IncDE();
         self.IncHL();
         byte_temp += self.A;
-        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+        self.F = self.F & (FLAG_C | FLAG_Z | FLAG_S)
             | tern_op_b(self.BC() != 0, FLAG_V, 0)
-            | (byte_temp & FLAG_3)
+            | byte_temp & FLAG_3
             | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
     }
 
@@ -9808,9 +9807,9 @@ impl Z80 {
         self.DecDE();
         self.DecHL();
         byte_temp += self.A;
-        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+        self.F = self.F & (FLAG_C | FLAG_Z | FLAG_S)
             | tern_op_b(self.BC() != 0, FLAG_V, 0)
-            | (byte_temp & FLAG_3)
+            | byte_temp & FLAG_3
             | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
     }
 
@@ -9880,9 +9879,9 @@ impl Z80 {
         self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
         self.DecBC();
         byte_temp = byte_temp.wrapping_add(self.A);
-        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+        self.F = self.F & (FLAG_C | FLAG_Z | FLAG_S)
             | tern_op_b(self.BC() != 0, FLAG_V, 0)
-            | (byte_temp & FLAG_3)
+            | byte_temp & FLAG_3
             | tern_op_b(byte_temp & 0x02 != 0, FLAG_5, 0);
         if self.BC() != 0 {
             self.memory.contend_write_no_mreq_loop(self.DE(), 1, 5);
@@ -9903,11 +9902,11 @@ impl Z80 {
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
         self.DecBC();
         self.F = self.F & FLAG_C
-            | (tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N))
+            | tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N)
             | HALF_CARRY_SUB_TABLE[lookup as usize]
-            | (tern_op_b(byte_temp != 0, 0, FLAG_Z))
+            | tern_op_b(byte_temp != 0, 0, FLAG_Z)
             | byte_temp & FLAG_S;
-        if (self.F & FLAG_H) != 0 {
+        if self.F & FLAG_H != 0 {
             byte_temp -= 1;
         }
         self.F |= (byte_temp & FLAG_3) | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
@@ -9985,9 +9984,9 @@ impl Z80 {
         self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
         self.DecBC();
         byte_temp = byte_temp.wrapping_add(self.A);
-        self.F = (self.F & (FLAG_C | FLAG_Z | FLAG_S))
+        self.F = self.F & (FLAG_C | FLAG_Z | FLAG_S)
             | tern_op_b(self.BC() != 0, FLAG_V, 0)
-            | (byte_temp & FLAG_3)
+            | byte_temp & FLAG_3
             | tern_op_b(byte_temp & 0x02 != 0, FLAG_5, 0);
         if self.BC() != 0 {
             self.memory.contend_write_no_mreq_loop(self.DE(), 1, 5);
@@ -10008,15 +10007,15 @@ impl Z80 {
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
         self.DecBC();
         self.F = self.F & FLAG_C
-            | (tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N))
+            | tern_op_b(self.BC() != 0, FLAG_V | FLAG_N, FLAG_N)
             | HALF_CARRY_SUB_TABLE[lookup as usize]
-            | (tern_op_b(byte_temp != 0, 0, FLAG_Z))
+            | tern_op_b(byte_temp != 0, 0, FLAG_Z)
             | byte_temp & FLAG_S;
-        if (self.F & FLAG_H) != 0 {
+        if self.F & FLAG_H != 0 {
             byte_temp -= 1;
         }
-        self.F |= (byte_temp & FLAG_3) | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
-        if (self.F & (FLAG_V | FLAG_Z)) == FLAG_V {
+        self.F |= byte_temp & FLAG_3 | tern_op_b((byte_temp & 0x02) != 0, FLAG_5, 0);
+        if self.F & (FLAG_V | FLAG_Z) == FLAG_V {
             self.memory.contend_read_no_mreq_loop(self.HL(), 1, 5);
             self.DecPC(2);
             self.cycles += 18;
