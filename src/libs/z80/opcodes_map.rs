@@ -44,6 +44,139 @@ macro_rules! fn_instr_ld_r16_nnnn {
     };
 }
 
+macro_rules! fn_instr_ld_i_nnnn_r16 {
+    ($fn:tt, $rl:ident, $rh:ident) => {
+        fn $fn(&mut self) {
+            self.ld16nnrr(self.$rl, self.$rh);
+        }
+    };
+}
+
+macro_rules! fn_instr_ld_i_r16_r8 {
+    ($fn:tt, $r16:ident, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.memory.write_byte(self.$r16(), self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_add_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.add(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_adc_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.adc(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_sub_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.sub(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_sbc_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.sbc(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_and_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.and(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_xor_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.xor(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_or_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.or(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_cp_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.cp(self.$r8);
+        }
+    };
+}
+
+macro_rules! fn_instr_pop_r16 {
+    ($fn:tt, $rl:ident, $rh:ident) => {
+        fn $fn(&mut self) {
+            (self.$rl, self.$rh) = self.pop16();
+        }
+    };
+}
+
+macro_rules! fn_instr_push_r16 {
+    ($fn:tt, $rl:ident, $rh:ident) => {
+        fn $fn(&mut self) {
+            let _address = self.IR();
+            self.memory.contend_read_no_mreq(_address, 1);
+            self.push16(self.$rl, self.$rh);
+        }
+    };
+}
+
+macro_rules! fn_instr_ld_a_r16 {
+    ($fn:tt, $r16:ident) => {
+        fn $fn(&mut self) {
+            let address = self.$r16();
+            self.A = self.memory.read_byte(address);
+        }
+    };
+}
+
+macro_rules! fn_instr_ld_a_r8 {
+    ($fn:tt, $r8:ident) => {
+        fn $fn(&mut self) {
+            self.A = self.$r8;
+        }
+    };
+}
+
+macro_rules! fn_instr_op_16 {
+    ($fn:tt, $op:ident) => {
+        fn $fn(&mut self) {
+            let _address = self.IR();
+            self.memory.contend_read_no_mreq_loop(_address, 1, 2);
+            self.$op();
+        }
+    };
+}
+
+macro_rules! fn_instr_op_8 {
+    ($fn:tt, $op:ident) => {
+        fn $fn(&mut self) {
+            self.$op();
+        }
+    };
+}
+
 macro_rules! fn_instr_ld_r8_nn {
     ($fn:tt, $r:ident) => {
         fn $fn(&mut self) {
@@ -59,12 +192,362 @@ macro_rules! fn_instr_add_hl_r16 {
         fn $fn(&mut self) {
             let _address = self.IR();
             self.memory.contend_read_no_mreq_loop(_address, 1, 7);
-            // self.add16(self.hl, self.BC());
             let mut hl = Register16::new(self.H, self.L);
             let value2 = self.$r16();
             self.add16(&mut hl, value2);
             (self.H, self.L) = hl.result();
         }
+    };
+}
+
+macro_rules! fn_instr_ld_hl_i_nnnn {
+    ($fn:tt, $rl:ident, $rh:ident) => {
+        fn $fn(&mut self) {
+            (self.$rl, self.$rh) = self.ld16rrnn_ex();
+        }
+    };
+}
+
+macro_rules! fn_instr_ld_i_reg_p_dd_r8 {
+    ($fn:tt, $ri:ident, $r:ident) => {
+        fn $fn(&mut self) {
+            let address = self.PC();
+            let offset = self.memory.read_byte(address);
+            let _address = self.PC();
+            self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+            self.IncPC(1);
+            self.memory
+                .write_byte(self.$ri() + (sign_extend(offset) as u16), self.$r)
+        }
+    };
+}
+
+macro_rules! fn_instr_op_a_i_reg_p_dd {
+    ($fn:tt, $r:ident, $op:ident) => {
+        fn $fn(&mut self) {
+            let address = self.PC();
+            let offset: u8 = self.memory.read_byte(address);
+            let _address = self.PC();
+            self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+            self.IncPC(1);
+            let byte_temp: u8 = self
+                .memory
+                .read_byte(self.$r() + (sign_extend(offset) as u16));
+            self.$op(byte_temp)
+        }
+    };
+}
+
+macro_rules! fn_instr_dd_op_a_i_reg_p_dd {
+    ($fn:tt, $op:ident) => {
+        fn_instr_op_a_i_reg_p_dd!($fn, IX, $op);
+    };
+}
+
+macro_rules! fn_instr_fd_op_a_i_reg_p_dd {
+    ($fn:tt, $op:ident) => {
+        fn_instr_op_a_i_reg_p_dd!($fn, IY, $op);
+    };
+}
+
+macro_rules! fn_instr_op_i_reg_p_dd {
+    ($fn:tt, $ri:ident, $op:ident) => {
+        fn $fn(&mut self) {
+            let address = self.PC();
+            let offset: u8 = self.memory.read_byte(address);
+            let _address = self.PC();
+            self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+            self.IncPC(1);
+            let word_temp: u16 = self.$ri() + sign_extend(offset) as u16;
+            let mut byte_temp: u8 = self.memory.read_byte(word_temp);
+            self.memory.contend_read_no_mreq(word_temp, 1);
+            self.$op(&mut byte_temp);
+            self.memory.write_byte(word_temp, byte_temp)
+        }
+    };
+}
+
+macro_rules! fn_instr_dd_op_i_reg_p_dd {
+    ($fn:tt, $op:ident) => {
+        fn_instr_op_i_reg_p_dd!($fn, IX, $op);
+    };
+}
+
+macro_rules! fn_instr_fd_op_i_reg_p_dd {
+    ($fn:tt, $op:ident) => {
+        fn_instr_op_i_reg_p_dd!($fn, IY, $op);
+    };
+}
+
+macro_rules! fn_instr_ld_r_i_reg_p_dd {
+    ($fn:tt, $r:ident, $ri:ident) => {
+        fn $fn(&mut self) {
+            let address = self.PC();
+            let offset: u8 = self.memory.read_byte(address);
+            let _address = self.PC();
+            self.memory.contend_read_no_mreq_loop(_address, 1, 5);
+            self.IncPC(1);
+            self.$r = self
+                .memory
+                .read_byte(self.$ri() + (sign_extend(offset) as u16));
+        }
+    };
+}
+
+macro_rules! fn_instr_dd_ld_r_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ld_r_i_reg_p_dd!($fn, $r, IX);
+    };
+}
+
+macro_rules! fn_instr_fd_ld_r_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ld_r_i_reg_p_dd!($fn, $r, IY);
+    };
+}
+
+macro_rules! fn_instr_ddcb_op_i_reg_p_dd {
+    ($fn:tt, $op:ident) => {
+        fn $fn(&mut self) {
+            let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            byte_temp = self.$op(byte_temp);
+            self.memory.write_byte(self.temp_addr, byte_temp);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_rlc_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.rlc(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_rrc_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.rrc(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_rl_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.rl(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_rr_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.rr(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_sla_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.sla(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_sra_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.sra(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_sll_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.sll(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_srl_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.$r = self.srl(self.$r);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_bit_n_i_reg_p_dd {
+    ($fn:tt, $r:expr) => {
+        fn $fn(&mut self) {
+            let byte_temp = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.biti($r, byte_temp, self.temp_addr);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_n_i_reg_p_dd {
+    ($fn:tt, $r:ident, $mask:expr) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr) & $mask;
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_res_n_i_reg_p_dd {
+    ($fn:tt, $mask:expr) => {
+        fn $fn(&mut self) {
+            let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.memory.write_byte(self.temp_addr, byte_temp & $mask);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_set_n_i_reg_p_dd {
+    ($fn:tt, $mask:expr) => {
+        fn $fn(&mut self) {
+            let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.memory.write_byte(self.temp_addr, byte_temp | $mask);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_0_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xfe);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_1_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xfd);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_2_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xfb);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_3_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xf7);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_4_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xef);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_5_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xdf);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_6_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0xbf);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_res_7_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_res_n_i_reg_p_dd!($fn, $r, 0x7f);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_n_i_reg_p_dd {
+    ($fn:tt, $r:ident, $mask:expr) => {
+        fn $fn(&mut self) {
+            self.$r = self.memory.read_byte(self.temp_addr) | $mask;
+            self.memory.contend_read_no_mreq(self.temp_addr, 1);
+            self.memory.write_byte(self.temp_addr, self.$r);
+        }
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_0_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x01);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_1_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x02);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_2_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x04);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_3_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x08);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_4_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x10);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_5_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x20);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_6_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x40);
+    };
+}
+
+macro_rules! fn_instr_ddcb_ld_r_set_7_i_reg_p_dd {
+    ($fn:tt, $r:ident) => {
+        fn_instr_ddcb_ld_r_set_n_i_reg_p_dd!($fn, $r, 0x80);
     };
 }
 
@@ -6274,21 +6757,13 @@ impl Z80 {
     }
 
     /* INC BC */
-    fn instr__INC_BC(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.IncBC();
-    }
+    fn_instr_op_16!(instr__INC_BC, IncBC);
 
     /* INC B */
-    fn instr__INC_B(&mut self) {
-        self.incB();
-    }
+    fn_instr_op_8!(instr__INC_B, incB);
 
     /* DEC B */
-    fn instr__DEC_B(&mut self) {
-        self.decB();
-    }
+    fn_instr_op_8!(instr__DEC_B, decB);
 
     /* LD B,nn */
     fn_instr_ld_r8_nn!(instr__LD_B_NN, B);
@@ -6313,27 +6788,16 @@ impl Z80 {
     fn_instr_add_hl_r16!(instr__ADD_HL_BC, BC);
 
     /* LD A,(BC) */
-    fn instr__LD_A_iBC(&mut self) {
-        let address = self.BC();
-        self.A = self.memory.read_byte(address);
-    }
+    fn_instr_ld_a_r16!(instr__LD_A_iBC, BC);
 
     /* DEC BC */
-    fn instr__DEC_BC(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.DecBC();
-    }
+    fn_instr_op_16!(instr__DEC_BC, DecBC);
 
     /* INC C */
-    fn instr__INC_C(&mut self) {
-        self.incC();
-    }
+    fn_instr_op_8!(instr__INC_C, incC);
 
     /* DEC C */
-    fn instr__DEC_C(&mut self) {
-        self.decC();
-    }
+    fn_instr_op_8!(instr__DEC_C, decC);
 
     /* LD C,nn */
     fn_instr_ld_r8_nn!(instr__LD_C_NN, C);
@@ -6365,26 +6829,16 @@ impl Z80 {
     fn_instr_ld_r16_nnnn!(instr__LD_DE_NNNN, DE, SetDE);
 
     /* LD (DE),A */
-    fn instr__LD_iDE_A(&mut self) {
-        self.memory.write_byte(self.DE(), self.A);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iDE_A, DE, A);
 
     /* INC DE */
-    fn instr__INC_DE(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.IncDE();
-    }
+    fn_instr_op_16!(instr__INC_DE, IncDE);
 
     /* INC D */
-    fn instr__INC_D(&mut self) {
-        self.incD();
-    }
+    fn_instr_op_8!(instr__INC_D, incD);
 
     /* DEC D */
-    fn instr__DEC_D(&mut self) {
-        self.decD();
-    }
+    fn_instr_op_8!(instr__DEC_D, decD);
 
     /* LD D,nn */
     fn_instr_ld_r8_nn!(instr__LD_D_NN, D);
@@ -6407,26 +6861,16 @@ impl Z80 {
     fn_instr_add_hl_r16!(instr__ADD_HL_DE, DE);
 
     /* LD A,(DE) */
-    fn instr__LD_A_iDE(&mut self) {
-        self.A = self.memory.read_byte(self.DE());
-    }
+    fn_instr_ld_a_r16!(instr__LD_A_iDE, DE);
 
     /* DEC DE */
-    fn instr__DEC_DE(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.DecDE();
-    }
+    fn_instr_op_16!(instr__DEC_DE, DecDE);
 
     /* INC E */
-    fn instr__INC_E(&mut self) {
-        self.incE();
-    }
+    fn_instr_op_8!(instr__INC_E, incE);
 
     /* DEC E */
-    fn instr__DEC_E(&mut self) {
-        self.decE();
-    }
+    fn_instr_op_8!(instr__DEC_E, decE);
 
     /* LD E,nn */
     fn_instr_ld_r8_nn!(instr__LD_E_NN, E);
@@ -6455,27 +6899,16 @@ impl Z80 {
     fn_instr_ld_r16_nnnn!(instr__LD_HL_NNNN, HL, SetHL);
 
     /* LD (nnnn),HL */
-    fn instr__LD_iNNNN_HL(&mut self) {
-        self.ld16nnrr(self.L, self.H);
-        // break
-    }
+    fn_instr_ld_i_nnnn_r16!(instr__LD_iNNNN_HL, L, H);
 
     /* INC HL */
-    fn instr__INC_HL(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.IncHL();
-    }
+    fn_instr_op_16!(instr__INC_HL, IncHL);
 
     /* INC H */
-    fn instr__INC_H(&mut self) {
-        self.incH();
-    }
+    fn_instr_op_8!(instr__INC_H, incH);
 
     /* DEC H */
-    fn instr__DEC_H(&mut self) {
-        self.decH();
-    }
+    fn_instr_op_8!(instr__DEC_H, decH);
 
     /* LD H,nn */
     fn_instr_ld_r8_nn!(instr__LD_H_NN, H);
@@ -6518,28 +6951,16 @@ impl Z80 {
     fn_instr_add_hl_r16!(instr__ADD_HL_HL, HL);
 
     /* LD HL,(nnnn) */
-    fn instr__LD_HL_iNNNN(&mut self) {
-        // self.ld16rrnn(&mut self.L, &mut self.H););
-        (self.L, self.H) = self.ld16rrnn_ex();
-        // break
-    }
+    fn_instr_ld_hl_i_nnnn!(instr__LD_HL_iNNNN, L, H);
 
     /* DEC HL */
-    fn instr__DEC_HL(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.DecHL();
-    }
+    fn_instr_op_16!(instr__DEC_HL, DecHL);
 
     /* INC L */
-    fn instr__INC_L(&mut self) {
-        self.incL();
-    }
+    fn_instr_op_8!(instr__INC_L, incL);
 
     /* DEC L */
-    fn instr__DEC_L(&mut self) {
-        self.decL();
-    }
+    fn_instr_op_8!(instr__DEC_L, decL);
 
     /* LD L,nn */
     fn_instr_ld_r8_nn!(instr__LD_L_NN, L);
@@ -6578,11 +6999,7 @@ impl Z80 {
     }
 
     /* INC SP */
-    fn instr__INC_SP(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.IncSP();
-    }
+    fn_instr_op_16!(instr__INC_SP, IncSP);
 
     /* INC (HL) */
     fn instr__INC_iHL(&mut self) {
@@ -6642,21 +7059,13 @@ impl Z80 {
     }
 
     /* DEC SP */
-    fn instr__DEC_SP(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 2);
-        self.DecSP();
-    }
+    fn_instr_op_16!(instr__DEC_SP, DecSP);
 
     /* INC A */
-    fn instr__INC_A(&mut self) {
-        self.incA();
-    }
+    fn_instr_op_8!(instr__INC_A, incA);
 
     /* DEC A */
-    fn instr__DEC_A(&mut self) {
-        self.decA();
-    }
+    fn_instr_op_8!(instr__DEC_A, decA);
 
     /* LD A,nn */
     fn_instr_ld_r8_nn!(instr__LD_A_NN, A);
@@ -6897,34 +7306,22 @@ impl Z80 {
     }
 
     /* LD (HL),B */
-    fn instr__LD_iHL_B(&mut self) {
-        self.memory.write_byte(self.HL(), self.B);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_B, HL, B);
 
     /* LD (HL),C */
-    fn instr__LD_iHL_C(&mut self) {
-        self.memory.write_byte(self.HL(), self.C);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_C, HL, C);
 
     /* LD (HL),D */
-    fn instr__LD_iHL_D(&mut self) {
-        self.memory.write_byte(self.HL(), self.D);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_D, HL, D);
 
     /* LD (HL),E */
-    fn instr__LD_iHL_E(&mut self) {
-        self.memory.write_byte(self.HL(), self.E);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_E, HL, E);
 
     /* LD (HL),H */
-    fn instr__LD_iHL_H(&mut self) {
-        self.memory.write_byte(self.HL(), self.H);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_H, HL, H);
 
     /* LD (HL),L */
-    fn instr__LD_iHL_L(&mut self) {
-        self.memory.write_byte(self.HL(), self.L);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_L, HL, L);
 
     /* HALT */
     fn instr__HALT(&mut self) {
@@ -6933,77 +7330,49 @@ impl Z80 {
     }
 
     /* LD (HL),A */
-    fn instr__LD_iHL_A(&mut self) {
-        self.memory.write_byte(self.HL(), self.A);
-    }
+    fn_instr_ld_i_r16_r8!(instr__LD_iHL_A, HL, A);
 
     /* LD A,B */
-    fn instr__LD_A_B(&mut self) {
-        self.A = self.B;
-    }
+    fn_instr_ld_a_r8!(instr__LD_A_B, B);
 
     /* LD A,C */
-    fn instr__LD_A_C(&mut self) {
-        self.A = self.C;
-    }
+    fn_instr_ld_a_r8!(instr__LD_A_C, C);
 
     /* LD A,D */
-    fn instr__LD_A_D(&mut self) {
-        self.A = self.D;
-    }
+    fn_instr_ld_a_r8!(instr__LD_A_D, D);
 
     /* LD A,E */
-    fn instr__LD_A_E(&mut self) {
-        self.A = self.E;
-    }
+    fn_instr_ld_a_r8!(instr__LD_A_E, E);
 
     /* LD A,H */
-    fn instr__LD_A_H(&mut self) {
-        self.A = self.H;
-    }
+    fn_instr_ld_a_r8!(instr__LD_A_H, H);
 
     /* LD A,L */
-    fn instr__LD_A_L(&mut self) {
-        self.A = self.L;
-    }
+    fn_instr_ld_a_r8!(instr__LD_A_L, L);
 
     /* LD A,(HL) */
-    fn instr__LD_A_iHL(&mut self) {
-        self.A = self.memory.read_byte(self.HL());
-    }
+    fn_instr_ld_a_r16!(instr__LD_A_iHL, HL);
 
     /* LD A,A */
     fn instr__LD_A_A(&mut self) {}
 
     /* ADD A,B */
-    fn instr__ADD_A_B(&mut self) {
-        self.add(self.B);
-    }
+    fn_instr_add_r8!(instr__ADD_A_B, B);
 
     /* ADD A,C */
-    fn instr__ADD_A_C(&mut self) {
-        self.add(self.C);
-    }
+    fn_instr_add_r8!(instr__ADD_A_C, C);
 
     /* ADD A,D */
-    fn instr__ADD_A_D(&mut self) {
-        self.add(self.D);
-    }
+    fn_instr_add_r8!(instr__ADD_A_D, D);
 
     /* ADD A,E */
-    fn instr__ADD_A_E(&mut self) {
-        self.add(self.E);
-    }
+    fn_instr_add_r8!(instr__ADD_A_E, E);
 
     /* ADD A,H */
-    fn instr__ADD_A_H(&mut self) {
-        self.add(self.H);
-    }
+    fn_instr_add_r8!(instr__ADD_A_H, H);
 
     /* ADD A,L */
-    fn instr__ADD_A_L(&mut self) {
-        self.add(self.L);
-    }
+    fn_instr_add_r8!(instr__ADD_A_L, L);
 
     /* ADD A,(HL) */
     fn instr__ADD_A_iHL(&mut self) {
@@ -7013,39 +7382,25 @@ impl Z80 {
     }
 
     /* ADD A,A */
-    fn instr__ADD_A_A(&mut self) {
-        self.add(self.A);
-    }
+    fn_instr_add_r8!(instr__ADD_A_A, A);
 
     /* ADC A,B */
-    fn instr__ADC_A_B(&mut self) {
-        self.adc(self.B);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_B, B);
 
     /* ADC A,C */
-    fn instr__ADC_A_C(&mut self) {
-        self.adc(self.C);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_C, C);
 
     /* ADC A,D */
-    fn instr__ADC_A_D(&mut self) {
-        self.adc(self.D);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_D, D);
 
     /* ADC A,E */
-    fn instr__ADC_A_E(&mut self) {
-        self.adc(self.E);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_E, E);
 
     /* ADC A,H */
-    fn instr__ADC_A_H(&mut self) {
-        self.adc(self.H);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_H, H);
 
     /* ADC A,L */
-    fn instr__ADC_A_L(&mut self) {
-        self.adc(self.L);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_L, L);
 
     /* ADC A,(HL) */
     fn instr__ADC_A_iHL(&mut self) {
@@ -7055,39 +7410,25 @@ impl Z80 {
     }
 
     /* ADC A,A */
-    fn instr__ADC_A_A(&mut self) {
-        self.adc(self.A);
-    }
+    fn_instr_adc_r8!(instr__ADC_A_A, A);
 
     /* SUB A,B */
-    fn instr__SUB_A_B(&mut self) {
-        self.sub(self.B);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_B, B);
 
     /* SUB A,C */
-    fn instr__SUB_A_C(&mut self) {
-        self.sub(self.C);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_C, C);
 
     /* SUB A,D */
-    fn instr__SUB_A_D(&mut self) {
-        self.sub(self.D);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_D, D);
 
     /* SUB A,E */
-    fn instr__SUB_A_E(&mut self) {
-        self.sub(self.E);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_E, E);
 
     /* SUB A,H */
-    fn instr__SUB_A_H(&mut self) {
-        self.sub(self.H);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_H, H);
 
     /* SUB A,L */
-    fn instr__SUB_A_L(&mut self) {
-        self.sub(self.L);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_L, L);
 
     /* SUB A,(HL) */
     fn instr__SUB_A_iHL(&mut self) {
@@ -7097,39 +7438,25 @@ impl Z80 {
     }
 
     /* SUB A,A */
-    fn instr__SUB_A_A(&mut self) {
-        self.sub(self.A);
-    }
+    fn_instr_sub_r8!(instr__SUB_A_A, A);
 
     /* SBC A,B */
-    fn instr__SBC_A_B(&mut self) {
-        self.sbc(self.B);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_B, B);
 
     /* SBC A,C */
-    fn instr__SBC_A_C(&mut self) {
-        self.sbc(self.C);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_C, C);
 
     /* SBC A,D */
-    fn instr__SBC_A_D(&mut self) {
-        self.sbc(self.D);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_D, D);
 
     /* SBC A,E */
-    fn instr__SBC_A_E(&mut self) {
-        self.sbc(self.E);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_E, E);
 
     /* SBC A,H */
-    fn instr__SBC_A_H(&mut self) {
-        self.sbc(self.H);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_H, H);
 
     /* SBC A,L */
-    fn instr__SBC_A_L(&mut self) {
-        self.sbc(self.L);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_L, L);
 
     /* SBC A,(HL) */
     fn instr__SBC_A_iHL(&mut self) {
@@ -7139,39 +7466,25 @@ impl Z80 {
     }
 
     /* SBC A,A */
-    fn instr__SBC_A_A(&mut self) {
-        self.sbc(self.A);
-    }
+    fn_instr_sbc_r8!(instr__SBC_A_A, A);
 
     /* AND A,B */
-    fn instr__AND_A_B(&mut self) {
-        self.and(self.B);
-    }
+    fn_instr_and_r8!(instr__AND_A_B, B);
 
     /* AND A,C */
-    fn instr__AND_A_C(&mut self) {
-        self.and(self.C);
-    }
+    fn_instr_and_r8!(instr__AND_A_C, C);
 
     /* AND A,D */
-    fn instr__AND_A_D(&mut self) {
-        self.and(self.D);
-    }
+    fn_instr_and_r8!(instr__AND_A_D, D);
 
     /* AND A,E */
-    fn instr__AND_A_E(&mut self) {
-        self.and(self.E);
-    }
+    fn_instr_and_r8!(instr__AND_A_E, E);
 
     /* AND A,H */
-    fn instr__AND_A_H(&mut self) {
-        self.and(self.H);
-    }
+    fn_instr_and_r8!(instr__AND_A_H, H);
 
     /* AND A,L */
-    fn instr__AND_A_L(&mut self) {
-        self.and(self.L);
-    }
+    fn_instr_and_r8!(instr__AND_A_L, L);
 
     /* AND A,(HL) */
     fn instr__AND_A_iHL(&mut self) {
@@ -7181,39 +7494,25 @@ impl Z80 {
     }
 
     /* AND A,A */
-    fn instr__AND_A_A(&mut self) {
-        self.and(self.A);
-    }
+    fn_instr_and_r8!(instr__AND_A_A, A);
 
     /* XOR A,B */
-    fn instr__XOR_A_B(&mut self) {
-        self.xor(self.B);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_B, B);
 
     /* XOR A,C */
-    fn instr__XOR_A_C(&mut self) {
-        self.xor(self.C);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_C, C);
 
     /* XOR A,D */
-    fn instr__XOR_A_D(&mut self) {
-        self.xor(self.D);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_D, D);
 
     /* XOR A,E */
-    fn instr__XOR_A_E(&mut self) {
-        self.xor(self.E);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_E, E);
 
     /* XOR A,H */
-    fn instr__XOR_A_H(&mut self) {
-        self.xor(self.H);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_H, H);
 
     /* XOR A,L */
-    fn instr__XOR_A_L(&mut self) {
-        self.xor(self.L);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_L, L);
 
     /* XOR A,(HL) */
     fn instr__XOR_A_iHL(&mut self) {
@@ -7223,39 +7522,25 @@ impl Z80 {
     }
 
     /* XOR A,A */
-    fn instr__XOR_A_A(&mut self) {
-        self.xor(self.A);
-    }
+    fn_instr_xor_r8!(instr__XOR_A_A, A);
 
     /* OR A,B */
-    fn instr__OR_A_B(&mut self) {
-        self.or(self.B);
-    }
+    fn_instr_or_r8!(instr__OR_A_B, B);
 
     /* OR A,C */
-    fn instr__OR_A_C(&mut self) {
-        self.or(self.C);
-    }
+    fn_instr_or_r8!(instr__OR_A_C, C);
 
     /* OR A,D */
-    fn instr__OR_A_D(&mut self) {
-        self.or(self.D);
-    }
+    fn_instr_or_r8!(instr__OR_A_D, D);
 
     /* OR A,E */
-    fn instr__OR_A_E(&mut self) {
-        self.or(self.E);
-    }
+    fn_instr_or_r8!(instr__OR_A_E, E);
 
     /* OR A,H */
-    fn instr__OR_A_H(&mut self) {
-        self.or(self.H);
-    }
+    fn_instr_or_r8!(instr__OR_A_H, H);
 
     /* OR A,L */
-    fn instr__OR_A_L(&mut self) {
-        self.or(self.L);
-    }
+    fn_instr_or_r8!(instr__OR_A_L, L);
 
     /* OR A,(HL) */
     fn instr__OR_A_iHL(&mut self) {
@@ -7265,39 +7550,25 @@ impl Z80 {
     }
 
     /* OR A,A */
-    fn instr__OR_A_A(&mut self) {
-        self.or(self.A);
-    }
+    fn_instr_or_r8!(instr__OR_A_A, A);
 
     /* CP B */
-    fn instr__CP_B(&mut self) {
-        self.cp(self.B);
-    }
+    fn_instr_cp_r8!(instr__CP_B, B);
 
     /* CP C */
-    fn instr__CP_C(&mut self) {
-        self.cp(self.C);
-    }
+    fn_instr_cp_r8!(instr__CP_C, C);
 
     /* CP D */
-    fn instr__CP_D(&mut self) {
-        self.cp(self.D);
-    }
+    fn_instr_cp_r8!(instr__CP_D, D);
 
     /* CP E */
-    fn instr__CP_E(&mut self) {
-        self.cp(self.E);
-    }
+    fn_instr_cp_r8!(instr__CP_E, E);
 
     /* CP H */
-    fn instr__CP_H(&mut self) {
-        self.cp(self.H);
-    }
+    fn_instr_cp_r8!(instr__CP_H, H);
 
     /* CP L */
-    fn instr__CP_L(&mut self) {
-        self.cp(self.L);
-    }
+    fn_instr_cp_r8!(instr__CP_L, L);
 
     /* CP (HL) */
     fn instr__CP_iHL(&mut self) {
@@ -7308,9 +7579,7 @@ impl Z80 {
     }
 
     /* CP A */
-    fn instr__CP_A(&mut self) {
-        self.cp(self.A);
-    }
+    fn_instr_cp_r8!(instr__CP_A, A);
 
     /* RET NZ */
     fn instr__RET_NZ(&mut self) {
@@ -7322,9 +7591,7 @@ impl Z80 {
     }
 
     /* POP BC */
-    fn instr__POP_BC(&mut self) {
-        (self.C, self.B) = self.pop16();
-    }
+    fn_instr_pop_r16!(instr__POP_BC, C, B);
 
     /* JP NZ,nnnn */
     fn instr__JP_NZ_NNNN(&mut self) {
@@ -7358,11 +7625,7 @@ impl Z80 {
     }
 
     /* PUSH BC */
-    fn instr__PUSH_BC(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq(_address, 1);
-        self.push16(self.C, self.B);
-    }
+    fn_instr_push_r16!(instr__PUSH_BC, C, B);
 
     /* ADD A,nn */
     fn instr__ADD_A_NN(&mut self) {
@@ -7452,9 +7715,7 @@ impl Z80 {
     }
 
     /* POP DE */
-    fn instr__POP_DE(&mut self) {
-        (self.E, self.D) = self.pop16()
-    }
+    fn_instr_pop_r16!(instr__POP_DE, E, D);
 
     /* JP NC,nnnn */
     fn instr__JP_NC_NNNN(&mut self) {
@@ -7491,11 +7752,7 @@ impl Z80 {
     }
 
     /* PUSH DE */
-    fn instr__PUSH_DE(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq(_address, 1);
-        self.push16(self.E, self.D);
-    }
+    fn_instr_push_r16!(instr__PUSH_DE, E, D);
 
     /* SUB nn */
     fn instr__SUB_NN(&mut self) {
@@ -7598,9 +7855,7 @@ impl Z80 {
     }
 
     /* POP HL */
-    fn instr__POP_HL(&mut self) {
-        (self.L, self.H) = self.pop16();
-    }
+    fn_instr_pop_r16!(instr__POP_HL, L, H);
 
     /* JP PO,nnnn */
     fn instr__JP_PO_NNNN(&mut self) {
@@ -7647,11 +7902,7 @@ impl Z80 {
     }
 
     /* PUSH HL */
-    fn instr__PUSH_HL(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq(_address, 1);
-        self.push16(self.L, self.H);
-    }
+    fn_instr_push_r16!(instr__PUSH_HL, L, H);
 
     /* AND nn */
     fn instr__AND_NN(&mut self) {
@@ -7744,9 +7995,7 @@ impl Z80 {
     }
 
     /* POP AF */
-    fn instr__POP_AF(&mut self) {
-        (self.F, self.A) = self.pop16();
-    }
+    fn_instr_pop_r16!(instr__POP_AF, F, A);
 
     /* JP P,nnnn */
     fn instr__JP_P_NNNN(&mut self) {
@@ -7780,11 +8029,7 @@ impl Z80 {
     }
 
     /* PUSH AF */
-    fn instr__PUSH_AF(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq(_address, 1);
-        self.push16(self.F, self.A);
-    }
+    fn_instr_push_r16!(instr__PUSH_AF, F, A);
 
     /* OR nn */
     fn instr__OR_NN(&mut self) {
@@ -9242,10 +9487,7 @@ impl Z80 {
     }
 
     /* LD (nnnn),BC */
-    fn instrED__LD_iNNNN_BC(&mut self) {
-        self.ld16nnrr(self.C, self.B);
-        // break
-    }
+    fn_instr_ld_i_nnnn_r16!(instrED__LD_iNNNN_BC, C, B);
 
     /* NEG */
     fn instrED__NEG(&mut self) {
@@ -9290,10 +9532,7 @@ impl Z80 {
     }
 
     /* LD BC,(nnnn) */
-    fn instrED__LD_BC_iNNNN(&mut self) {
-        (self.C, self.B) = self.ld16rrnn_ex();
-        // break
-    }
+    fn_instr_ld_hl_i_nnnn!(instrED__LD_BC_iNNNN, C, B);
 
     /* LD R,A */
     fn instrED__LD_R_A(&mut self) {
@@ -9322,10 +9561,7 @@ impl Z80 {
     }
 
     /* LD (nnnn),DE */
-    fn instrED__LD_iNNNN_DE(&mut self) {
-        self.ld16nnrr(self.E, self.D);
-        // break
-    }
+    fn_instr_ld_i_nnnn_r16!(instrED__LD_iNNNN_DE, E, D);
 
     /* IM 1 */
     fn instrED__IM_1(&mut self) {
@@ -9361,10 +9597,7 @@ impl Z80 {
     }
 
     /* LD DE,(nnnn) */
-    fn instrED__LD_DE_iNNNN(&mut self) {
-        (self.E, self.D) = self.ld16rrnn_ex();
-        // break
-    }
+    fn_instr_ld_hl_i_nnnn!(instrED__LD_DE_iNNNN, E, D);
 
     /* IM 2 */
     fn instrED__IM_2(&mut self) {
@@ -9399,10 +9632,7 @@ impl Z80 {
     }
 
     /* LD (nnnn),HL */
-    fn instrED__LD_iNNNN_HL(&mut self) {
-        self.ld16nnrr(self.L, self.H)
-        // break
-    }
+    fn_instr_ld_i_nnnn_r16!(instrED__LD_iNNNN_HL, L, H);
 
     /* RRD */
     fn instrED__RRD(&mut self) {
@@ -9432,10 +9662,7 @@ impl Z80 {
     }
 
     /* LD HL,(nnnn) */
-    fn instrED__LD_HL_iNNNN(&mut self) {
-        (self.L, self.H) = self.ld16rrnn_ex();
-        // break
-    }
+    fn_instr_ld_hl_i_nnnn!(instrED__LD_HL_iNNNN, L, H);
 
     /* RLD */
     fn instrED__RLD(&mut self) {
@@ -9895,10 +10122,7 @@ impl Z80 {
     }
 
     /* LD (nnnn),ix */
-    fn instrDD__LD_iNNNN_REG(&mut self) {
-        self.ld16nnrr(self.IXL, self.IXH)
-        // break
-    }
+    fn_instr_ld_i_nnnn_r16!(instrDD__LD_iNNNN_REG, IXL, IXH);
 
     /* INC ix */
     fn instrDD__INC_REG(&mut self) {
@@ -9936,10 +10160,7 @@ impl Z80 {
     }
 
     /* LD ix,(nnnn) */
-    fn instrDD__LD_REG_iNNNN(&mut self) {
-        (self.IXL, self.IXH) = self.ld16rrnn_ex();
-        // break
-    }
+    fn_instr_ld_hl_i_nnnn!(instrDD__LD_REG_iNNNN, IXL, IXH);
 
     /* DEC ix */
     fn instrDD__DEC_REG(&mut self) {
@@ -9966,32 +10187,10 @@ impl Z80 {
     }
 
     /* INC (ix+dd) */
-    fn instrDD__INC_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let word_temp: u16 = self.IX() + sign_extend(offset) as u16;
-        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
-        self.memory.contend_read_no_mreq(word_temp, 1);
-        self.inc(&mut byte_temp);
-        self.memory.write_byte(word_temp, byte_temp)
-    }
+    fn_instr_dd_op_i_reg_p_dd!(instrDD__INC_iREGpDD, inc);
 
     /* DEC (ix+dd) */
-    fn instrDD__DEC_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let word_temp: u16 = self.IX() + (sign_extend(offset) as u16);
-        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
-        self.memory.contend_read_no_mreq(word_temp, 1);
-        self.dec(&mut byte_temp);
-        self.memory.write_byte(word_temp, byte_temp);
-    }
+    fn_instr_dd_op_i_reg_p_dd!(instrDD__DEC_iREGpDD, dec);
 
     /* LD (ix+dd),nn */
     fn instrDD__LD_iREGpDD_NN(&mut self) {
@@ -10029,16 +10228,7 @@ impl Z80 {
     }
 
     /* LD B,(ix+dd) */
-    fn instrDD__LD_B_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.B = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_B_iREGpDD, B);
 
     /* LD C,IXH */
     fn instrDD__LD_C_REGH(&mut self) {
@@ -10051,16 +10241,7 @@ impl Z80 {
     }
 
     /* LD C,(ix+dd) */
-    fn instrDD__LD_C_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.C = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_C_iREGpDD, C);
 
     /* LD D,IXH */
     fn instrDD__LD_D_REGH(&mut self) {
@@ -10073,16 +10254,7 @@ impl Z80 {
     }
 
     /* LD D,(ix+dd) */
-    fn instrDD__LD_D_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.D = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_D_iREGpDD, D);
 
     /* LD E,IXH */
     fn instrDD__LD_E_REGH(&mut self) {
@@ -10095,16 +10267,7 @@ impl Z80 {
     }
 
     /* LD E,(ix+dd) */
-    fn instrDD__LD_E_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.E = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_E_iREGpDD, E);
 
     /* LD IXH,B */
     fn instrDD__LD_REGH_B(&mut self) {
@@ -10135,16 +10298,7 @@ impl Z80 {
     }
 
     /* LD H,(ix+dd) */
-    fn instrDD__LD_H_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.H = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_H_iREGpDD, H);
 
     /* LD IXH,A */
     fn instrDD__LD_REGH_A(&mut self) {
@@ -10180,16 +10334,7 @@ impl Z80 {
     fn instrDD__LD_REGL_REGL(&mut self) {}
 
     /* LD L,(ix+dd) */
-    fn instrDD__LD_L_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.L = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_L_iREGpDD, L);
 
     /* LD IXL,A */
     fn instrDD__LD_REGL_A(&mut self) {
@@ -10197,294 +10342,112 @@ impl Z80 {
     }
 
     /* LD (ix+dd),B */
-    fn instrDD__LD_iREGpDD_B(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.B)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_B, IX, B);
 
     /* LD (ix+dd),C */
-    fn instrDD__LD_iREGpDD_C(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.C)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_C, IX, C);
 
     /* LD (ix+dd),D */
-    fn instrDD__LD_iREGpDD_D(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.D)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_D, IX, D);
 
     /* LD (ix+dd),E */
-    fn instrDD__LD_iREGpDD_E(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.E)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_E, IX, E);
 
     /* LD (ix+dd),H */
-    fn instrDD__LD_iREGpDD_H(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.H)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_H, IX, H);
 
     /* LD (ix+dd),L */
-    fn instrDD__LD_iREGpDD_L(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.L)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_L, IX, L);
 
     /* LD (ix+dd),A */
-    fn instrDD__LD_iREGpDD_A(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IX() + (sign_extend(offset) as u16), self.A)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrDD__LD_iREGpDD_A, IX, A);
 
     /* LD A,IXH */
-    fn instrDD__LD_A_REGH(&mut self) {
-        self.A = self.IXH
-    }
+    fn_instr_ld_a_r8!(instrDD__LD_A_REGH, IXH);
 
     /* LD A,IXL */
-    fn instrDD__LD_A_REGL(&mut self) {
-        self.A = self.IXL
-    }
+    fn_instr_ld_a_r8!(instrDD__LD_A_REGL, IXL);
 
     /* LD A,(ix+dd) */
-    fn instrDD__LD_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.A = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-    }
+    fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_A_iREGpDD, A);
 
     /* ADD A,IXH */
-    fn instrDD__ADD_A_REGH(&mut self) {
-        self.add(self.IXH)
-    }
+    fn_instr_add_r8!(instrDD__ADD_A_REGH, IXH);
 
     /* ADD A,IXL */
-    fn instrDD__ADD_A_REGL(&mut self) {
-        self.add(self.IXL)
-    }
+    fn_instr_add_r8!(instrDD__ADD_A_REGL, IXL);
 
     /* ADD A,(ix+dd) */
-    fn instrDD__ADD_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.add(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__ADD_A_iREGpDD, add);
 
     /* ADC A,IXH */
-    fn instrDD__ADC_A_REGH(&mut self) {
-        self.adc(self.IXH)
-    }
+    fn_instr_adc_r8!(instrDD__ADC_A_REGH, IXH);
 
     /* ADC A,IXL */
-    fn instrDD__ADC_A_REGL(&mut self) {
-        self.adc(self.IXL)
-    }
+    fn_instr_adc_r8!(instrDD__ADC_A_REGL, IXL);
 
     /* ADC A,(ix+dd) */
-    fn instrDD__ADC_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.adc(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__ADC_A_iREGpDD, adc);
 
     /* SUB A,IXH */
-    fn instrDD__SUB_A_REGH(&mut self) {
-        self.sub(self.IXH)
-    }
+    fn_instr_sub_r8!(instrDD__SUB_A_REGH, IXH);
 
     /* SUB A,IXL */
-    fn instrDD__SUB_A_REGL(&mut self) {
-        self.sub(self.IXL)
-    }
+    fn_instr_sub_r8!(instrDD__SUB_A_REGL, IXL);
 
     /* SUB A,(ix+dd) */
-    fn instrDD__SUB_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.sub(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__SUB_A_iREGpDD, sub);
 
     /* SBC A,IXH */
-    fn instrDD__SBC_A_REGH(&mut self) {
-        self.sbc(self.IXH)
-    }
+    fn_instr_sbc_r8!(instrDD__SBC_A_REGH, IXH);
 
     /* SBC A,IXL */
-    fn instrDD__SBC_A_REGL(&mut self) {
-        self.sbc(self.IXL)
-    }
+    fn_instr_sbc_r8!(instrDD__SBC_A_REGL, IXL);
 
     /* SBC A,(ix+dd) */
-    fn instrDD__SBC_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.sbc(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__SBC_A_iREGpDD, sbc);
 
     /* AND A,IXH */
-    fn instrDD__AND_A_REGH(&mut self) {
-        self.and(self.IXH)
-    }
+    fn_instr_and_r8!(instrDD__AND_A_REGH, IXH);
 
     /* AND A,IXL */
-    fn instrDD__AND_A_REGL(&mut self) {
-        self.and(self.IXL)
-    }
+    fn_instr_and_r8!(instrDD__AND_A_REGL, IXL);
 
     /* AND A,(ix+dd) */
-    fn instrDD__AND_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.and(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__AND_A_iREGpDD, and);
 
     /* XOR A,IXH */
-    fn instrDD__XOR_A_REGH(&mut self) {
-        self.xor(self.IXH)
-    }
+    fn_instr_xor_r8!(instrDD__XOR_A_REGH, IXH);
 
     /* XOR A,IXL */
-    fn instrDD__XOR_A_REGL(&mut self) {
-        self.xor(self.IXL)
-    }
+    fn_instr_xor_r8!(instrDD__XOR_A_REGL, IXL);
 
     /* XOR A,(ix+dd) */
-    fn instrDD__XOR_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.xor(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__XOR_A_iREGpDD, xor);
 
     /* OR A,IXH */
-    fn instrDD__OR_A_REGH(&mut self) {
-        self.or(self.IXH)
-    }
+    fn_instr_or_r8!(instrDD__OR_A_REGH, IXH);
 
     /* OR A,IXL */
-    fn instrDD__OR_A_REGL(&mut self) {
-        self.or(self.IXL)
-    }
+    fn_instr_or_r8!(instrDD__OR_A_REGL, IXL);
 
     /* OR A,(ix+dd) */
-    fn instrDD__OR_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IX() + (sign_extend(offset) as u16));
-        self.or(byte_temp)
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__OR_A_iREGpDD, or);
 
     /* CP A,IXH */
-    fn instrDD__CP_A_REGH(&mut self) {
-        self.cp(self.IXH)
-    }
+    fn_instr_cp_r8!(instrDD__CP_A_REGH, IXH);
 
     /* CP A,IXL */
-    fn instrDD__CP_A_REGL(&mut self) {
-        self.cp(self.IXL)
-    }
+    fn_instr_cp_r8!(instrDD__CP_A_REGL, IXL);
 
     /* CP A,(ix+dd) */
-    fn instrDD__CP_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let ix = self.IX();
-        let byte_temp: u8 = self.memory.read_byte(ix + (sign_extend(offset) as u16));
-        self.cp(byte_temp);
-    }
+    fn_instr_dd_op_a_i_reg_p_dd!(instrDD__CP_A_iREGpDD, cp);
 
     /* shift DDFDCB */
     fn instrDD__SHIFT_DDFDCB(&mut self) {}
 
     /* POP ix */
-    fn instrDD__POP_REG(&mut self) {
-        (self.IXL, self.IXH) = self.pop16();
-    }
+    fn_instr_pop_r16!(instrDD__POP_REG, IXL, IXH);
 
     /* EX (SP),ix */
     fn instrDD__EX_iSP_REG(&mut self) {
@@ -10505,11 +10468,7 @@ impl Z80 {
     }
 
     /* PUSH ix */
-    fn instrDD__PUSH_REG(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq(_address, 1);
-        self.push16(self.IXL, self.IXH);
-    }
+    fn_instr_push_r16!(instrDD__PUSH_REG, IXL, IXH);
 
     /* JP ix */
     fn instrDD__JP_REG(&mut self) {
@@ -10557,10 +10516,7 @@ impl Z80 {
     }
 
     /* LD (nnnn),iy */
-    fn instrFD__LD_iNNNN_REG(&mut self) {
-        self.ld16nnrr(self.IYL, self.IYH)
-        // break
-    }
+    fn_instr_ld_i_nnnn_r16!(instrFD__LD_iNNNN_REG, IYL, IYH);
 
     /* INC iy */
     fn instrFD__INC_REG(&mut self) {
@@ -10598,10 +10554,7 @@ impl Z80 {
     }
 
     /* LD iy,(nnnn) */
-    fn instrFD__LD_REG_iNNNN(&mut self) {
-        (self.IYL, self.IYH) = self.ld16rrnn_ex();
-        // break
-    }
+    fn_instr_ld_hl_i_nnnn!(instrFD__LD_REG_iNNNN, IYL, IYH);
 
     /* DEC iy */
     fn instrFD__DEC_REG(&mut self) {
@@ -10628,32 +10581,10 @@ impl Z80 {
     }
 
     /* INC (iy+dd) */
-    fn instrFD__INC_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let word_temp: u16 = self.IY() + (sign_extend(offset) as u16);
-        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
-        self.memory.contend_read_no_mreq(word_temp, 1);
-        self.inc(&mut byte_temp);
-        self.memory.write_byte(word_temp, byte_temp);
-    }
+    fn_instr_fd_op_i_reg_p_dd!(instrFD__INC_iREGpDD, inc);
 
     /* DEC (iy+dd) */
-    fn instrFD__DEC_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let word_temp: u16 = self.IY() + (sign_extend(offset) as u16);
-        let mut byte_temp: u8 = self.memory.read_byte(word_temp);
-        self.memory.contend_read_no_mreq(word_temp, 1);
-        self.dec(&mut byte_temp);
-        self.memory.write_byte(word_temp, byte_temp)
-    }
+    fn_instr_fd_op_i_reg_p_dd!(instrFD__DEC_iREGpDD, dec);
 
     /* LD (iy+dd),nn */
     fn instrFD__LD_iREGpDD_NN(&mut self) {
@@ -10691,16 +10622,7 @@ impl Z80 {
     }
 
     /* LD B,(iy+dd) */
-    fn instrFD__LD_B_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.B = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_B_iREGpDD, B);
 
     /* LD C,IYH */
     fn instrFD__LD_C_REGH(&mut self) {
@@ -10713,16 +10635,7 @@ impl Z80 {
     }
 
     /* LD C,(iy+dd) */
-    fn instrFD__LD_C_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.C = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_C_iREGpDD, C);
 
     /* LD D,IYH */
     fn instrFD__LD_D_REGH(&mut self) {
@@ -10735,16 +10648,7 @@ impl Z80 {
     }
 
     /* LD D,(iy+dd) */
-    fn instrFD__LD_D_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.D = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_D_iREGpDD, D);
 
     /* LD E,IYH */
     fn instrFD__LD_E_REGH(&mut self) {
@@ -10757,16 +10661,7 @@ impl Z80 {
     }
 
     /* LD E,(iy+dd) */
-    fn instrFD__LD_E_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.E = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_E_iREGpDD, E);
 
     /* LD IYH,B */
     fn instrFD__LD_REGH_B(&mut self) {
@@ -10797,16 +10692,7 @@ impl Z80 {
     }
 
     /* LD H,(iy+dd) */
-    fn instrFD__LD_H_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.H = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_H_iREGpDD, H);
 
     /* LD IYH,A */
     fn instrFD__LD_REGH_A(&mut self) {
@@ -10842,16 +10728,7 @@ impl Z80 {
     fn instrFD__LD_REGL_REGL(&mut self) {}
 
     /* LD L,(iy+dd) */
-    fn instrFD__LD_L_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.L = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_L_iREGpDD, L);
 
     /* LD IYL,A */
     fn instrFD__LD_REGL_A(&mut self) {
@@ -10859,295 +10736,112 @@ impl Z80 {
     }
 
     /* LD (iy+dd),B */
-    fn instrFD__LD_iREGpDD_B(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.B);
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_B, IY, B);
 
     /* LD (iy+dd),C */
-    fn instrFD__LD_iREGpDD_C(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.C);
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_C, IY, C);
 
     /* LD (iy+dd),D */
-    fn instrFD__LD_iREGpDD_D(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.D);
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_D, IY, D);
 
     /* LD (iy+dd),E */
-    fn instrFD__LD_iREGpDD_E(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.E);
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_E, IY, E);
 
     /* LD (iy+dd),H */
-    fn instrFD__LD_iREGpDD_H(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.H);
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_H, IY, H);
 
     /* LD (iy+dd),L */
-    fn instrFD__LD_iREGpDD_L(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.L);
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_L, IY, L);
 
     /* LD (iy+dd),A */
-    fn instrFD__LD_iREGpDD_A(&mut self) {
-        let address = self.PC();
-        let offset = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.memory
-            .write_byte(self.IY() + (sign_extend(offset) as u16), self.A)
-    }
+    fn_instr_ld_i_reg_p_dd_r8!(instrFD__LD_iREGpDD_A, IY, A);
 
     /* LD A,IYH */
-    fn instrFD__LD_A_REGH(&mut self) {
-        self.A = self.IYH
-    }
+    fn_instr_ld_a_r8!(instrFD__LD_A_REGH, IYH);
 
     /* LD A,IYL */
-    fn instrFD__LD_A_REGL(&mut self) {
-        self.A = self.IYL
-    }
+    fn_instr_ld_a_r8!(instrFD__LD_A_REGL, IYL);
 
     /* LD A,(iy+dd) */
-    fn instrFD__LD_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        self.A = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16))
-    }
+    fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_A_iREGpDD, A);
 
     /* ADD A,IYH */
-    fn instrFD__ADD_A_REGH(&mut self) {
-        self.add(self.IYH)
-    }
+    fn_instr_add_r8!(instrFD__ADD_A_REGH, IYH);
 
     /* ADD A,IYL */
-    fn instrFD__ADD_A_REGL(&mut self) {
-        self.add(self.IYL)
-    }
+    fn_instr_add_r8!(instrFD__ADD_A_REGL, IYL);
 
     /* ADD A,(iy+dd) */
-    fn instrFD__ADD_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.add(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__ADD_A_iREGpDD, add);
 
     /* ADC A,IYH */
-    fn instrFD__ADC_A_REGH(&mut self) {
-        self.adc(self.IYH)
-    }
+    fn_instr_adc_r8!(instrFD__ADC_A_REGH, IYH);
 
     /* ADC A,IYL */
-    fn instrFD__ADC_A_REGL(&mut self) {
-        self.adc(self.IYL)
-    }
+    fn_instr_adc_r8!(instrFD__ADC_A_REGL, IYL);
 
     /* ADC A,(iy+dd) */
-    fn instrFD__ADC_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.adc(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__ADC_A_iREGpDD, adc);
 
     /* SUB A,IYH */
-    fn instrFD__SUB_A_REGH(&mut self) {
-        self.sub(self.IYH)
-    }
+    fn_instr_sub_r8!(instrFD__SUB_A_REGH, IYH);
 
     /* SUB A,IYL */
-    fn instrFD__SUB_A_REGL(&mut self) {
-        self.sub(self.IYL)
-    }
+    fn_instr_sub_r8!(instrFD__SUB_A_REGL, IYL);
 
     /* SUB A,(iy+dd) */
-    fn instrFD__SUB_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.sub(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__SUB_A_iREGpDD, sub);
 
     /* SBC A,IYH */
-    fn instrFD__SBC_A_REGH(&mut self) {
-        self.sbc(self.IYH)
-    }
+    fn_instr_sbc_r8!(instrFD__SBC_A_REGH, IYH);
 
     /* SBC A,IYL */
-    fn instrFD__SBC_A_REGL(&mut self) {
-        self.sbc(self.IYL)
-    }
+    fn_instr_sbc_r8!(instrFD__SBC_A_REGL, IYL);
 
     /* SBC A,(iy+dd) */
-    fn instrFD__SBC_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.sbc(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__SBC_A_iREGpDD, sbc);
 
     /* AND A,IYH */
-    fn instrFD__AND_A_REGH(&mut self) {
-        self.and(self.IYH)
-    }
+    fn_instr_and_r8!(instrFD__AND_A_REGH, IYH);
 
     /* AND A,IYL */
-    fn instrFD__AND_A_REGL(&mut self) {
-        self.and(self.IYL)
-    }
+    fn_instr_and_r8!(instrFD__AND_A_REGL, IYL);
 
     /* AND A,(iy+dd) */
-    fn instrFD__AND_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.and(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__AND_A_iREGpDD, and);
 
     /* XOR A,IYH */
-    fn instrFD__XOR_A_REGH(&mut self) {
-        self.xor(self.IYH)
-    }
+    fn_instr_xor_r8!(instrFD__XOR_A_REGH, IYH);
 
     /* XOR A,IYL */
-    fn instrFD__XOR_A_REGL(&mut self) {
-        self.xor(self.IYL)
-    }
+    fn_instr_xor_r8!(instrFD__XOR_A_REGL, IYL);
 
     /* XOR A,(iy+dd) */
-    fn instrFD__XOR_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.xor(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__XOR_A_iREGpDD, xor);
 
     /* OR A,IYH */
-    fn instrFD__OR_A_REGH(&mut self) {
-        self.or(self.IYH)
-    }
+    fn_instr_or_r8!(instrFD__OR_A_REGH, IYH);
 
     /* OR A,IYL */
-    fn instrFD__OR_A_REGL(&mut self) {
-        self.or(self.IYL)
-    }
+    fn_instr_or_r8!(instrFD__OR_A_REGL, IYL);
 
     /* OR A,(iy+dd) */
-    fn instrFD__OR_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.or(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__OR_A_iREGpDD, or);
 
     /* CP A,IYH */
-    fn instrFD__CP_A_REGH(&mut self) {
-        self.cp(self.IYH)
-    }
+    fn_instr_cp_r8!(instrFD__CP_A_REGH, IYH);
 
     /* CP A,IYL */
-    fn instrFD__CP_A_REGL(&mut self) {
-        self.cp(self.IYL)
-    }
+    fn_instr_cp_r8!(instrFD__CP_A_REGL, IYL);
 
     /* CP A,(iy+dd) */
-    fn instrFD__CP_A_iREGpDD(&mut self) {
-        let address = self.PC();
-        let offset: u8 = self.memory.read_byte(address);
-        let _address = self.PC();
-        self.memory.contend_read_no_mreq_loop(_address, 1, 5);
-        self.IncPC(1);
-        let byte_temp: u8 = self
-            .memory
-            .read_byte(self.IY() + (sign_extend(offset) as u16));
-        self.cp(byte_temp)
-    }
+    fn_instr_fd_op_a_i_reg_p_dd!(instrFD__CP_A_iREGpDD, cp);
 
     /* shift DDFDCB */
     fn instrFD__SHIFT_DDFDCB(&mut self) {}
 
     /* POP iy */
-    fn instrFD__POP_REG(&mut self) {
-        (self.IYL, self.IYH) = self.pop16();
-    }
+    fn_instr_pop_r16!(instrFD__POP_REG, IYL, IYH);
 
     /* EX (SP),iy */
     fn instrFD__EX_iSP_REG(&mut self) {
@@ -11168,11 +10862,7 @@ impl Z80 {
     }
 
     /* PUSH iy */
-    fn instrFD__PUSH_REG(&mut self) {
-        let _address = self.IR();
-        self.memory.contend_read_no_mreq(_address, 1);
-        self.push16(self.IYL, self.IYH);
-    }
+    fn_instr_push_r16!(instrFD__PUSH_REG, IYL, IYH);
 
     /* JP iy */
     fn instrFD__JP_REG(&mut self) {
@@ -11187,1466 +10877,602 @@ impl Z80 {
     }
 
     /* LD B,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_B_RLC_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.rlc(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_B_RLC_iREGpDD, B);
 
     /* LD C,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_C_RLC_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.rlc(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_C_RLC_iREGpDD, C);
 
     /* LD D,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_D_RLC_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.rlc(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_D_RLC_iREGpDD, D);
 
     /* LD E,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_E_RLC_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.rlc(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_E_RLC_iREGpDD, E);
 
     /* LD H,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_H_RLC_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.rlc(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_H_RLC_iREGpDD, H);
 
     /* LD L,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_L_RLC_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.rlc(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_L_RLC_iREGpDD, L);
 
     /* RLC (REGISTER+dd) */
-    fn instrDDCB__RLC_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.rlc(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp);
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__RLC_iREGpDD, rlc);
 
     /* LD A,RLC (REGISTER+dd) */
-    fn instrDDCB__LD_A_RLC_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.rlc(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_rlc_i_reg_p_dd!(instrDDCB__LD_A_RLC_iREGpDD, A);
 
     /* LD B,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_B_RRC_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.rrc(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_B_RRC_iREGpDD, B);
 
     /* LD C,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_C_RRC_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.rrc(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_C_RRC_iREGpDD, C);
 
     /* LD D,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_D_RRC_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.rrc(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_D_RRC_iREGpDD, D);
 
     /* LD E,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_E_RRC_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.rrc(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_E_RRC_iREGpDD, E);
 
     /* LD H,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_H_RRC_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.rrc(self.H);
-        self.memory.write_byte(self.temp_addr, self.H)
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_H_RRC_iREGpDD, H);
 
     /* LD L,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_L_RRC_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.rrc(self.L);
-        self.memory.write_byte(self.temp_addr, self.L)
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_L_RRC_iREGpDD, L);
 
     /* RRC (REGISTER+dd) */
-    fn instrDDCB__RRC_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.rrc(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp)
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__RRC_iREGpDD, rrc);
 
     /* LD A,RRC (REGISTER+dd) */
-    fn instrDDCB__LD_A_RRC_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.rrc(self.A);
-        self.memory.write_byte(self.temp_addr, self.A)
-    }
+    fn_instr_ddcb_ld_r_rrc_i_reg_p_dd!(instrDDCB__LD_A_RRC_iREGpDD, A);
 
     /* LD B,RL (REGISTER+dd) */
-    fn instrDDCB__LD_B_RL_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.rl(self.B);
-        self.memory.write_byte(self.temp_addr, self.B)
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_B_RL_iREGpDD, B);
 
     /* LD C,RL (REGISTER+dd) */
-    fn instrDDCB__LD_C_RL_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.rl(self.C);
-        self.memory.write_byte(self.temp_addr, self.C)
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_C_RL_iREGpDD, C);
 
     /* LD D,RL (REGISTER+dd) */
-    fn instrDDCB__LD_D_RL_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.rl(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_D_RL_iREGpDD, D);
 
     /* LD E,RL (REGISTER+dd) */
-    fn instrDDCB__LD_E_RL_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.rl(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_E_RL_iREGpDD, E);
 
     /* LD H,RL (REGISTER+dd) */
-    fn instrDDCB__LD_H_RL_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.rl(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_H_RL_iREGpDD, H);
 
     /* LD L,RL (REGISTER+dd) */
-    fn instrDDCB__LD_L_RL_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.rl(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_L_RL_iREGpDD, L);
 
     /* RL (REGISTER+dd) */
-    fn instrDDCB__RL_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.rl(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp);
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__RL_iREGpDD, rl);
 
     /* LD A,RL (REGISTER+dd) */
-    fn instrDDCB__LD_A_RL_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.rl(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_rl_i_reg_p_dd!(instrDDCB__LD_A_RL_iREGpDD, A);
 
     /* LD B,RR (REGISTER+dd) */
-    fn instrDDCB__LD_B_RR_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.rr(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_B_RR_iREGpDD, B);
 
     /* LD C,RR (REGISTER+dd) */
-    fn instrDDCB__LD_C_RR_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.rr(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_C_RR_iREGpDD, C);
 
     /* LD D,RR (REGISTER+dd) */
-    fn instrDDCB__LD_D_RR_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.rr(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_D_RR_iREGpDD, D);
 
     /* LD E,RR (REGISTER+dd) */
-    fn instrDDCB__LD_E_RR_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.rr(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_E_RR_iREGpDD, E);
 
     /* LD H,RR (REGISTER+dd) */
-    fn instrDDCB__LD_H_RR_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.rr(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_H_RR_iREGpDD, H);
 
     /* LD L,RR (REGISTER+dd) */
-    fn instrDDCB__LD_L_RR_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.rr(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_L_RR_iREGpDD, L);
 
     /* RR (REGISTER+dd) */
-    fn instrDDCB__RR_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.rr(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp)
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__RR_iREGpDD, rr);
 
     /* LD A,RR (REGISTER+dd) */
-    fn instrDDCB__LD_A_RR_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.rr(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_rr_i_reg_p_dd!(instrDDCB__LD_A_RR_iREGpDD, A);
 
     /* LD B,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_B_SLA_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.sla(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_B_SLA_iREGpDD, B);
 
     /* LD C,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_C_SLA_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.sla(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_C_SLA_iREGpDD, C);
 
     /* LD D,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_D_SLA_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.sla(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_D_SLA_iREGpDD, D);
 
     /* LD E,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_E_SLA_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.sla(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_E_SLA_iREGpDD, E);
 
     /* LD H,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_H_SLA_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.sla(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_H_SLA_iREGpDD, H);
 
     /* LD L,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_L_SLA_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.sla(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_L_SLA_iREGpDD, L);
 
     /* SLA (REGISTER+dd) */
-    fn instrDDCB__SLA_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.sla(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp);
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__SLA_iREGpDD, sla);
 
     /* LD A,SLA (REGISTER+dd) */
-    fn instrDDCB__LD_A_SLA_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.sla(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_sla_i_reg_p_dd!(instrDDCB__LD_A_SLA_iREGpDD, A);
 
     /* LD B,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_B_SRA_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.sra(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_B_SRA_iREGpDD, B);
 
     /* LD C,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_C_SRA_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.sra(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_C_SRA_iREGpDD, C);
 
     /* LD D,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_D_SRA_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.sra(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_D_SRA_iREGpDD, D);
 
     /* LD E,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_E_SRA_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.sra(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_E_SRA_iREGpDD, E);
 
     /* LD H,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_H_SRA_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.sra(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_H_SRA_iREGpDD, H);
 
     /* LD L,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_L_SRA_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.sra(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_L_SRA_iREGpDD, L);
 
     /* SRA (REGISTER+dd) */
-    fn instrDDCB__SRA_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.sra(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp);
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__SRA_iREGpDD, sra);
 
     /* LD A,SRA (REGISTER+dd) */
-    fn instrDDCB__LD_A_SRA_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.sra(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_sra_i_reg_p_dd!(instrDDCB__LD_A_SRA_iREGpDD, A);
 
     /* LD B,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_B_SLL_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.sll(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_B_SLL_iREGpDD, B);
 
     /* LD C,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_C_SLL_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.sll(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_C_SLL_iREGpDD, C);
 
     /* LD D,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_D_SLL_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.sll(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_D_SLL_iREGpDD, D);
 
     /* LD E,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_E_SLL_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.sll(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_E_SLL_iREGpDD, E);
 
     /* LD H,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_H_SLL_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.sll(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_H_SLL_iREGpDD, H);
 
     /* LD L,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_L_SLL_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.sll(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_L_SLL_iREGpDD, L);
 
     /* SLL (REGISTER+dd) */
-    fn instrDDCB__SLL_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.sll(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp);
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__SLL_iREGpDD, sll);
 
     /* LD A,SLL (REGISTER+dd) */
-    fn instrDDCB__LD_A_SLL_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.sll(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_sll_i_reg_p_dd!(instrDDCB__LD_A_SLL_iREGpDD, A);
 
     /* LD B,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_B_SRL_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.B = self.srl(self.B);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_B_SRL_iREGpDD, B);
 
     /* LD C,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_C_SRL_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.C = self.srl(self.C);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_C_SRL_iREGpDD, C);
 
     /* LD D,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_D_SRL_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.D = self.srl(self.D);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_D_SRL_iREGpDD, D);
 
     /* LD E,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_E_SRL_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.E = self.srl(self.E);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_E_SRL_iREGpDD, E);
 
     /* LD H,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_H_SRL_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.H = self.srl(self.H);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_H_SRL_iREGpDD, H);
 
     /* LD L,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_L_SRL_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.L = self.srl(self.L);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_L_SRL_iREGpDD, L);
 
     /* SRL (REGISTER+dd) */
-    fn instrDDCB__SRL_iREGpDD(&mut self) {
-        let mut byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        byte_temp = self.srl(byte_temp);
-        self.memory.write_byte(self.temp_addr, byte_temp);
-    }
+    fn_instr_ddcb_op_i_reg_p_dd!(instrDDCB__SRL_iREGpDD, srl);
 
     /* LD A,SRL (REGISTER+dd) */
-    fn instrDDCB__LD_A_SRL_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.A = self.srl(self.A);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_srl_i_reg_p_dd!(instrDDCB__LD_A_SRL_iREGpDD, A);
 
     /* BIT 0,(REGISTER+dd) */
-    fn instrDDCB__BIT_0_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(0, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_0_iREGpDD, 0);
 
     /* BIT 1,(REGISTER+dd) */
-    fn instrDDCB__BIT_1_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(1, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_1_iREGpDD, 1);
 
     /* BIT 2,(REGISTER+dd) */
-    fn instrDDCB__BIT_2_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(2, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_2_iREGpDD, 2);
 
     /* BIT 3,(REGISTER+dd) */
-    fn instrDDCB__BIT_3_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(3, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_3_iREGpDD, 3);
 
     /* BIT 4,(REGISTER+dd) */
-    fn instrDDCB__BIT_4_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(4, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_4_iREGpDD, 4);
 
     /* BIT 5,(REGISTER+dd) */
-    fn instrDDCB__BIT_5_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(5, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_5_iREGpDD, 5);
 
     /* BIT 6,(REGISTER+dd) */
-    fn instrDDCB__BIT_6_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(6, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_6_iREGpDD, 6);
 
     /* BIT 7,(REGISTER+dd) */
-    fn instrDDCB__BIT_7_iREGpDD(&mut self) {
-        let byte_temp = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.biti(7, byte_temp, self.temp_addr);
-    }
+    fn_instr_ddcb_bit_n_i_reg_p_dd!(instrDDCB__BIT_7_iREGpDD, 7);
 
     /* LD B,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_0_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_B_RES_0_iREGpDD, B);
 
     /* LD C,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_0_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_C_RES_0_iREGpDD, C);
 
     /* LD D,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_0_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_D_RES_0_iREGpDD, D);
 
     /* LD E,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_0_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_E_RES_0_iREGpDD, E);
 
     /* LD H,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_0_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_H_RES_0_iREGpDD, H);
 
     /* LD L,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_0_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_L_RES_0_iREGpDD, L);
 
     /* RES 0,(REGISTER+dd) */
-    fn instrDDCB__RES_0_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xfe);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_0_iREGpDD, 0xfe);
 
     /* LD A,RES 0,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_0_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xfe;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_0_i_reg_p_dd!(instrDDCB__LD_A_RES_0_iREGpDD, A);
 
     /* LD B,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_1_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_B_RES_1_iREGpDD, B);
 
     /* LD C,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_1_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_C_RES_1_iREGpDD, C);
 
     /* LD D,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_1_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_D_RES_1_iREGpDD, D);
 
     /* LD E,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_1_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_E_RES_1_iREGpDD, E);
 
     /* LD H,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_1_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_H_RES_1_iREGpDD, H);
 
     /* LD L,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_1_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_L_RES_1_iREGpDD, L);
 
     /* RES 1,(REGISTER+dd) */
-    fn instrDDCB__RES_1_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xfd);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_1_iREGpDD, 0xfd);
 
     /* LD A,RES 1,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_1_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xfd;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_1_i_reg_p_dd!(instrDDCB__LD_A_RES_1_iREGpDD, A);
 
     /* LD B,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_2_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_B_RES_2_iREGpDD, B);
 
     /* LD C,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_2_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_C_RES_2_iREGpDD, C);
 
     /* LD D,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_2_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_D_RES_2_iREGpDD, D);
 
     /* LD E,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_2_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_E_RES_2_iREGpDD, E);
 
     /* LD H,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_2_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_H_RES_2_iREGpDD, H);
 
     /* LD L,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_2_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_L_RES_2_iREGpDD, L);
 
     /* RES 2,(REGISTER+dd) */
-    fn instrDDCB__RES_2_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xfb);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_2_iREGpDD, 0xfb);
 
     /* LD A,RES 2,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_2_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xfb;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_2_i_reg_p_dd!(instrDDCB__LD_A_RES_2_iREGpDD, A);
 
     /* LD B,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_3_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_B_RES_3_iREGpDD, B);
 
     /* LD C,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_3_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C)
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_C_RES_3_iREGpDD, C);
 
     /* LD D,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_3_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_D_RES_3_iREGpDD, D);
 
     /* LD E,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_3_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_E_RES_3_iREGpDD, E);
 
     /* LD H,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_3_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_H_RES_3_iREGpDD, H);
 
     /* LD L,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_3_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_L_RES_3_iREGpDD, L);
 
     /* RES 3,(REGISTER+dd) */
-    fn instrDDCB__RES_3_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xf7)
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_3_iREGpDD, 0xf7);
 
     /* LD A,RES 3,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_3_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xf7;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_3_i_reg_p_dd!(instrDDCB__LD_A_RES_3_iREGpDD, A);
 
     /* LD B,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_4_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_B_RES_4_iREGpDD, B);
 
     /* LD C,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_4_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_C_RES_4_iREGpDD, C);
 
     /* LD D,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_4_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_D_RES_4_iREGpDD, D);
 
     /* LD E,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_4_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_E_RES_4_iREGpDD, E);
 
     /* LD H,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_4_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_H_RES_4_iREGpDD, H);
 
     /* LD L,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_4_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_L_RES_4_iREGpDD, L);
 
     /* RES 4,(REGISTER+dd) */
-    fn instrDDCB__RES_4_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xef);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_4_iREGpDD, 0xef);
 
     /* LD A,RES 4,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_4_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xef;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_4_i_reg_p_dd!(instrDDCB__LD_A_RES_4_iREGpDD, A);
 
     /* LD B,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_5_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_B_RES_5_iREGpDD, B);
 
     /* LD C,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_5_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_C_RES_5_iREGpDD, C);
 
     /* LD D,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_5_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_D_RES_5_iREGpDD, D);
 
     /* LD E,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_5_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_E_RES_5_iREGpDD, E);
 
     /* LD H,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_5_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_H_RES_5_iREGpDD, H);
 
     /* LD L,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_5_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_L_RES_5_iREGpDD, L);
 
     /* RES 5,(REGISTER+dd) */
-    fn instrDDCB__RES_5_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xdf);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_5_iREGpDD, 0xdf);
 
     /* LD A,RES 5,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_5_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xdf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_5_i_reg_p_dd!(instrDDCB__LD_A_RES_5_iREGpDD, A);
 
     /* LD B,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_6_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_B_RES_6_iREGpDD, B);
 
     /* LD C,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_6_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_C_RES_6_iREGpDD, C);
 
     /* LD D,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_6_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_D_RES_6_iREGpDD, D);
 
     /* LD E,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_6_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_E_RES_6_iREGpDD, E);
 
     /* LD H,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_6_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_H_RES_6_iREGpDD, H);
 
     /* LD L,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_6_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_L_RES_6_iREGpDD, L);
 
     /* RES 6,(REGISTER+dd) */
-    fn instrDDCB__RES_6_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0xbf);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_6_iREGpDD, 0xbf);
 
     /* LD A,RES 6,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_6_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0xbf;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_6_i_reg_p_dd!(instrDDCB__LD_A_RES_6_iREGpDD, A);
 
     /* LD B,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_B_RES_7_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_B_RES_7_iREGpDD, B);
 
     /* LD C,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_C_RES_7_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_C_RES_7_iREGpDD, C);
 
     /* LD D,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_D_RES_7_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_D_RES_7_iREGpDD, D);
 
     /* LD E,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_E_RES_7_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_E_RES_7_iREGpDD, E);
 
     /* LD H,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_H_RES_7_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_H_RES_7_iREGpDD, H);
 
     /* LD L,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_L_RES_7_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_L_RES_7_iREGpDD, L);
 
     /* RES 7,(REGISTER+dd) */
-    fn instrDDCB__RES_7_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp & 0x7f);
-    }
+    fn_instr_ddcb_res_n_i_reg_p_dd!(instrDDCB__RES_7_iREGpDD, 0x7f);
 
     /* LD A,RES 7,(REGISTER+dd) */
-    fn instrDDCB__LD_A_RES_7_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) & 0x7f;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_res_7_i_reg_p_dd!(instrDDCB__LD_A_RES_7_iREGpDD, A);
 
     /* LD B,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_0_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_B_SET_0_iREGpDD, B);
 
     /* LD C,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_0_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_C_SET_0_iREGpDD, C);
 
     /* LD D,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_0_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_D_SET_0_iREGpDD, D);
 
     /* LD E,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_0_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_E_SET_0_iREGpDD, E);
 
     /* LD H,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_0_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_H_SET_0_iREGpDD, H);
 
     /* LD L,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_0_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_L_SET_0_iREGpDD, L);
 
     /* SET 0,(REGISTER+dd) */
-    fn instrDDCB__SET_0_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x01);
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_0_iREGpDD, 0x01);
 
     /* LD A,SET 0,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_0_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x01;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_set_0_i_reg_p_dd!(instrDDCB__LD_A_SET_0_iREGpDD, A);
 
     /* LD B,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_1_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_B_SET_1_iREGpDD, B);
 
     /* LD C,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_1_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_C_SET_1_iREGpDD, C);
 
     /* LD D,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_1_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_D_SET_1_iREGpDD, D);
 
     /* LD E,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_1_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_E_SET_1_iREGpDD, E);
 
     /* LD H,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_1_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_H_SET_1_iREGpDD, H);
 
     /* LD L,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_1_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_L_SET_1_iREGpDD, L);
 
     /* SET 1,(REGISTER+dd) */
-    fn instrDDCB__SET_1_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x02);
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_1_iREGpDD, 0x02);
 
     /* LD A,SET 1,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_1_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x02;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_set_1_i_reg_p_dd!(instrDDCB__LD_A_SET_1_iREGpDD, A);
 
     /* LD B,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_2_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_B_SET_2_iREGpDD, B);
 
     /* LD C,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_2_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_C_SET_2_iREGpDD, C);
 
     /* LD D,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_2_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_D_SET_2_iREGpDD, D);
 
     /* LD E,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_2_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_E_SET_2_iREGpDD, E);
 
     /* LD H,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_2_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_H_SET_2_iREGpDD, H);
 
     /* LD L,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_2_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_L_SET_2_iREGpDD, L);
 
     /* SET 2,(REGISTER+dd) */
-    fn instrDDCB__SET_2_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x04);
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_2_iREGpDD, 0x04);
 
     /* LD A,SET 2,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_2_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x04;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_set_2_i_reg_p_dd!(instrDDCB__LD_A_SET_2_iREGpDD, A);
 
     /* LD B,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_3_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_B_SET_3_iREGpDD, B);
 
     /* LD C,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_3_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_C_SET_3_iREGpDD, C);
 
     /* LD D,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_3_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_D_SET_3_iREGpDD, D);
 
     /* LD E,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_3_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_E_SET_3_iREGpDD, E);
 
     /* LD H,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_3_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_H_SET_3_iREGpDD, H);
 
     /* LD L,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_3_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_L_SET_3_iREGpDD, L);
 
     /* SET 3,(REGISTER+dd) */
-    fn instrDDCB__SET_3_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x08);
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_3_iREGpDD, 0x08);
 
     /* LD A,SET 3,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_3_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x08;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_set_3_i_reg_p_dd!(instrDDCB__LD_A_SET_3_iREGpDD, A);
 
     /* LD B,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_4_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_B_SET_4_iREGpDD, B);
 
     /* LD C,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_4_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_C_SET_4_iREGpDD, C);
 
     /* LD D,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_4_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_D_SET_4_iREGpDD, D);
 
     /* LD E,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_4_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_E_SET_4_iREGpDD, E);
 
     /* LD H,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_4_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_H_SET_4_iREGpDD, H);
 
     /* LD L,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_4_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_L_SET_4_iREGpDD, L);
 
     /* SET 4,(REGISTER+dd) */
-    fn instrDDCB__SET_4_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x10);
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_4_iREGpDD, 0x10);
 
     /* LD A,SET 4,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_4_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x10;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A);
-    }
+    fn_instr_ddcb_ld_r_set_4_i_reg_p_dd!(instrDDCB__LD_A_SET_4_iREGpDD, A);
 
     /* LD B,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_5_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_B_SET_5_iREGpDD, B);
 
     /* LD C,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_5_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_C_SET_5_iREGpDD, C);
 
     /* LD D,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_5_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_D_SET_5_iREGpDD, D);
 
     /* LD E,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_5_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_E_SET_5_iREGpDD, E);
 
     /* LD H,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_5_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_H_SET_5_iREGpDD, H);
 
     /* LD L,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_5_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_L_SET_5_iREGpDD, L);
 
     /* SET 5,(REGISTER+dd) */
-    fn instrDDCB__SET_5_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x20)
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_5_iREGpDD, 0x20);
 
     /* LD A,SET 5,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_5_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x20;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A)
-    }
+    fn_instr_ddcb_ld_r_set_5_i_reg_p_dd!(instrDDCB__LD_A_SET_5_iREGpDD, A);
 
     /* LD B,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_6_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_B_SET_6_iREGpDD, B);
 
     /* LD C,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_6_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_C_SET_6_iREGpDD, C);
 
     /* LD D,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_6_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_D_SET_6_iREGpDD, D);
 
     /* LD E,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_6_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_E_SET_6_iREGpDD, E);
 
     /* LD H,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_6_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_H_SET_6_iREGpDD, H);
 
     /* LD L,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_6_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_L_SET_6_iREGpDD, L);
 
     /* SET 6,(REGISTER+dd) */
-    fn instrDDCB__SET_6_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x40)
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_6_iREGpDD, 0x40);
 
     /* LD A,SET 6,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_6_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x40;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A)
-    }
+    fn_instr_ddcb_ld_r_set_6_i_reg_p_dd!(instrDDCB__LD_A_SET_6_iREGpDD, A);
 
     /* LD B,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_B_SET_7_iREGpDD(&mut self) {
-        self.B = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.B)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_B_SET_7_iREGpDD, B);
 
     /* LD C,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_C_SET_7_iREGpDD(&mut self) {
-        self.C = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.C)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_C_SET_7_iREGpDD, C);
 
     /* LD D,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_D_SET_7_iREGpDD(&mut self) {
-        self.D = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.D)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_D_SET_7_iREGpDD, D);
 
     /* LD E,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_E_SET_7_iREGpDD(&mut self) {
-        self.E = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.E)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_E_SET_7_iREGpDD, E);
 
     /* LD H,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_H_SET_7_iREGpDD(&mut self) {
-        self.H = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.H)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_H_SET_7_iREGpDD, H);
 
     /* LD L,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_L_SET_7_iREGpDD(&mut self) {
-        self.L = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.L)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_L_SET_7_iREGpDD, L);
 
     /* SET 7,(REGISTER+dd) */
-    fn instrDDCB__SET_7_iREGpDD(&mut self) {
-        let byte_temp: u8 = self.memory.read_byte(self.temp_addr);
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, byte_temp | 0x80)
-    }
+    fn_instr_ddcb_set_n_i_reg_p_dd!(instrDDCB__SET_7_iREGpDD, 0x80);
 
     /* LD A,SET 7,(REGISTER+dd) */
-    fn instrDDCB__LD_A_SET_7_iREGpDD(&mut self) {
-        self.A = self.memory.read_byte(self.temp_addr) | 0x80;
-        self.memory.contend_read_no_mreq(self.temp_addr, 1);
-        self.memory.write_byte(self.temp_addr, self.A)
-    }
+    fn_instr_ddcb_ld_r_set_7_i_reg_p_dd!(instrDDCB__LD_A_SET_7_iREGpDD, A);
 }
