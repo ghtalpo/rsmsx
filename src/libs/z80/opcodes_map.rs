@@ -7034,7 +7034,7 @@ impl Z80 {
     }
 
     /* SCF */
-    fn instr__SCF(&mut self) {
+    pub(crate) fn instr__SCF(&mut self) {
         self.data.F =
             (self.data.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.data.A & (FLAG_3 | FLAG_5)) | FLAG_C;
     }
@@ -9560,7 +9560,7 @@ impl Z80 {
     }
 
     /* SBC HL,DE */
-    fn instrED__SBC_HL_DE(&mut self) {
+    pub(crate) fn instrED__SBC_HL_DE(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         self.sbc16(self.DE());
