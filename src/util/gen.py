@@ -54,15 +54,16 @@ def convert_to_lua(line):
                         # return "z80.%s = %s" % (oprr[0],oprr[1])
                     elif oprr[1].startswith('('):
                         tgt = oprr[1][1:].rstrip(')').rstrip()
-                        v_opr = addr.search(tgt)
-                        if v_opr:
-                            # return "z80.%s = read_byte(z80, 0x%s)" % (oprr[0], v_opr.group(1))
-                            return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (oprr[0], v_opr.group(1))
-                        elif is_reg16(tgt[:2]):
+                        if is_reg16(tgt[:2]):
                             # return "z80.%s = read_byte(z80, z80_gen.%s(z80))" % (oprr[0], tgt[:2])
                             return "self.instr_hk__LD_%s_i%s();" % (oprr[0], tgt[:2])
                         else:
-                            return "WRONG1a %s %s" % (op,opr)
+                            v_opr = addr.search(tgt)
+                            if v_opr:
+                                # return "z80.%s = read_byte(z80, 0x%s)" % (oprr[0], v_opr.group(1))
+                                return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (oprr[0], v_opr.group(1))
+                            else:
+                                return "WRONG1a %s %s" % (op,opr)
                     else:
                         return "self.instr_hk__LD_%s_%s();" % (oprr[0],oprr[1])
                 elif oprr[0].startswith('('):
