@@ -668,6 +668,7 @@ impl Z80 {
             }
             if skip {
                 self.pop16();
+                self.data.pc = old_pc;
                 return;
             } else {
                 log::info!("z80:call ignored 0x{:04x}=>0x{:04x}", old_pc, new_pc);
