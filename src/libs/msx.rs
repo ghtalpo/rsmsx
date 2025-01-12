@@ -108,6 +108,10 @@ impl MSX {
                 if ui.button(None, "Load") {
                     self.load();
                 }
+                if ui.button(None, "Reset") {
+                    self.cpu_z80.reset();
+                    self.cpu_z80.SetPC(0);
+                }
 
                 ui.separator();
             });
