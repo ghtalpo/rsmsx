@@ -56,15 +56,6 @@ impl Z80 {
         }
     }
     fn hook_46ac(&mut self) -> bool {
-        //
-        //                              *************************************************************
-        //                              *                           FUNCTION
-        //                              *************************************************************
-        //                              undefined  FUN_ram_46ac ()
-        //              undefined         A:1            <RETURN>
-        // self.instr_hk__RET();
-        //                              FUN_ram_46ac                                    XREF[4]:     ram:45f8 (c) , ram:4608 (c) ,
-        //                                                                                           ram:4618 (c) , ram:4628 (c)
         //         ram:46ac c5              PUSH       BC
         self.instr_hk__PUSH_BC();
         //         ram:46ad 22  be  c8       LD         (BYTE_ram_c8be ),HL
@@ -161,26 +152,10 @@ impl Z80 {
         //         ram:46f8 5e              LD         E,(HL=>BYTE_ram_c1ef )
         self.instr_hk__LD_E_iHL();
         //         ram:46f9 c9              RET
-        //
         true
     }
 
     fn hook_4705(&mut self) -> bool {
-        //
-        //         *************************************************************
-        //     *                           FUNCTION
-        //     *************************************************************
-        //     undefined  sb_read_mem_for_player_4705 ()
-        // undefined         A:1            <RETURN>
-        // self.instr_hk__RET();
-        //     sb_read_mem_for_player_4705                     XREF[9]:     ram:4324 (c) ,
-        //                                                                  FUN_ram_46ac:46b4 (c) ,
-        //                                                                  FUN_ram_481e:489f (c) ,
-        //                                                                  FUN_ram_49a1:49e2 (c) ,
-        //                                                                  FUN_ram_61b5:646a (c) ,
-        //                                                                  FUN_ram_61b5:64bb (c) ,
-        //                                                                  ram:66f4 (c) , ram:6739 (c) ,
-        //                                                                  FUN_ram_6ed6:6eda (c)
         // ram:4705 3a  1b  c2       LD         A,(bt_player_idx_c21b )                          HL <- c349 + player_idx + 3
         self.instr_hk__LD_A_iNNNN(0xc21b);
         // ram:4708 c6  03           ADD        A,0x3
@@ -195,7 +170,6 @@ impl Z80 {
         self.instr_hk__ADD_HL_BC();
         // ram:4711 c9              RET
         // self.instr_hk__RET();
-        //
         true
     }
 
@@ -223,7 +197,6 @@ impl Z80 {
         //         ram:4769 09              ADD        HL,BC
         self.instr_hk__ADD_HL_BC();
         //         ram:476a c9              RET
-        //
         true
     }
     fn hook_4801(&mut self) -> bool {
@@ -242,14 +215,12 @@ impl Z80 {
     fn hook_8bc4(&mut self) -> bool {
         //         ram:8bc4 cd  ca  8b       CALL       sb_read_mem_for_player_8BCA                      hl <- *c290 + *c21b
         assert!(self.call_hook(0x8BCA));
-        //                                                                                              b <- 0
         //                                                                                              c <- *21b
         //         ram:8bc7 7e              LD         A,(HL)
         self.instr_hk__LD_A_iHL();
         //         ram:8bc8 70              LD         (HL),B
         self.instr_hk__LD_iHL_B();
         //         ram:8bc9 c9              RET
-        //
         true
     }
     fn hook_8bca(&mut self) -> bool {
@@ -270,7 +241,6 @@ impl Z80 {
         assert!(self.call_hook(0x4763));
         //                                                                                              bc <- player_idx
         //         ram:8bd7 c9              RET
-        //
         true
     }
     fn hook_8be4(&mut self) -> bool {
@@ -282,7 +252,6 @@ impl Z80 {
         //         ram:8be8 70              LD         (HL),B
         self.instr_hk__LD_iHL_B();
         //         ram:8be9 c9              RET
-        //
         true
     }
     fn hook_8bea(&mut self) -> bool {
