@@ -4,6 +4,8 @@ use macroquad::prelude::*;
 
 use super::{vdp::Vdp, z80::z80_base::Z80};
 
+use macroquad::ui::{hash, root_ui};
+
 const CYCLES_PER_FRAME: u64 = 60000; // The z80 runs at 3.58 Mhz. Every 16msec 57280 cycles pass.
 const NANO_SEC_PER_SEC: u32 = 1_000_000_000;
 const MILLIS_PER_NANO_SEC: u32 = 1_000_000;
@@ -84,6 +86,17 @@ impl MSX {
             // 	paused = false;
             // }
 
+            root_ui().window(hash!(), vec2(512., 0.), vec2(256., 192. * 2.), |ui| {
+                if ui.button(None, "Save") {
+                    self.save();
+                }
+                if ui.button(None, "Load") {
+                    self.load();
+                }
+
+                ui.separator();
+            });
+
             n_frames += 1;
             next_frame().await;
         }
@@ -104,6 +117,12 @@ impl MSX {
             self.vdp.borrow_mut().set_frame_flag();
             self.cpu_z80.interrupt();
         }
+    }
+    fn save(&mut self) {
+        println!("save");
+    }
+    fn load(&mut self) {
+        println!("load");
     }
 }
 

@@ -8,7 +8,7 @@ const MSX_W1: u16 = 320;
 const MSX_W2: u16 = 256;
 const MSX_H: u16 = 192;
 const SCALE: f32 = 2.0;
-const WIN_W: f32 = MSX_W2 as f32 * SCALE;
+const WIN_W: f32 = MSX_W2 as f32 * SCALE * 1.5;
 const WIN_H: f32 = MSX_H as f32 * SCALE;
 
 #[derive(Clone, Debug)]
