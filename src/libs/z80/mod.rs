@@ -3,4 +3,6 @@ pub mod opcodes_map;
 pub mod opcodes_timings_msx;
 pub mod z80_base;
 pub mod z80_gen;
+pub mod z80_hook_func;
+pub mod z80_hook_instr;
 pub mod z80_tables;

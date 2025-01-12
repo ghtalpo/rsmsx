@@ -651,7 +651,30 @@ impl Z80 {
         self.data.pc += 1;
         let (pch, pcl) = split_word(self.data.pc);
         self.push16(pcl, pch);
-        // let old_pc = self.data.pc;
+        let old_pc = self.data.pc;
+        if new_pc >= 0x4000 && new_pc <= 0xc000 {
+            log::info!("z80:call 0x{:04x}=>0x{:04x}", old_pc, new_pc);
+        }
+        if self.has_hook(new_pc) {
+            let die_after_unknown_caller = true;
+            let skip = self.call_hook(new_pc);
+            if !self.is_known_caller(old_pc) {
+                let debug_call = true;
+                if debug_call {
+                    log::info!("z80:call UNKOWN 0x{:04x}=>0x{:04x}", old_pc, new_pc);
+                    self.peek_stack(5);
+                }
+                assert!(!die_after_unknown_caller);
+            }
+            if skip {
+                self.pop16();
+                return;
+            } else {
+                log::info!("z80:call ignored 0x{:04x}=>0x{:04x}", old_pc, new_pc);
+                assert!(false);
+            }
+        }
+
         self.data.pc = new_pc;
         // println!("z80:call 0x{:04x} -> 0x{:04x}", old_pc, self.data.pc);
     }
