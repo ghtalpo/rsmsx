@@ -37,10 +37,12 @@ impl Z80 {
     }
     pub(crate) fn is_known_caller(&self, addr: u16) -> bool {
         match addr {
-            0x58b8 => true, // temp
-            0x58d0 => true, // temp
-            0x5a4d => true, // loop
-            0x8c72 => true, // on tick
+            0x4e54..0x4e61 => true,  // in looped func
+            0x587b..0x6009 => true,  // in looped func
+            0x61b5..0x6265 => true,  // in looped func
+            0x6448..0x6650 => true,  // in looped func
+            0x8c02..=0x8c57 => true, // in bios call func
+            0x8c72 => true,          // on tick
             _ => false,
         }
     }
