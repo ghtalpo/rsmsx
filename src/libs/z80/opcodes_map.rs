@@ -7188,7 +7188,7 @@ impl Z80 {
     }
 
     /* LD D,(HL) */
-    fn instr__LD_D_iHL(&mut self) {
+    pub(crate) fn instr__LD_D_iHL(&mut self) {
         self.data.D = self.memory.read_byte(self.HL());
     }
 
@@ -7226,7 +7226,7 @@ impl Z80 {
     }
 
     /* LD E,(HL) */
-    fn instr__LD_E_iHL(&mut self) {
+    pub(crate) fn instr__LD_E_iHL(&mut self) {
         self.data.E = self.memory.read_byte(self.HL());
     }
 

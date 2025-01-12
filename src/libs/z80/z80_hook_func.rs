@@ -155,11 +155,11 @@ impl Z80 {
         //         ram:46f5 09              ADD        HL,BC
         self.instr_hk__ADD_HL_BC();
         //         ram:46f6 56              LD         D,(HL=>BYTE_ram_c1ee )
-        self.instr_hk__LD_D_iNNNN(0xc1ee);
+        self.instr_hk__LD_D_iHL();
         //         ram:46f7 23              INC        HL
         self.instr_hk__INC_HL();
         //         ram:46f8 5e              LD         E,(HL=>BYTE_ram_c1ef )
-        self.instr_hk__LD_E_iNNNN(0xc1ef);
+        self.instr_hk__LD_E_iHL();
         //         ram:46f9 c9              RET
         //
         true
