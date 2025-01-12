@@ -69,7 +69,7 @@ impl Z80 {
         true
     }
     fn hook_4801(&mut self) -> bool {
-        log::info!("hook_4801");
+        // log::info!("hook_4801");
         self.instr_hk__LD_C_NN(0xa);
         // ram:4803 18  12           JR         sb_get_char_internal_4817                        undefined sb_get_char_internal_4
         //         ram:4817 06  00           LD         B,0x0
@@ -82,7 +82,7 @@ impl Z80 {
         true
     }
     fn hook_8bd1(&mut self) -> bool {
-        log::info!("hook_8bd1");
+        // log::info!("hook_8bd1");
         //         ram:8bd1 21  a2  c2       LD         HL,0xc2a2
         self.instr_hk__LD_HL_NNNN(0xc2a2);
         //         ram:8bd4 cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
@@ -93,7 +93,7 @@ impl Z80 {
         true
     }
     fn hook_8be4(&mut self) -> bool {
-        log::info!("hook_8be4");
+        // log::info!("hook_8be4");
         //         ram:8be4 cd  ea  8b       CALL       sb_read_mem_for_player_8bea                      undefined sb_read_mem_for_player
         assert!(self.call_hook(0x8bea));
         //         ram:8be7 7e              LD         A,(HL)
@@ -105,7 +105,7 @@ impl Z80 {
         true
     }
     fn hook_8bea(&mut self) -> bool {
-        log::info!("hook_8bea");
+        // log::info!("hook_8bea");
         //         ram:8bea 21  93  c2       LD         HL,DAT_ram_c293
         self.instr_hk__LD_HL_NNNN(0xc293);
         //         ram:8bed cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
@@ -115,7 +115,7 @@ impl Z80 {
         true
     }
     fn hook_8bf1(&mut self) -> bool {
-        log::info!("hook_8bf1");
+        // log::info!("hook_8bf1");
         //         ram:8bf1 21  a5  c2       LD         HL,DAT_ram_c2a5
         self.instr_hk__LD_HL_NNNN(0xc2a5);
         //         ram:8bf4 cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx

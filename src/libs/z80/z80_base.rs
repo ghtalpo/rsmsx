@@ -652,9 +652,9 @@ impl Z80 {
         let (pch, pcl) = split_word(self.data.pc);
         self.push16(pcl, pch);
         let old_pc = self.data.pc;
-        if new_pc >= 0x4000 && new_pc <= 0xc000 {
-            log::info!("z80:call 0x{:04x}=>0x{:04x}", old_pc, new_pc);
-        }
+        // if new_pc >= 0x4000 && new_pc <= 0xc000 {
+        //     log::info!("z80:call 0x{:04x}=>0x{:04x}", old_pc, new_pc);
+        // }
         if self.has_hook(new_pc) {
             let die_after_unknown_caller = true;
             let skip = self.call_hook(new_pc);
