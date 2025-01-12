@@ -1501,7 +1501,7 @@ impl Z80 {
             }
             0xdc => {
                 // CALL C, nn
-                if self.F & FLAG_C != 0 {
+                if self.data.F & FLAG_C != 0 {
                     18
                 } else {
                     11
@@ -1509,7 +1509,7 @@ impl Z80 {
             }
             0xfc => {
                 // CALL M, nn
-                if self.F & FLAG_S != 0 {
+                if self.data.F & FLAG_S != 0 {
                     18
                 } else {
                     11
@@ -1517,7 +1517,7 @@ impl Z80 {
             }
             0xd4 => {
                 // CALL NC, nn
-                if self.F & FLAG_C == 0 {
+                if self.data.F & FLAG_C == 0 {
                     18
                 } else {
                     11
@@ -1525,7 +1525,7 @@ impl Z80 {
             }
             0xc4 => {
                 // CALL NZ, nn
-                if self.F & FLAG_Z == 0 {
+                if self.data.F & FLAG_Z == 0 {
                     18
                 } else {
                     11
@@ -1533,7 +1533,7 @@ impl Z80 {
             }
             0xf4 => {
                 // CALL P, nn
-                if self.F & FLAG_S == 0 {
+                if self.data.F & FLAG_S == 0 {
                     18
                 } else {
                     11
@@ -1541,7 +1541,7 @@ impl Z80 {
             }
             0xec => {
                 // CALL PE, nn
-                if self.F & FLAG_P != 0 {
+                if self.data.F & FLAG_P != 0 {
                     18
                 } else {
                     11
@@ -1549,7 +1549,7 @@ impl Z80 {
             }
             0xe4 => {
                 // CALL PO, nn
-                if self.F & FLAG_P == 0 {
+                if self.data.F & FLAG_P == 0 {
                     18
                 } else {
                     11
@@ -1557,7 +1557,7 @@ impl Z80 {
             }
             0xcc => {
                 // CALL Z, nn
-                if self.F & FLAG_Z != 0 {
+                if self.data.F & FLAG_Z != 0 {
                     18
                 } else {
                     11
@@ -1572,7 +1572,7 @@ impl Z80 {
             // }
             0x38 => {
                 // JR C, nn
-                if self.F & FLAG_C != 0 {
+                if self.data.F & FLAG_C != 0 {
                     13
                 } else {
                     8
@@ -1580,7 +1580,7 @@ impl Z80 {
             }
             0x30 => {
                 // JR NC, nn
-                if self.F & FLAG_C == 0 {
+                if self.data.F & FLAG_C == 0 {
                     13
                 } else {
                     8
@@ -1588,7 +1588,7 @@ impl Z80 {
             }
             0x28 => {
                 // JR Z, nn
-                if self.F & FLAG_Z != 0 {
+                if self.data.F & FLAG_Z != 0 {
                     13
                 } else {
                     8
@@ -1596,7 +1596,7 @@ impl Z80 {
             }
             0x20 => {
                 // JR NZ, nn
-                if self.F & FLAG_Z == 0 {
+                if self.data.F & FLAG_Z == 0 {
                     13
                 } else {
                     8
@@ -1604,7 +1604,7 @@ impl Z80 {
             }
             0xd8 => {
                 // RET C
-                if self.F & FLAG_C != 0 {
+                if self.data.F & FLAG_C != 0 {
                     12
                 } else {
                     6
@@ -1612,7 +1612,7 @@ impl Z80 {
             }
             0xf8 => {
                 // RET M
-                if self.F & FLAG_S != 0 {
+                if self.data.F & FLAG_S != 0 {
                     12
                 } else {
                     6
@@ -1620,7 +1620,7 @@ impl Z80 {
             }
             0xd0 => {
                 // RET NC
-                if self.F & FLAG_C == 0 {
+                if self.data.F & FLAG_C == 0 {
                     12
                 } else {
                     6
@@ -1628,7 +1628,7 @@ impl Z80 {
             }
             0xc0 => {
                 // RET NZ
-                if self.F & FLAG_Z == 0 {
+                if self.data.F & FLAG_Z == 0 {
                     12
                 } else {
                     6
@@ -1636,7 +1636,7 @@ impl Z80 {
             }
             0xf0 => {
                 // RET P
-                if self.F & FLAG_S == 0 {
+                if self.data.F & FLAG_S == 0 {
                     12
                 } else {
                     6
@@ -1644,7 +1644,7 @@ impl Z80 {
             }
             0xe8 => {
                 // RET PE
-                if self.F & FLAG_P != 0 {
+                if self.data.F & FLAG_P != 0 {
                     12
                 } else {
                     6
@@ -1652,7 +1652,7 @@ impl Z80 {
             }
             0xe0 => {
                 // RET PO
-                if self.F & FLAG_P == 0 {
+                if self.data.F & FLAG_P == 0 {
                     12
                 } else {
                     6
@@ -1660,7 +1660,7 @@ impl Z80 {
             }
             0xc8 => {
                 // RET Z
-                if self.F & FLAG_Z != 0 {
+                if self.data.F & FLAG_Z != 0 {
                     12
                 } else {
                     6

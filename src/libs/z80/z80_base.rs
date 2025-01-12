@@ -26,7 +26,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /*
 The z80 package implements a Zilog Z80 emulator.
 */
-use crate::libs::{memory::Memory, ports::Ports};
+use serde::{Deserialize, Serialize};
+
+use crate::libs::{
+    memory::{Memory, MemoryData},
+    ports::Ports,
+    ppi::PPIData,
+};
 
 use super::z80_tables::{
     Z80Tables, HALF_CARRY_ADD_TABLE, HALF_CARRY_SUB_TABLE, OVERFLOW_ADD_TABLE, OVERFLOW_SUB_TABLE,
@@ -106,8 +112,9 @@ impl Register16 {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
-pub struct Z80 {
+pub struct Z80Data {
     pub(crate) A: u8,
     pub(crate) F: u8,
     pub(crate) B: u8,
@@ -166,20 +173,14 @@ pub struct Z80 {
 
     pub(crate) interrupts_enabled_at: isize,
 
-    pub(crate) memory: Memory,
-    ports: Ports,
-
     pub(crate) rzx_instructions_offset: isize,
 
     // Clock Cycles
     pub(crate) cycles: u64,
-    pub(crate) tables: Z80Tables,
     pub(crate) debug: bool,
 }
-
-#[allow(non_snake_case)]
-impl Z80 {
-    pub fn new(memory: Memory, ports: Ports) -> Self {
+impl Z80Data {
+    pub fn new() -> Self {
         Self {
             A: 0,
             F: 0,
@@ -227,93 +228,9 @@ impl Z80 {
 
             cycles: 0,
 
-            memory,
-            ports,
             debug: false,
-
-            tables: Z80Tables::new(),
         }
     }
-    pub fn save_state(&self, backup: &mut Z80) {
-        (
-            backup.A, backup.F, backup.B, backup.C, backup.D, backup.E, backup.H, backup.L,
-        ) = (
-            self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L,
-        );
-
-        (
-            backup.A_, backup.F_, backup.B_, backup.C_, backup.D_, backup.E_, backup.H_, backup.L_,
-        ) = (
-            self.A_, self.F_, self.B_, self.C_, self.D_, self.E_, self.H_, self.L_,
-        );
-
-        (backup.IXH, backup.IXL, backup.IYH, backup.IYL) = (self.IXH, self.IXL, self.IYH, self.IYL);
-
-        (
-            backup.sp,
-            backup.I,
-            backup.R,
-            backup.R7,
-            backup.pc,
-            backup.IFF1,
-            backup.IFF2,
-            backup.IM,
-        ) = (
-            self.sp, self.I, self.R, self.R7, self.pc, self.IFF1, self.IFF2, self.IM,
-        );
-
-        backup.t_states = self.t_states;
-
-        backup.halted = self.halted;
-        backup.interrupts_enabled_at = self.interrupts_enabled_at;
-
-        backup.event_next_event = self.event_next_event;
-        backup.t_states = self.t_states;
-        backup.temp_addr = self.temp_addr;
-        backup.rzx_instructions_offset = self.rzx_instructions_offset;
-        backup.cycles = self.cycles;
-    }
-
-    pub fn restore_state(&mut self, backup: &Z80) {
-        (
-            self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L,
-        ) = (
-            backup.A, backup.F, backup.B, backup.C, backup.D, backup.E, backup.H, backup.L,
-        );
-
-        (
-            self.A_, self.F_, self.B_, self.C_, self.D_, self.E_, self.H_, self.L_,
-        ) = (
-            backup.A_, backup.F_, backup.B_, backup.C_, backup.D_, backup.E_, backup.H_, backup.L_,
-        );
-
-        (self.IXH, self.IXL, self.IYH, self.IYL) = (backup.IXH, backup.IXL, backup.IYH, backup.IYL);
-
-        (
-            self.sp, self.I, self.R, self.R7, self.pc, self.IFF1, self.IFF2, self.IM,
-        ) = (
-            backup.sp,
-            backup.I,
-            backup.R,
-            backup.R7,
-            backup.pc,
-            backup.IFF1,
-            backup.IFF2,
-            backup.IM,
-        );
-
-        self.t_states = backup.t_states;
-
-        self.halted = backup.halted;
-        self.interrupts_enabled_at = backup.interrupts_enabled_at;
-
-        self.event_next_event = backup.event_next_event;
-        self.t_states = backup.t_states;
-        self.temp_addr = backup.temp_addr;
-        self.rzx_instructions_offset = backup.rzx_instructions_offset;
-        self.cycles = backup.cycles;
-    }
-    // Reset resets the Z80.
     pub fn reset(&mut self) {
         (
             self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L,
@@ -332,48 +249,79 @@ impl Z80 {
         self.halted = false;
         self.interrupts_enabled_at = 0;
     }
+}
+impl Default for Z80Data {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[allow(non_snake_case)]
+pub struct Z80 {
+    pub(crate) data: Z80Data,
+
+    pub(crate) tables: Z80Tables,
+    pub(crate) memory: Memory,
+    ports: Ports,
+}
+
+#[allow(non_snake_case)]
+impl Z80 {
+    pub fn new(memory: Memory, ports: Ports) -> Self {
+        Self {
+            data: Z80Data::default(),
+            memory,
+            ports,
+            tables: Z80Tables::new(),
+        }
+    }
+
+    // Reset resets the Z80.
+    pub fn reset(&mut self) {
+        self.data.reset();
+    }
     pub fn reset_cycles(&mut self) {
-        self.cycles = 0;
+        self.data.cycles = 0;
     }
     pub fn get_cycles(&self) -> u64 {
-        self.cycles
+        self.data.cycles
     }
     pub fn is_halted(&self) -> bool {
-        self.halted
+        self.data.halted
     }
     // Interrupt process a Z80 maskable interrupt
     pub fn interrupt(&mut self) {
-        if self.IFF1 != 0 {
-            if self.halted {
-                self.pc += 1;
-                self.halted = false;
+        if self.data.IFF1 != 0 {
+            if self.data.halted {
+                self.data.pc += 1;
+                self.data.halted = false;
             }
 
-            self.t_states += 7;
+            self.data.t_states += 7;
 
-            self.R = (self.R + 1) & 0x7f;
-            (self.IFF1, self.IFF2) = (0, 0);
+            self.data.R = (self.data.R + 1) & 0x7f;
+            (self.data.IFF1, self.data.IFF2) = (0, 0);
 
             // push PC
             {
-                let (pch, pcl) = split_word(self.pc);
+                let (pch, pcl) = split_word(self.data.pc);
 
-                self.sp -= 1;
-                self.memory.write_byte(self.sp, pch);
-                self.sp -= 1;
-                self.memory.write_byte(self.sp, pcl);
+                self.data.sp -= 1;
+                self.memory.write_byte(self.data.sp, pch);
+                self.data.sp -= 1;
+                self.memory.write_byte(self.data.sp, pcl);
             }
 
-            match self.IM {
+            match self.data.IM {
                 0 | 1 => {
-                    self.pc = 0x0038;
+                    self.data.pc = 0x0038;
                 }
                 2 => {
-                    let mut int_temp: u16 = ((self.I as u16) << 8) | 0xff;
+                    let mut int_temp: u16 = ((self.data.I as u16) << 8) | 0xff;
                     let pcl = self.memory.read_byte(int_temp);
                     int_temp += 1;
                     let pch = self.memory.read_byte(int_temp);
-                    self.pc = join_bytes(pch, pcl);
+                    self.data.pc = join_bytes(pch, pcl);
                 }
                 _ => {
                     panic!("Unknown interrupt mode");
@@ -383,62 +331,63 @@ impl Z80 {
     }
     // Process a Z80 non-maskable interrupt.
     pub fn non_maskable_interrupt(&mut self) {
-        if self.halted {
-            self.pc += 1;
-            self.halted = false;
+        if self.data.halted {
+            self.data.pc += 1;
+            self.data.halted = false;
         }
 
-        self.t_states += 7;
+        self.data.t_states += 7;
 
-        self.R = (self.R + 1) & 0x7f;
-        (self.IFF1, self.IFF2) = (0, 0);
+        self.data.R = (self.data.R + 1) & 0x7f;
+        (self.data.IFF1, self.data.IFF2) = (0, 0);
 
         // push PC
         {
-            let (pch, pcl) = split_word(self.pc);
+            let (pch, pcl) = split_word(self.data.pc);
 
-            self.sp -= 1;
-            self.memory.write_byte(self.sp, pch);
-            self.sp -= 1;
-            self.memory.write_byte(self.sp, pcl);
+            self.data.sp -= 1;
+            self.memory.write_byte(self.data.sp, pch);
+            self.data.sp -= 1;
+            self.memory.write_byte(self.data.sp, pcl);
         }
 
-        self.pc = 0x0066;
+        self.data.pc = 0x0066;
     }
     pub fn jp(&mut self) {
-        let mut jp_temp: u16 = self.pc;
+        let mut jp_temp: u16 = self.data.pc;
         let pcl = self.memory.read_byte(jp_temp);
         jp_temp += 1;
         let pch = self.memory.read_byte(jp_temp);
-        self.pc = join_bytes(pch, pcl);
+        self.data.pc = join_bytes(pch, pcl);
     }
 
     pub fn dec(&mut self, value: &mut u8) {
-        self.F = self.F & FLAG_C | tern_op_b((*value & 0x0f) != 0, 0, FLAG_H) | FLAG_N;
+        self.data.F = self.data.F & FLAG_C | tern_op_b((*value & 0x0f) != 0, 0, FLAG_H) | FLAG_N;
         *value = (*value).wrapping_sub(1);
-        self.F |= tern_op_b(*value == 0x7f, FLAG_V, 0) | self.tables.sz53_table[*value as usize];
+        self.data.F |=
+            tern_op_b(*value == 0x7f, FLAG_V, 0) | self.tables.sz53_table[*value as usize];
     }
 
     pub fn inc(&mut self, value: &mut u8) {
         *value = (*value).wrapping_add(1);
-        self.F = (self.F & FLAG_C)
+        self.data.F = (self.data.F & FLAG_C)
             | tern_op_b(*value == 0x80, FLAG_V, 0)
             | tern_op_b((*value & 0x0f) != 0, 0, FLAG_H)
             | self.tables.sz53_table[*value as usize];
     }
     pub fn jr(&mut self) {
-        let jr_temp: i16 = sign_extend(self.memory.read_byte(self.pc));
-        self.memory.contend_read_no_mreq_loop(self.pc, 1, 5);
-        self.pc = self.pc.wrapping_add(jr_temp as u16);
+        let jr_temp: i16 = sign_extend(self.memory.read_byte(self.data.pc));
+        self.memory.contend_read_no_mreq_loop(self.data.pc, 1, 5);
+        self.data.pc = self.data.pc.wrapping_add(jr_temp as u16);
     }
 
     pub fn ld16nnrr(&mut self, reg_l: u8, reg_h: u8) {
         let mut ld_temp: u16;
 
-        ld_temp = self.memory.read_byte(self.pc) as u16;
-        self.pc += 1;
-        ld_temp |= (self.memory.read_byte(self.pc) as u16) << 8;
-        self.pc += 1;
+        ld_temp = self.memory.read_byte(self.data.pc) as u16;
+        self.data.pc += 1;
+        ld_temp |= (self.memory.read_byte(self.data.pc) as u16) << 8;
+        self.data.pc += 1;
         self.memory.write_byte(ld_temp, reg_l);
         ld_temp += 1;
         self.memory.write_byte(ld_temp, reg_h);
@@ -447,10 +396,10 @@ impl Z80 {
     // pub fn ld16rrnn(&mut self, reg_l: &mut u8, reg_h: &mut u8) {
     //     let mut ld_temp: u16;
 
-    //     ld_temp = self.memory.ReadByte(self.pc) as u16;
-    //     self.pc += 1;
-    //     ld_temp |= (self.memory.ReadByte(self.pc) as u16) << 8;
-    //     self.pc += 1;
+    //     ld_temp = self.memory.ReadByte(self.data.pc) as u16;
+    //     self.data.pc += 1;
+    //     ld_temp |= (self.memory.ReadByte(self.data.pc) as u16) << 8;
+    //     self.data.pc += 1;
     //     *reg_l = self.memory.ReadByte(ld_temp);
     //     ld_temp += 1;
     //     *reg_h = self.memory.ReadByte(ld_temp);
@@ -460,10 +409,10 @@ impl Z80 {
     pub fn ld16rrnn_ex(&mut self) -> (u8, u8) {
         let mut ld_temp: u16;
 
-        ld_temp = self.memory.read_byte(self.pc) as u16;
-        self.pc += 1;
-        ld_temp |= (self.memory.read_byte(self.pc) as u16) << 8;
-        self.pc += 1;
+        ld_temp = self.memory.read_byte(self.data.pc) as u16;
+        self.data.pc += 1;
+        ld_temp |= (self.memory.read_byte(self.data.pc) as u16) << 8;
+        self.data.pc += 1;
         let reg_l = self.memory.read_byte(ld_temp);
         ld_temp += 1;
         let reg_h = self.memory.read_byte(ld_temp);
@@ -471,48 +420,49 @@ impl Z80 {
     }
 
     pub fn sub(&mut self, value: u8) {
-        let sub_temp: u16 = (self.A as u16).wrapping_sub(value as u16);
+        let sub_temp: u16 = (self.data.A as u16).wrapping_sub(value as u16);
         let lookup: u8 =
-            ((self.A & 0x88) >> 3) | ((value & 0x88) >> 2) | (((sub_temp & 0x88) >> 1) as u8);
-        self.A = sub_temp as u8;
-        self.F = tern_op_b(sub_temp & 0x100 != 0, FLAG_C, 0)
+            ((self.data.A & 0x88) >> 3) | ((value & 0x88) >> 2) | (((sub_temp & 0x88) >> 1) as u8);
+        self.data.A = sub_temp as u8;
+        self.data.F = tern_op_b(sub_temp & 0x100 != 0, FLAG_C, 0)
             | FLAG_N
             | HALF_CARRY_SUB_TABLE[(lookup & 0x07) as usize]
             | OVERFLOW_SUB_TABLE[(lookup >> 4) as usize]
-            | self.tables.sz53_table[self.A as usize];
+            | self.tables.sz53_table[self.data.A as usize];
     }
 
     pub fn and(&mut self, value: u8) {
-        self.A &= value;
-        self.F = FLAG_H | self.tables.sz53p_table[self.A as usize];
+        self.data.A &= value;
+        self.data.F = FLAG_H | self.tables.sz53p_table[self.data.A as usize];
     }
 
     pub fn adc(&mut self, value: u8) {
-        let adc_temp: u16 = (self.A as u16) + (value as u16) + (((self.F) & FLAG_C) as u16);
-        let lookup: u8 = (((self.A as u16) & 0x88) >> 3
+        let adc_temp: u16 =
+            (self.data.A as u16) + (value as u16) + (((self.data.F) & FLAG_C) as u16);
+        let lookup: u8 = (((self.data.A as u16) & 0x88) >> 3
             | ((value as u16) & 0x88) >> 2
             | (adc_temp & 0x88) >> 1) as u8;
 
-        self.A = adc_temp as u8;
+        self.data.A = adc_temp as u8;
 
-        self.F = tern_op_b((adc_temp & 0x100) != 0, FLAG_C, 0)
+        self.data.F = tern_op_b((adc_temp & 0x100) != 0, FLAG_C, 0)
             | HALF_CARRY_ADD_TABLE[(lookup & 0x07) as usize]
             | OVERFLOW_ADD_TABLE[(lookup >> 4) as usize]
-            | self.tables.sz53_table[self.A as usize];
+            | self.tables.sz53_table[self.data.A as usize];
     }
 
     pub fn adc16(&mut self, value: u16) {
         let add16_temp: usize =
-            (self.HL() as usize) + (value as usize) + ((self.F & FLAG_C) as usize);
+            (self.HL() as usize) + (value as usize) + ((self.data.F & FLAG_C) as usize);
         let lookup: u8 = ((((self.HL()) & 0x8800) >> 11) as usize
             | (((value) & 0x8800) >> 10) as usize
             | (add16_temp & 0x8800) >> 9) as u8;
 
         self.SetHL(add16_temp as u16);
 
-        self.F = tern_op_b((add16_temp & 0x10000) != 0, FLAG_C, 0)
+        self.data.F = tern_op_b((add16_temp & 0x10000) != 0, FLAG_C, 0)
             | OVERFLOW_ADD_TABLE[(lookup >> 4) as usize]
-            | self.H & (FLAG_3 | FLAG_5 | FLAG_S)
+            | self.data.H & (FLAG_3 | FLAG_5 | FLAG_S)
             | HALF_CARRY_ADD_TABLE[(lookup & 0x07) as usize]
             | tern_op_b(self.HL() != 0, 0, FLAG_Z);
     }
@@ -525,104 +475,104 @@ impl Z80 {
 
         value1.set(add16_temp as u16);
 
-        self.F = self.F & (FLAG_V | FLAG_Z | FLAG_S)
+        self.data.F = self.data.F & (FLAG_V | FLAG_Z | FLAG_S)
             | tern_op_b((add16_temp & 0x10000) != 0, FLAG_C, 0)
             | ((add16_temp >> 8) as u8) & (FLAG_3 | FLAG_5)
             | HALF_CARRY_ADD_TABLE[lookup as usize];
     }
 
     pub fn add(&mut self, value: u8) {
-        let add_temp: usize = (self.A as usize) + (value as usize);
+        let add_temp: usize = (self.data.A as usize) + (value as usize);
         let lookup: u8 =
-            ((self.A & 0x88) >> 3) | ((value & 0x88) >> 2) | (((add_temp & 0x88) >> 1) as u8);
-        self.A = add_temp as u8;
-        self.F = tern_op_b(add_temp & 0x100 != 0, FLAG_C, 0)
+            ((self.data.A & 0x88) >> 3) | ((value & 0x88) >> 2) | (((add_temp & 0x88) >> 1) as u8);
+        self.data.A = add_temp as u8;
+        self.data.F = tern_op_b(add_temp & 0x100 != 0, FLAG_C, 0)
             | HALF_CARRY_ADD_TABLE[(lookup & 0x07) as usize]
             | OVERFLOW_ADD_TABLE[(lookup >> 4) as usize]
-            | self.tables.sz53_table[self.A as usize];
+            | self.tables.sz53_table[self.data.A as usize];
     }
 
     pub fn or(&mut self, value: u8) {
-        self.A |= value;
-        self.F = self.tables.sz53p_table[self.A as usize];
+        self.data.A |= value;
+        self.data.F = self.tables.sz53p_table[self.data.A as usize];
     }
 
     /// return reg_l, reg_h
     pub fn pop16(&mut self) -> (u8, u8) {
-        let reg_l = self.memory.read_byte(self.sp);
-        self.sp += 1;
-        let reg_h = self.memory.read_byte(self.sp);
-        self.sp += 1;
+        let reg_l = self.memory.read_byte(self.data.sp);
+        self.data.sp += 1;
+        let reg_h = self.memory.read_byte(self.data.sp);
+        self.data.sp += 1;
         (reg_l, reg_h)
     }
 
     pub fn push16(&mut self, reg_l: u8, reg_h: u8) {
-        // self.sp -= 1;
-        self.sp = self.sp.wrapping_sub(1);
-        self.memory.write_byte(self.sp, reg_h);
-        // self.sp -= 1;
-        self.sp = self.sp.wrapping_sub(1);
-        self.memory.write_byte(self.sp, reg_l);
+        // self.data.sp -= 1;
+        self.data.sp = self.data.sp.wrapping_sub(1);
+        self.memory.write_byte(self.data.sp, reg_h);
+        // self.data.sp -= 1;
+        self.data.sp = self.data.sp.wrapping_sub(1);
+        self.memory.write_byte(self.data.sp, reg_l);
     }
 
     pub fn ret(&mut self) {
         let (pcl, pch) = self.pop16();
-        // let old_pc = self.pc;
-        self.pc = join_bytes(pch, pcl);
-        // println!("z80:ret 0x{:04x} -> 0x{:04x}", old_pc, self.pc);
+        // let old_pc = self.data.pc;
+        self.data.pc = join_bytes(pch, pcl);
+        // println!("z80:ret 0x{:04x} -> 0x{:04x}", old_pc, self.data.pc);
     }
 
     pub fn rl(&mut self, mut value: u8) -> u8 {
         let rl_temp = value;
-        value = (value << 1) | (self.F & FLAG_C);
-        self.F = (rl_temp >> 7) | self.tables.sz53p_table[value as usize];
+        value = (value << 1) | (self.data.F & FLAG_C);
+        self.data.F = (rl_temp >> 7) | self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn rlc(&mut self, mut value: u8) -> u8 {
         value = value.rotate_left(1);
-        self.F = (value & FLAG_C) | self.tables.sz53p_table[value as usize];
+        self.data.F = (value & FLAG_C) | self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn rr(&mut self, mut value: u8) -> u8 {
         let rr_temp = value;
-        value = (value >> 1) | (self.F << 7);
-        self.F = (rr_temp & FLAG_C) | self.tables.sz53p_table[value as usize];
+        value = (value >> 1) | (self.data.F << 7);
+        self.data.F = (rr_temp & FLAG_C) | self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn rrc(&mut self, mut value: u8) -> u8 {
-        self.F = value & FLAG_C;
+        self.data.F = value & FLAG_C;
         value = value.rotate_right(1);
-        self.F |= self.tables.sz53p_table[value as usize];
+        self.data.F |= self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn rst(&mut self, value: u8) {
-        let (pch, pcl) = split_word(self.pc);
+        let (pch, pcl) = split_word(self.data.pc);
         self.push16(pcl, pch);
-        self.pc = value as u16;
+        self.data.pc = value as u16;
     }
 
     pub fn sbc(&mut self, value: u8) {
-        let sbc_temp: u16 = (self.A as u16)
+        let sbc_temp: u16 = (self.data.A as u16)
             .wrapping_sub(value as u16)
-            .wrapping_sub((self.F & FLAG_C) as u16);
+            .wrapping_sub((self.data.F & FLAG_C) as u16);
         let lookup: u8 =
-            ((self.A & 0x88) >> 3) | ((value & 0x88) >> 2) | ((sbc_temp & 0x88) >> 1) as u8;
-        self.A = sbc_temp as u8;
-        self.F = tern_op_b((sbc_temp & 0x100) != 0, FLAG_C, 0)
+            ((self.data.A & 0x88) >> 3) | ((value & 0x88) >> 2) | ((sbc_temp & 0x88) >> 1) as u8;
+        self.data.A = sbc_temp as u8;
+        self.data.F = tern_op_b((sbc_temp & 0x100) != 0, FLAG_C, 0)
             | FLAG_N
             | HALF_CARRY_SUB_TABLE[lookup as usize & 0x07]
             | OVERFLOW_SUB_TABLE[(lookup >> 4) as usize]
-            | self.tables.sz53_table[self.A as usize];
+            | self.tables.sz53_table[self.data.A as usize];
     }
 
     pub fn sbc16(&mut self, value: u16) {
         let sub16_temp: usize = (self.HL() as usize)
             .wrapping_sub(value as usize)
-            .wrapping_sub((self.F & FLAG_C) as usize);
+            .wrapping_sub((self.data.F & FLAG_C) as usize);
         let lookup: u8 = ((self.HL() & 0x8800) >> 11
             | (value & 0x8800) >> 10
             | ((sub16_temp as u16) & 0x8800) >> 9)
@@ -631,85 +581,86 @@ impl Z80 {
 
         self.SetHL(sub16_temp as u16);
 
-        self.F = tern_op_b((sub16_temp & 0x10000) != 0, FLAG_C, 0)
+        self.data.F = tern_op_b((sub16_temp & 0x10000) != 0, FLAG_C, 0)
             | FLAG_N
             | OVERFLOW_SUB_TABLE[lookup as usize >> 4]
-            | self.H & (FLAG_3 | FLAG_5 | FLAG_S)
+            | self.data.H & (FLAG_3 | FLAG_5 | FLAG_S)
             | HALF_CARRY_SUB_TABLE[(lookup & 0x07) as usize]
             | tern_op_b(self.HL() != 0, 0, FLAG_Z);
     }
 
     pub fn sla(&mut self, mut value: u8) -> u8 {
-        self.F = value >> 7;
+        self.data.F = value >> 7;
         value <<= 1;
-        self.F |= self.tables.sz53p_table[value as usize];
+        self.data.F |= self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn sll(&mut self, mut value: u8) -> u8 {
-        self.F = value >> 7;
+        self.data.F = value >> 7;
         value = (value << 1) | 0x01;
-        self.F |= self.tables.sz53p_table[value as usize];
+        self.data.F |= self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn sra(&mut self, mut value: u8) -> u8 {
-        self.F = value & FLAG_C;
+        self.data.F = value & FLAG_C;
         value = (value & 0x80) | (value >> 1);
-        self.F |= self.tables.sz53p_table[value as usize];
+        self.data.F |= self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn srl(&mut self, mut value: u8) -> u8 {
-        self.F = value & FLAG_C;
+        self.data.F = value & FLAG_C;
         value >>= 1;
-        self.F |= self.tables.sz53p_table[value as usize];
+        self.data.F |= self.tables.sz53p_table[value as usize];
         value
     }
 
     pub fn xor(&mut self, value: u8) {
-        self.A ^= value;
-        self.F = self.tables.sz53p_table[self.A as usize];
+        self.data.A ^= value;
+        self.data.F = self.tables.sz53p_table[self.data.A as usize];
     }
 
     pub fn bit(&mut self, bit: u8, value: u8) {
-        self.F = self.F & FLAG_C | FLAG_H | value & (FLAG_3 | FLAG_5);
+        self.data.F = self.data.F & FLAG_C | FLAG_H | value & (FLAG_3 | FLAG_5);
         if value & (0x01 << bit) == 0 {
-            self.F |= FLAG_P | FLAG_Z;
+            self.data.F |= FLAG_P | FLAG_Z;
         }
         if bit == 7 && (value & 0x80) != 0 {
-            self.F |= FLAG_S;
+            self.data.F |= FLAG_S;
         }
     }
 
     pub fn biti(&mut self, bit: u8, value: u8, address: u16) {
-        self.F = self.F & FLAG_C | FLAG_H | (address >> 8) as u8 & (FLAG_3 | FLAG_5);
+        self.data.F = self.data.F & FLAG_C | FLAG_H | (address >> 8) as u8 & (FLAG_3 | FLAG_5);
         if value & (0x01 << bit) == 0 {
-            self.F |= FLAG_P | FLAG_Z;
+            self.data.F |= FLAG_P | FLAG_Z;
         }
         if (bit == 7) && (value & 0x80) != 0 {
-            self.F |= FLAG_S;
+            self.data.F |= FLAG_S;
         }
     }
 
     pub fn call(&mut self) {
-        let call_temp_l: u8 = self.memory.read_byte(self.pc);
-        self.pc += 1;
-        let call_temp_h: u8 = self.memory.read_byte(self.pc);
+        let call_temp_l: u8 = self.memory.read_byte(self.data.pc);
+        self.data.pc += 1;
+        let call_temp_h: u8 = self.memory.read_byte(self.data.pc);
         let new_pc = join_bytes(call_temp_h, call_temp_l);
-        self.memory.contend_read_no_mreq(self.pc, 1);
-        self.pc += 1;
-        let (pch, pcl) = split_word(self.pc);
+        self.memory.contend_read_no_mreq(self.data.pc, 1);
+        self.data.pc += 1;
+        let (pch, pcl) = split_word(self.data.pc);
         self.push16(pcl, pch);
-        // let old_pc = self.pc;
-        self.pc = new_pc;
-        // println!("z80:call 0x{:04x} -> 0x{:04x}", old_pc, self.pc);
+        // let old_pc = self.data.pc;
+        self.data.pc = new_pc;
+        // println!("z80:call 0x{:04x} -> 0x{:04x}", old_pc, self.data.pc);
     }
 
     pub fn cp(&mut self, value: u8) {
-        let cp_temp: u16 = (self.A as u16).wrapping_sub(value as u16);
-        let lookup: u8 = (self.A & 0x88) >> 3 | (value & 0x88) >> 2 | ((cp_temp & 0x88) >> 1) as u8;
-        self.F = tern_op_b(
+        let cp_temp: u16 = (self.data.A as u16).wrapping_sub(value as u16);
+        let lookup: u8 =
+            (self.data.A & 0x88) >> 3 | (value & 0x88) >> 2 | ((cp_temp & 0x88) >> 1) as u8;
+        self.data.F = tern_op_b(
             (cp_temp & 0x100) != 0,
             FLAG_C,
             tern_op_b(cp_temp != 0, 0, FLAG_Z),
@@ -723,12 +674,12 @@ impl Z80 {
     // pub fn in(&mut self, reg: &mut u8, port :u16) {
     // pub fn in_u8(&mut self, reg: &mut u8, port: u16) {
     //     *reg = self.readPort(port);
-    //     self.F = (self.F & FLAG_C) | self.tables.sz53pTable[*reg as usize];
+    //     self.data.F = (self.data.F & FLAG_C) | self.tables.sz53pTable[*reg as usize];
     // }
 
     pub fn in_u8_ex(&mut self, port: u16) -> u8 {
         let reg = self.read_port(port);
-        self.F = self.F & FLAG_C | self.tables.sz53p_table[reg as usize];
+        self.data.F = self.data.F & FLAG_C | self.tables.sz53p_table[reg as usize];
         reg
     }
 
@@ -744,49 +695,49 @@ impl Z80 {
 
     // PC returns the program counter.
     pub fn PC(&mut self) -> u16 {
-        self.pc
+        self.data.pc
     }
 
     // SetPC sets the program counter.
     pub fn SetPC(&mut self, value: u16) {
-        self.pc = value;
+        self.data.pc = value;
     }
 
     // IncPC increments the program counter.
     pub fn IncPC(&mut self, value: u16) {
-        self.pc += value;
+        self.data.pc += value;
     }
 
     // IncPC decrements the program counter.
     pub fn DecPC(&mut self, value: u16) {
-        self.pc -= value;
+        self.data.pc -= value;
     }
 
     // SP returns the SP register.
     pub fn SP(&mut self) -> u16 {
-        self.sp
+        self.data.sp
     }
 
     // SetSP sets the SP register.
     pub fn SetSP(&mut self, value: u16) {
-        self.sp = value;
+        self.data.sp = value;
     }
 
     // IncSP increments the SP register.
     pub fn IncSP(&mut self) {
-        self.sp += 1;
+        self.data.sp += 1;
     }
 
     // DecSP decrements the SP register.
     pub fn DecSP(&mut self) {
-        self.sp -= 1;
+        self.data.sp -= 1;
     }
 
     // IR returns the IR register.
     pub fn IR(&mut self) -> u16 {
         let mut ir: u16 = 0;
-        ir |= (self.I as u16) << 8;
-        ir |= self.R7 as u16 & 0x80 | self.R & 0x7f;
+        ir |= (self.data.I as u16) << 8;
+        ir |= self.data.R7 as u16 & 0x80 | self.data.R & 0x7f;
         ir
     }
 
@@ -797,15 +748,15 @@ impl Z80 {
 
     // Execute a single instruction at the program counter.
     pub fn do_opcode(&mut self) {
-        self.memory.contend_read(self.pc, 4);
-        let opcode = self.memory.read_byte_internal(self.pc);
-        self.R = (self.R + 1) & 0x7f;
-        self.pc += 1;
-        // self.Cycles += get_timings[opcode](z80);
-        self.cycles += self.get_timings(opcode as u16);
+        self.memory.contend_read(self.data.pc, 4);
+        let opcode = self.memory.read_byte_internal(self.data.pc);
+        self.data.R = (self.data.R + 1) & 0x7f;
+        self.data.pc += 1;
+        // self.data.cycles += get_timings[opcode](z80);
+        self.data.cycles += self.get_timings(opcode as u16);
 
         // OpcodesMap[opcode](z80)
-        if self.debug {
+        if self.data.debug {
             self.disassemble_map(opcode as u16);
         }
         match opcode {
@@ -828,86 +779,86 @@ impl Z80 {
     }
 
     fn opcode_cb(&mut self) {
-        self.memory.contend_read(self.pc, 4);
-        let opcode2: u8 = self.memory.read_byte_internal(self.pc);
-        self.pc += 1;
-        self.R += 1;
+        self.memory.contend_read(self.data.pc, 4);
+        let opcode2: u8 = self.memory.read_byte_internal(self.data.pc);
+        self.data.pc += 1;
+        self.data.R += 1;
         self.execute_opcode(SHIFT_0X_CB + opcode2 as u16);
-        self.cycles += self.get_timings(SHIFT_0X_CB + opcode2 as u16);
+        self.data.cycles += self.get_timings(SHIFT_0X_CB + opcode2 as u16);
     }
 
     fn opcode_dd(&mut self) {
-        self.memory.contend_read(self.pc, 4);
-        let opcode2: u8 = self.memory.read_byte_internal(self.pc);
-        self.pc += 1;
-        self.R += 1;
+        self.memory.contend_read(self.data.pc, 4);
+        let opcode2: u8 = self.memory.read_byte_internal(self.data.pc);
+        self.data.pc += 1;
+        self.data.R += 1;
 
         match opcode2 {
             0xcb => {
-                self.memory.contend_read(self.pc, 3);
-                self.temp_addr =
-                    self.IX() + sign_extend(self.memory.read_byte_internal(self.pc)) as u16;
-                self.pc += 1;
-                self.memory.contend_read(self.pc, 3);
-                let opcode3: u8 = self.memory.read_byte_internal(self.pc);
-                self.memory.contend_read_no_mreq_loop(self.pc, 1, 2);
-                self.pc += 1;
+                self.memory.contend_read(self.data.pc, 3);
+                self.data.temp_addr =
+                    self.IX() + sign_extend(self.memory.read_byte_internal(self.data.pc)) as u16;
+                self.data.pc += 1;
+                self.memory.contend_read(self.data.pc, 3);
+                let opcode3: u8 = self.memory.read_byte_internal(self.data.pc);
+                self.memory.contend_read_no_mreq_loop(self.data.pc, 1, 2);
+                self.data.pc += 1;
                 self.execute_opcode(SHIFT_0X_DDCB + (opcode3 as u16));
-                self.cycles += self.get_timings(SHIFT_0X_DDCB + opcode3 as u16);
+                self.data.cycles += self.get_timings(SHIFT_0X_DDCB + opcode3 as u16);
             }
             _ => {
                 if self.execute_opcode(SHIFT_0X_DD + (opcode2 as u16)) {
-                    self.cycles += self.get_timings(SHIFT_0X_DD + (opcode2 as u16));
+                    self.data.cycles += self.get_timings(SHIFT_0X_DD + (opcode2 as u16));
                 } else {
                     /* Instruction did not involve H or L */
                     self.execute_opcode(opcode2 as u16);
-                    self.cycles += self.get_timings(opcode2 as u16);
+                    self.data.cycles += self.get_timings(opcode2 as u16);
                 }
             }
         }
     }
 
     fn opcode_ed(&mut self) {
-        self.memory.contend_read(self.pc, 4);
-        let opcode2: u8 = self.memory.read_byte_internal(self.pc);
-        self.pc += 1;
-        self.R += 1;
+        self.memory.contend_read(self.data.pc, 4);
+        let opcode2: u8 = self.memory.read_byte_internal(self.data.pc);
+        self.data.pc += 1;
+        self.data.R += 1;
 
-        self.cycles += self.get_timings(SHIFT_0X_ED + opcode2 as u16);
+        self.data.cycles += self.get_timings(SHIFT_0X_ED + opcode2 as u16);
         if !self.execute_opcode(SHIFT_0X_ED + opcode2 as u16) {
             self.invalid_opcode();
         }
     }
 
     fn opcode_fd(&mut self) {
-        self.memory.contend_read(self.pc, 4);
-        let opcode2: u8 = self.memory.read_byte_internal(self.pc);
-        self.pc += 1;
-        self.R += 1;
+        self.memory.contend_read(self.data.pc, 4);
+        let opcode2: u8 = self.memory.read_byte_internal(self.data.pc);
+        self.data.pc += 1;
+        self.data.R += 1;
 
         match opcode2 {
             0xcb => {
-                self.memory.contend_read(self.pc, 3);
-                self.temp_addr =
-                    self.IY() + sign_extend(self.memory.read_byte_internal(self.pc)) as u16;
-                self.pc += 1;
-                self.memory.contend_read(self.pc, 3);
-                let opcode3: u8 = self.memory.read_byte_internal(self.pc);
-                self.memory.contend_read_no_mreq_loop(self.pc, 1, 2);
-                self.pc += 1;
+                self.memory.contend_read(self.data.pc, 3);
+                self.data.temp_addr =
+                    self.IY() + sign_extend(self.memory.read_byte_internal(self.data.pc)) as u16;
+                self.data.pc += 1;
+                self.memory.contend_read(self.data.pc, 3);
+                let opcode3: u8 = self.memory.read_byte_internal(self.data.pc);
+                self.memory.contend_read_no_mreq_loop(self.data.pc, 1, 2);
+                self.data.pc += 1;
 
                 self.execute_opcode(SHIFT_0X_FDCB + (opcode3 as u16));
-                self.cycles += self.get_timings(SHIFT_0X_FDCB + (opcode3 as u16));
+                self.data.cycles += self.get_timings(SHIFT_0X_FDCB + (opcode3 as u16));
             }
 
             _ => {
                 if self.execute_opcode(SHIFT_0X_FD + opcode2 as u16) {
                     // f(z80)
-                    self.cycles += self.get_timings(SHIFT_0X_FD + opcode2 as u16);
+                    self.data.cycles += self.get_timings(SHIFT_0X_FD + opcode2 as u16);
                 } else {
                     /* Instruction did not involve H or L */
                     self.execute_opcode(opcode2 as u16);
-                    self.cycles += self.get_timings(opcode2 as u16);
+                    self.data.cycles += self.get_timings(opcode2 as u16);
                 }
             }
         }
@@ -915,5 +866,24 @@ impl Z80 {
 
     fn invalid_opcode(&mut self) {
         panic!("invalid opcode");
+    }
+
+    pub fn get_data(&self) -> Z80Data {
+        self.data.clone()
+    }
+    pub fn set_data(&mut self, data: Z80Data) {
+        self.data = data;
+    }
+    pub fn get_memory_data(&self) -> MemoryData {
+        self.memory.get_data()
+    }
+    pub fn set_memory_data(&mut self, data: MemoryData) {
+        self.memory.set_data(data);
+    }
+    pub fn get_ppi_data(&self) -> PPIData {
+        self.memory.get_ppi_data()
+    }
+    pub fn set_ppi_data(&mut self, data: PPIData) {
+        self.memory.set_ppi_data(data);
     }
 }

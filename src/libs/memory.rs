@@ -1,10 +1,12 @@
 use std::io::Read;
 use std::{cell::RefCell, fs::File, rc::Rc};
 
+use serde::{Deserialize, Serialize};
+
 use crate::libs::cartridges::MapperKonami4;
 
 use super::cartridges::{get_cart_type, CartType, MapperASCII8, MapperKonami5};
-use super::ppi::PPI;
+use super::ppi::{PPIData, PPI};
 
 pub struct NullMapper {}
 impl Default for NullMapper {
@@ -35,13 +37,34 @@ pub trait Mapper {
     fn write_byte(&mut self, address: u16, value: u8);
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[allow(non_snake_case)]
+pub struct MemoryData {
+    pub(crate) contents: Vec<u8>, //[u8; 4 * 4 * 0x4000],
+    pub(crate) can_write: [bool; 4 * 4],
+    pub(crate) slot_mapper: isize,
+}
+impl Default for MemoryData {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MemoryData {
+    pub fn new() -> Self {
+        Self {
+            contents: vec![0; 4 * 4 * 0x4000],
+            can_write: [true; 4 * 4],
+            slot_mapper: -1,
+        }
+    }
+}
+
 // TODO: Secondary mapper (0xFFFF)
 pub type MemoryAccessor = Rc<RefCell<Memory>>;
 
 pub struct Memory {
-    contents: Vec<u8>, //[u8; 4 * 4 * 0x4000],
-    can_write: [bool; 4 * 4],
-    slot_mapper: isize,
+    pub(crate) data: MemoryData,
     pub(crate) ppi: Rc<RefCell<PPI>>,
     mapper: Rc<RefCell<dyn Mapper>>,
 }
@@ -49,29 +72,27 @@ pub struct Memory {
 impl Memory {
     pub fn new(ppi: Rc<RefCell<PPI>>) -> Self {
         Self {
-            contents: vec![0; 4 * 4 * 0x4000],
-            can_write: [true; 4 * 4],
-            slot_mapper: -1,
+            data: MemoryData::default(),
             ppi,
             mapper: Rc::new(RefCell::new(NullMapper::new())),
         }
     }
-    pub fn save_state(&self) -> Memory {
-        let mut m = Memory::new(self.ppi.clone());
-        m.contents = self.contents.clone();
-        m.can_write = self.can_write;
-        m.slot_mapper = self.slot_mapper;
-        // m.mapper = self.mapper;
-        m.mapper = self.mapper.clone();
-        m
-    }
-    pub fn restore_state(&mut self, m: Memory) {
-        self.contents = m.contents.clone();
-        self.can_write = m.can_write;
-        self.slot_mapper = m.slot_mapper;
-        self.mapper = m.mapper.clone();
-        self.ppi = m.ppi;
-    }
+    // pub fn save_state(&self) -> Memory {
+    //     let mut m = Memory::new(self.ppi.clone());
+    //     m.contents = self.contents.clone();
+    //     m.can_write = self.can_write;
+    //     m.slot_mapper = self.slot_mapper;
+    //     // m.mapper = self.mapper;
+    //     m.mapper = self.mapper.clone();
+    //     m
+    // }
+    // pub fn restore_state(&mut self, m: Memory) {
+    //     self.contents = m.contents.clone();
+    //     self.can_write = m.can_write;
+    //     self.slot_mapper = m.slot_mapper;
+    //     self.mapper = m.mapper.clone();
+    //     self.ppi = m.ppi;
+    // }
     pub fn load_bios_basic(&mut self, fname: &str) {
         let mut f = File::open(fname).unwrap();
         let mut buffer = Vec::new();
@@ -156,14 +177,14 @@ impl Memory {
     // Loads 16k (one page)
     pub fn load(&mut self, data: &[u8], page: usize, slot: usize) {
         let base_addr = (page * 4 + slot) * 0x4000;
-        self.contents[base_addr..(0x4000 + base_addr)].copy_from_slice(&data[..0x4000]);
-        self.can_write[page * 4 + slot] = false;
+        self.data.contents[base_addr..(0x4000 + base_addr)].copy_from_slice(&data[..0x4000]);
+        self.data.can_write[page * 4 + slot] = false;
     }
 
     pub fn set_mapper(&mut self, mapper: Rc<RefCell<dyn Mapper>>, slot: usize) {
         log::info!("Loading MegaROM in slot {}", slot);
         self.mapper = mapper;
-        self.slot_mapper = slot as isize;
+        self.data.slot_mapper = slot as isize;
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
@@ -174,15 +195,18 @@ impl Memory {
     // into account contention.
     pub fn read_byte_internal(&self, address: u16) -> u8 {
         let page = (address / 0x4000) as usize;
-        let slot = self.ppi.borrow().pg_slots[page];
+        let slot = self.ppi.borrow().data.pg_slots[page];
 
-        if !self.mapper.borrow().is_void() && self.slot_mapper == slot && (page == 1 || page == 2) {
+        if !self.mapper.borrow().is_void()
+            && self.data.slot_mapper == slot
+            && (page == 1 || page == 2)
+        {
             return self.mapper.borrow().read_byte(address);
         }
 
         let delta = (address as usize) - page * 0x4000;
         // return self.contents[page][slot as usize][delta];
-        self.contents[(page * 4 + slot as usize) * 0x4000 + delta]
+        self.data.contents[(page * 4 + slot as usize) * 0x4000 + delta]
     }
 
     // WriteByte writes a byte at address taking into account
@@ -195,17 +219,20 @@ impl Memory {
     // into account contention.
     fn write_byte_internal(&mut self, address: u16, value: u8) {
         let page = (address / 0x4000) as usize;
-        let slot = self.ppi.borrow().pg_slots[page];
+        let slot = self.ppi.borrow().data.pg_slots[page];
 
-        if !self.mapper.borrow().is_void() && self.slot_mapper == slot && (page == 1 || page == 2) {
+        if !self.mapper.borrow().is_void()
+            && self.data.slot_mapper == slot
+            && (page == 1 || page == 2)
+        {
             self.mapper.borrow_mut().write_byte(address, value);
             return;
         }
 
-        if self.can_write[page * 4 + slot as usize] {
+        if self.data.can_write[page * 4 + slot as usize] {
             let delta = (address as usize) - page * 0x4000;
             // return self.contents[page][slot as usize][delta];
-            self.contents[(page * 4 + slot as usize) * 0x4000 + delta] = value;
+            self.data.contents[(page * 4 + slot as usize) * 0x4000 + delta] = value;
         }
     }
 
@@ -227,5 +254,17 @@ impl Memory {
 
     pub fn contend_write_no_mreq_loop(&mut self, _address: u16, _time: isize, _count: usize) {
         //panic("ContendWriteNoMreq_loop not implemented")
+    }
+    pub fn get_data(&self) -> MemoryData {
+        self.data.clone()
+    }
+    pub fn set_data(&mut self, data: MemoryData) {
+        self.data = data;
+    }
+    pub fn get_ppi_data(&self) -> PPIData {
+        self.ppi.borrow().get_data()
+    }
+    pub fn set_ppi_data(&mut self, data: PPIData) {
+        self.ppi.borrow_mut().set_data(data);
     }
 }

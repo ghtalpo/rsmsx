@@ -1,14 +1,29 @@
+use std::fs;
 use std::{cell::RefCell, rc::Rc};
 
+use serde::{Deserialize, Serialize};
+
 use macroquad::prelude::*;
-
-use super::{vdp::Vdp, z80::z80_base::Z80};
-
 use macroquad::ui::{hash, root_ui};
+
+use super::memory::MemoryData;
+use super::ppi::PPIData;
+use super::vdp::{Vdp, VdpData};
+use super::z80::z80_base::{Z80Data, Z80};
+// use super::{vdp::Vdp, z80::z80_base::Z80};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SaveData {
+    z80: Z80Data,
+    memory: MemoryData,
+    ppi: PPIData,
+    vdp: VdpData,
+}
 
 const CYCLES_PER_FRAME: u64 = 60000; // The z80 runs at 3.58 Mhz. Every 16msec 57280 cycles pass.
 const NANO_SEC_PER_SEC: u32 = 1_000_000_000;
 const MILLIS_PER_NANO_SEC: u32 = 1_000_000;
+const SAVE_FILE_PATH: &str = "msx.save";
 
 fn nanoseconds() -> i64 {
     (get_time() * NANO_SEC_PER_SEC as f64) as i64
@@ -105,24 +120,37 @@ impl MSX {
     }
 
     pub fn cpu_frame(&mut self) {
-        self.cpu_z80.cycles %= CYCLES_PER_FRAME;
-        while self.cpu_z80.cycles < CYCLES_PER_FRAME {
-            if self.cpu_z80.halted {
+        self.cpu_z80.data.cycles %= CYCLES_PER_FRAME;
+        while self.cpu_z80.data.cycles < CYCLES_PER_FRAME {
+            if self.cpu_z80.data.halted {
                 break;
             }
             self.cpu_z80.do_opcode();
         }
 
-        if self.vdp.borrow().enabled_interrupts {
+        if self.vdp.borrow().data.enabled_interrupts {
             self.vdp.borrow_mut().set_frame_flag();
             self.cpu_z80.interrupt();
         }
     }
     fn save(&mut self) {
-        println!("save");
+        let data = SaveData {
+            z80: self.cpu_z80.get_data(),
+            memory: self.cpu_z80.get_memory_data(),
+            ppi: self.cpu_z80.get_ppi_data(),
+            vdp: self.vdp.borrow().get_data(),
+        };
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        fs::write(SAVE_FILE_PATH, serialized).unwrap();
     }
     fn load(&mut self) {
-        println!("load");
+        let contents = fs::read(SAVE_FILE_PATH).unwrap();
+        let deserialized: SaveData = serde_json::from_slice(&contents).unwrap();
+        self.cpu_z80.set_data(deserialized.z80);
+        self.cpu_z80.set_memory_data(deserialized.memory);
+        self.cpu_z80.set_ppi_data(deserialized.ppi);
+        self.vdp.borrow_mut().set_data(deserialized.vdp);
     }
 }
 

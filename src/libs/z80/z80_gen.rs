@@ -28,11 +28,11 @@ use super::z80_base::{join_bytes, split_word, tern_op_b, FLAG_C, FLAG_H, FLAG_N,
 macro_rules! fn_inc_reg {
     ($fn:tt, $r:ident) => {
         pub(crate) fn $fn(&mut self) {
-            self.$r = self.$r.wrapping_add(1);
-            self.F = self.F & FLAG_C
-                | tern_op_b(self.$r == 0x80, FLAG_V, 0)
-                | tern_op_b((self.$r & 0x0f) != 0, 0, FLAG_H)
-                | self.tables.sz53_table[self.$r as usize];
+            self.data.$r = self.data.$r.wrapping_add(1);
+            self.data.F = self.data.F & FLAG_C
+                | tern_op_b(self.data.$r == 0x80, FLAG_V, 0)
+                | tern_op_b((self.data.$r & 0x0f) != 0, 0, FLAG_H)
+                | self.tables.sz53_table[self.data.$r as usize];
         }
     };
 }
@@ -40,10 +40,11 @@ macro_rules! fn_inc_reg {
 macro_rules! fn_dec_reg {
     ($fn:tt, $r:ident) => {
         pub(crate) fn $fn(&mut self) {
-            self.F = self.F & FLAG_C | tern_op_b(self.$r & 0x0f != 0, 0, FLAG_H) | FLAG_N;
-            self.$r = self.$r.wrapping_sub(1);
-            self.F |=
-                tern_op_b(self.$r == 0x7f, FLAG_V, 0) | self.tables.sz53_table[self.$r as usize];
+            self.data.F =
+                self.data.F & FLAG_C | tern_op_b(self.data.$r & 0x0f != 0, 0, FLAG_H) | FLAG_N;
+            self.data.$r = self.data.$r.wrapping_sub(1);
+            self.data.F |= tern_op_b(self.data.$r == 0x7f, FLAG_V, 0)
+                | self.tables.sz53_table[self.data.$r as usize];
         }
     };
 }
@@ -52,7 +53,7 @@ macro_rules! fn_get_reg16 {
     ($fn:tt, $rh:ident, $rl:ident) => {
         pub(crate) fn $fn(&self) -> u16 {
             // return self.bc.get();
-            join_bytes(self.$rh, self.$rl)
+            join_bytes(self.data.$rh, self.data.$rl)
         }
     };
 }
@@ -61,7 +62,7 @@ macro_rules! fn_set_reg16 {
     ($fn:tt, $rh:ident, $rl:ident) => {
         pub(crate) fn $fn(&mut self, value: u16) {
             // return self.bc.get();
-            (self.$rh, self.$rl) = split_word(value);
+            (self.data.$rh, self.data.$rl) = split_word(value);
         }
     };
 }
