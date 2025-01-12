@@ -18,7 +18,7 @@ impl Z80 {
 
     pub(crate) fn has_hook(&self, addr: u16) -> bool {
         match addr {
-            0x471c | 0x4763 | 0x8bd1 | 0x8be4 | 0x8bea | 0x8bf1 => true,
+            0x471c | 0x4763 | 0x8bc4 | 0x8bca | 0x8bd1 | 0x8be4 | 0x8bea | 0x8bf1 => true,
             _ => false,
         }
     }
@@ -26,6 +26,8 @@ impl Z80 {
         match addr {
             0x471c => self.hook_471c(),
             0x4763 => self.hook_4763(),
+            0x8bc4 => self.hook_8bc4(),
+            0x8bca => self.hook_8bca(),
             0x8bd1 => self.hook_8bd1(),
             0x8be4 => self.hook_8be4(),
             0x8bea => self.hook_8bea(),
@@ -35,6 +37,8 @@ impl Z80 {
     }
     pub(crate) fn is_known_caller(&self, addr: u16) -> bool {
         match addr {
+            0x58b8 => true, // temp
+            0x58d0 => true, // temp
             0x5a4d => true, // loop
             0x8c72 => true, // on tick
             _ => false,
@@ -50,7 +54,6 @@ impl Z80 {
         //         ram:4722 7e              LD         A,(HL)
         self.instr_hk__LD_A_iHL();
         //         ram:4723 c9              RET
-
         true
     }
     fn hook_4763(&mut self) -> bool {
@@ -79,6 +82,29 @@ impl Z80 {
         //         ram:481c 09              ADD        HL,BC
         self.instr_hk__ADD_HL_BC();
         //         ram:481d c9              RET
+        true
+    }
+    fn hook_8bc4(&mut self) -> bool {
+        //         ram:8bc4 cd  ca  8b       CALL       sb_read_mem_for_player_8BCA                      hl <- *c290 + *c21b
+        assert!(self.call_hook(0x8BCA));
+        //                                                                                              b <- 0
+        //                                                                                              c <- *21b
+        //         ram:8bc7 7e              LD         A,(HL)
+        self.instr_hk__LD_A_iHL();
+        //         ram:8bc8 70              LD         (HL),B
+        self.instr_hk__LD_iHL_B();
+        //         ram:8bc9 c9              RET
+        //
+        true
+    }
+    fn hook_8bca(&mut self) -> bool {
+        //         ram:8bca 21  90  c2       LD         HL,DAT_ram_c290                                  hl <- *c290 + *c21b
+        self.instr_hk__LD_HL_NNNN(0xc290);
+        //                                                                                              c <- *21b
+        //         ram:8bcd cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
+        assert!(self.call_hook(0x4763));
+        //                                                                                              bc <- player_idx
+        //         ram:8bd0 c9              RET
         true
     }
     fn hook_8bd1(&mut self) -> bool {
