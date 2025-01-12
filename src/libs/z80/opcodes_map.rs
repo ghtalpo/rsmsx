@@ -32,7 +32,7 @@ use super::{
 
 macro_rules! fn_instr_ld_r16_nnnn {
     ($fn:tt, $r:ident, $fs:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.PC();
             let b1 = self.memory.read_byte(address);
             self.IncPC(1);
@@ -46,7 +46,7 @@ macro_rules! fn_instr_ld_r16_nnnn {
 
 macro_rules! fn_instr_ld_i_nnnn_r16 {
     ($fn:tt, $rl:ident, $rh:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.ld16nnrr(self.data.$rl, self.data.$rh);
         }
     };
@@ -54,7 +54,7 @@ macro_rules! fn_instr_ld_i_nnnn_r16 {
 
 macro_rules! fn_instr_ld_i_r16_r8 {
     ($fn:tt, $r16:ident, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.memory.write_byte(self.$r16(), self.data.$r8);
         }
     };
@@ -62,7 +62,7 @@ macro_rules! fn_instr_ld_i_r16_r8 {
 
 macro_rules! fn_instr_add_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.add(self.data.$r8);
         }
     };
@@ -70,7 +70,7 @@ macro_rules! fn_instr_add_r8 {
 
 macro_rules! fn_instr_adc_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.adc(self.data.$r8);
         }
     };
@@ -78,7 +78,7 @@ macro_rules! fn_instr_adc_r8 {
 
 macro_rules! fn_instr_sub_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.sub(self.data.$r8);
         }
     };
@@ -86,7 +86,7 @@ macro_rules! fn_instr_sub_r8 {
 
 macro_rules! fn_instr_sbc_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.sbc(self.data.$r8);
         }
     };
@@ -94,7 +94,7 @@ macro_rules! fn_instr_sbc_r8 {
 
 macro_rules! fn_instr_and_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.and(self.data.$r8);
         }
     };
@@ -102,7 +102,7 @@ macro_rules! fn_instr_and_r8 {
 
 macro_rules! fn_instr_xor_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.xor(self.data.$r8);
         }
     };
@@ -110,7 +110,7 @@ macro_rules! fn_instr_xor_r8 {
 
 macro_rules! fn_instr_or_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.or(self.data.$r8);
         }
     };
@@ -118,7 +118,7 @@ macro_rules! fn_instr_or_r8 {
 
 macro_rules! fn_instr_cp_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.cp(self.data.$r8);
         }
     };
@@ -126,7 +126,7 @@ macro_rules! fn_instr_cp_r8 {
 
 macro_rules! fn_instr_pop_r16 {
     ($fn:tt, $rl:ident, $rh:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             (self.data.$rl, self.data.$rh) = self.pop16();
         }
     };
@@ -134,7 +134,7 @@ macro_rules! fn_instr_pop_r16 {
 
 macro_rules! fn_instr_push_r16 {
     ($fn:tt, $rl:ident, $rh:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let _address = self.IR();
             self.memory.contend_read_no_mreq(_address, 1);
             self.push16(self.data.$rl, self.data.$rh);
@@ -144,7 +144,7 @@ macro_rules! fn_instr_push_r16 {
 
 macro_rules! fn_instr_ld_a_r16 {
     ($fn:tt, $r16:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.$r16();
             self.data.A = self.memory.read_byte(address);
         }
@@ -153,7 +153,7 @@ macro_rules! fn_instr_ld_a_r16 {
 
 macro_rules! fn_instr_ld_a_r8 {
     ($fn:tt, $r8:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.A = self.data.$r8;
         }
     };
@@ -161,7 +161,7 @@ macro_rules! fn_instr_ld_a_r8 {
 
 macro_rules! fn_instr_op_16 {
     ($fn:tt, $op:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let _address = self.IR();
             self.memory.contend_read_no_mreq_loop(_address, 1, 2);
             self.$op();
@@ -171,7 +171,7 @@ macro_rules! fn_instr_op_16 {
 
 macro_rules! fn_instr_op_8 {
     ($fn:tt, $op:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.$op();
         }
     };
@@ -179,7 +179,7 @@ macro_rules! fn_instr_op_8 {
 
 macro_rules! fn_instr_ld_r8_nn {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.PC();
             self.data.$r = self.memory.read_byte(address);
             self.IncPC(1);
@@ -189,7 +189,7 @@ macro_rules! fn_instr_ld_r8_nn {
 
 macro_rules! fn_instr_add_hl_r16 {
     ($fn:tt, $r16:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let _address = self.IR();
             self.memory.contend_read_no_mreq_loop(_address, 1, 7);
             let mut hl = Register16::new(self.data.H, self.data.L);
@@ -202,7 +202,7 @@ macro_rules! fn_instr_add_hl_r16 {
 
 macro_rules! fn_instr_ld_hl_i_nnnn {
     ($fn:tt, $rl:ident, $rh:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             (self.data.$rl, self.data.$rh) = self.ld16rrnn_ex();
         }
     };
@@ -210,7 +210,7 @@ macro_rules! fn_instr_ld_hl_i_nnnn {
 
 macro_rules! fn_instr_ld_i_reg_p_dd_r8 {
     ($fn:tt, $ri:ident, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.PC();
             let offset = self.memory.read_byte(address);
             let _address = self.PC();
@@ -224,7 +224,7 @@ macro_rules! fn_instr_ld_i_reg_p_dd_r8 {
 
 macro_rules! fn_instr_op_a_i_reg_p_dd {
     ($fn:tt, $r:ident, $op:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.PC();
             let offset: u8 = self.memory.read_byte(address);
             let _address = self.PC();
@@ -252,7 +252,7 @@ macro_rules! fn_instr_fd_op_a_i_reg_p_dd {
 
 macro_rules! fn_instr_op_i_reg_p_dd {
     ($fn:tt, $ri:ident, $op:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.PC();
             let offset: u8 = self.memory.read_byte(address);
             let _address = self.PC();
@@ -281,7 +281,7 @@ macro_rules! fn_instr_fd_op_i_reg_p_dd {
 
 macro_rules! fn_instr_ld_r_i_reg_p_dd {
     ($fn:tt, $r:ident, $ri:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let address = self.PC();
             let offset: u8 = self.memory.read_byte(address);
             let _address = self.PC();
@@ -308,7 +308,7 @@ macro_rules! fn_instr_fd_ld_r_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_op_i_reg_p_dd {
     ($fn:tt, $op:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let mut byte_temp: u8 = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             byte_temp = self.$op(byte_temp);
@@ -319,7 +319,7 @@ macro_rules! fn_instr_ddcb_op_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_rlc_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.rlc(self.data.$r);
@@ -330,7 +330,7 @@ macro_rules! fn_instr_ddcb_ld_r_rlc_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_rrc_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.rrc(self.data.$r);
@@ -341,7 +341,7 @@ macro_rules! fn_instr_ddcb_ld_r_rrc_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_rl_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.rl(self.data.$r);
@@ -352,7 +352,7 @@ macro_rules! fn_instr_ddcb_ld_r_rl_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_rr_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.rr(self.data.$r);
@@ -363,7 +363,7 @@ macro_rules! fn_instr_ddcb_ld_r_rr_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_sla_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.sla(self.data.$r);
@@ -374,7 +374,7 @@ macro_rules! fn_instr_ddcb_ld_r_sla_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_sra_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.sra(self.data.$r);
@@ -385,7 +385,7 @@ macro_rules! fn_instr_ddcb_ld_r_sra_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_sll_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.sll(self.data.$r);
@@ -396,7 +396,7 @@ macro_rules! fn_instr_ddcb_ld_r_sll_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_srl_i_reg_p_dd {
     ($fn:tt, $r:ident) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.data.$r = self.srl(self.data.$r);
@@ -407,7 +407,7 @@ macro_rules! fn_instr_ddcb_ld_r_srl_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_bit_n_i_reg_p_dd {
     ($fn:tt, $r:expr) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let byte_temp = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.biti($r, byte_temp, self.data.temp_addr);
@@ -417,7 +417,7 @@ macro_rules! fn_instr_ddcb_bit_n_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_res_n_i_reg_p_dd {
     ($fn:tt, $r:ident, $mask:expr) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr) & $mask;
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.memory.write_byte(self.data.temp_addr, self.data.$r);
@@ -427,7 +427,7 @@ macro_rules! fn_instr_ddcb_ld_r_res_n_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_res_n_i_reg_p_dd {
     ($fn:tt, $mask:expr) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let byte_temp: u8 = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.memory
@@ -438,7 +438,7 @@ macro_rules! fn_instr_ddcb_res_n_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_set_n_i_reg_p_dd {
     ($fn:tt, $mask:expr) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             let byte_temp: u8 = self.memory.read_byte(self.data.temp_addr);
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.memory
@@ -497,7 +497,7 @@ macro_rules! fn_instr_ddcb_ld_r_res_7_i_reg_p_dd {
 
 macro_rules! fn_instr_ddcb_ld_r_set_n_i_reg_p_dd {
     ($fn:tt, $r:ident, $mask:expr) => {
-        fn $fn(&mut self) {
+        pub(crate) fn $fn(&mut self) {
             self.data.$r = self.memory.read_byte(self.data.temp_addr) | $mask;
             self.memory.contend_read_no_mreq(self.data.temp_addr, 1);
             self.memory.write_byte(self.data.temp_addr, self.data.$r);
@@ -7155,7 +7155,7 @@ impl Z80 {
     }
 
     /* LD C,A */
-    fn instr__LD_C_A(&mut self) {
+    pub(crate) fn instr__LD_C_A(&mut self) {
         self.data.C = self.data.A;
     }
 
