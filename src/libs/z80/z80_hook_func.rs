@@ -252,19 +252,7 @@ impl Z80 {
         //         ram:471c 21  bd  c1       LD         HL,by_player_controller_c1bd
         self.instr_hk__LD_HL_NNNN(0xc1bd);
         //         ram:471f cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
-        assert!(
-            self.PC() == 0x471f,
-            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
-            self.PC(),
-            0x471f
-        );
         assert!(self.call_hook(0x4763));
-        assert!(
-            self.PC() == 0x4722,
-            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
-            self.PC(),
-            0x4722
-        );
         //         ram:4722 7e              LD         A,(HL)
         self.instr_hk__LD_A_iHL();
         //         ram:4723 c9              RET
@@ -306,6 +294,12 @@ impl Z80 {
         //         ram:481c 09              ADD        HL,BC
         self.instr_hk__ADD_HL_BC();
         //         ram:481d c9              RET
+        assert!(
+            self.PC() == 0x481d,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x481d
+        );
         true
     }
     fn hook_4b61(&mut self) -> bool {
@@ -316,6 +310,12 @@ impl Z80 {
         //         ram:4b67 cd ba c0        CALL       sb_fill_vram_guess_c0ba                          IN
         assert!(self.call_hook(0xc0ba));
         //         ram:4b6a c9              RET
+        assert!(
+            self.PC() == 0x4b6a,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x4b6a
+        );
         true
     }
     fn hook_6ed6(&mut self) -> bool {
@@ -331,6 +331,12 @@ impl Z80 {
         self.IncPC(1);
         if (self.data.F & FLAG_Z) != 0 {
             self.increase_cycles(11);
+            assert!(
+                self.PC() == 0x6ee0,
+                "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+                self.PC(),
+                0x6ee0
+            );
             return true;
         } else {
             self.increase_cycles(5);
@@ -429,6 +435,12 @@ impl Z80 {
         self.instr_hk__EI();
         //         ram:6f2c c9              RET
         //
+        assert!(
+            self.PC() == 0x6f2c,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x6f2c
+        );
         true
     }
     fn hook_8840(&mut self) -> bool {
@@ -477,6 +489,12 @@ impl Z80 {
         self.instr_hk__EI();
         //         ram:885f c9              RET
         //
+        assert!(
+            self.PC() == 0x885f,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x885f
+        );
         true
     }
     fn hook_8964(&mut self) -> bool {
@@ -523,6 +541,12 @@ impl Z80 {
         //         ram:8980 cd 84 89        CALL       sb_blit_ram_to_vram_guess_8984                   IN
         assert!(self.call_hook(0x8984));
         //         ram:8983 c9              RET
+        assert!(
+            self.PC() == 0x8983,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8983
+        );
         true
     }
     fn hook_8984(&mut self) -> bool {
@@ -562,6 +586,12 @@ impl Z80 {
             }
         }
         //         ram:8999 c9              RET
+        assert!(
+            self.PC() == 0x8999,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8999
+        );
         true
     }
     fn hook_899a(&mut self) -> bool {
@@ -608,6 +638,12 @@ impl Z80 {
         //         ram:89ba fb              EI
         self.instr_hk__EI();
         //         ram:89bb c9              RET
+        assert!(
+            self.PC() == 0x89bb,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x89bb
+        );
         true
     }
     fn hook_89bc(&mut self) -> bool {
@@ -631,6 +667,12 @@ impl Z80 {
         self.instr_hk__ADD_HL_DE();
         //         ram:89c6 c9              RET
         //
+        assert!(
+            self.PC() == 0x89c6,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x89c6
+        );
         true
     }
     fn hook_89c7(&mut self) -> bool {
@@ -659,9 +701,16 @@ impl Z80 {
             self.increase_cycles(10); //JP loop;
         }
         //                              l_exit                                          XREF[1]:     ram:89cb(j)
+        self.SetPC(0x89d4);
         //         ram:89d4 e1              POP        HL
         self.instr_hk__POP_HL();
         //         ram:89d5 c9              RET
+        assert!(
+            self.PC() == 0x89d5,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x89d5
+        );
         true
     }
     fn hook_89d6(&mut self) -> bool {
@@ -672,6 +721,7 @@ impl Z80 {
         self.increase_cycles(10);
         if (self.data.F & FLAG_C) == 0 {
             // JP LAB_ram_89e0;
+            self.SetPC(0x89e0);
             //                              LAB_ram_89e0                                    XREF[1]:     ram:89d8(j)
             //         ram:89e0 c6 60           ADD        A,0x60
             self.instr_hk__ADD_A_NN(0x60);
@@ -683,6 +733,7 @@ impl Z80 {
             self.IncPC(3);
             self.increase_cycles(10); //JP LAB_ram_89e2;
         }
+        self.SetPC(0x89e2);
         //                              LAB_ram_89e2                                    XREF[1]:     ram:89dd(j)
         //         ram:89e2 e5              PUSH       HL
         self.instr_hk__PUSH_HL();
@@ -709,6 +760,12 @@ impl Z80 {
         //         ram:89f3 fb              EI
         self.instr_hk__EI();
         //         ram:89f4 c9              RET
+        assert!(
+            self.PC() == 0x89f4,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x89f4
+        );
         true
     }
     fn hook_8ac9(&mut self) -> bool {
@@ -840,6 +897,12 @@ impl Z80 {
         //         ram:8b19 fb              EI
         self.instr_hk__EI();
         //         ram:8b1a c9              RET
+        assert!(
+            self.PC() == 0x8b1a,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8b1a
+        );
         true
     }
     fn hook_8b1b(&mut self) -> bool {
@@ -850,6 +913,12 @@ impl Z80 {
         //         ram:8b1f fb              EI
         self.instr_hk__EI();
         //         ram:8b20 c9              RET
+        assert!(
+            self.PC() == 0x8b20,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8b20
+        );
         true
     }
     fn hook_8b21(&mut self) -> bool {
@@ -902,6 +971,7 @@ impl Z80 {
             self.increase_cycles(10); //JP loop;
         }
         //                              l_exit_x                                        XREF[1]:     ram:8b36(j)
+        self.SetPC(0x8b3e);
         //         ram:8b3e 79              LD         A,C
         self.instr_hk__LD_A_C();
         //         ram:8b3f 87              ADD        A,A
@@ -925,6 +995,12 @@ impl Z80 {
         //         ram:8b4d cd 85 c0        CALL       sb_blit_ram_to_vram_guess_C085                   IN bc: count
         assert!(self.call_hook(0xC085));
         //         ram:8b50 c9              RET
+        assert!(
+            self.PC() == 0x8b50,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8b50
+        );
         true
     }
     fn hook_8bc4(&mut self) -> bool {
@@ -935,6 +1011,12 @@ impl Z80 {
         //         ram:8bc8 70              LD         (HL),B
         self.instr_hk__LD_iHL_B();
         //         ram:8bc9 c9              RET
+        assert!(
+            self.PC() == 0x8bc9,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8bc9
+        );
         true
     }
     fn hook_8bca(&mut self) -> bool {
@@ -943,6 +1025,12 @@ impl Z80 {
         //         ram:8bcd cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
         assert!(self.call_hook(0x4763));
         //         ram:8bd0 c9              RET
+        assert!(
+            self.PC() == 0x8bd0,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8bd0
+        );
         true
     }
     fn hook_8bd1(&mut self) -> bool {
@@ -952,6 +1040,12 @@ impl Z80 {
         //         ram:8bd4 cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
         assert!(self.call_hook(0x4763));
         //         ram:8bd7 c9              RET
+        assert!(
+            self.PC() == 0x8bd7,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8bd7
+        );
         true
     }
     fn hook_8be4(&mut self) -> bool {
@@ -963,6 +1057,12 @@ impl Z80 {
         //         ram:8be8 70              LD         (HL),B
         self.instr_hk__LD_iHL_B();
         //         ram:8be9 c9              RET
+        assert!(
+            self.PC() == 0x8be9,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8be9
+        );
         true
     }
     fn hook_8bea(&mut self) -> bool {
@@ -972,6 +1072,12 @@ impl Z80 {
         //         ram:8bed cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
         assert!(self.call_hook(0x4763));
         //         ram:8bf0 c9              RET
+        assert!(
+            self.PC() == 0x8bf0,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x8bf0
+        );
         true
     }
     fn hook_8bf1(&mut self) -> bool {
@@ -1013,6 +1119,12 @@ impl Z80 {
             }
         }
         //         ram:c093 c9              RET
+        assert!(
+            self.PC() == 0xc093,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0xc093
+        );
         true
     }
     fn hook_c094(&mut self) -> bool {
@@ -1029,6 +1141,12 @@ impl Z80 {
         //         ram:c09b d3 98           OUT        (DAT_io_0098),A
         self.instr_hk__OUT_iNN_A(DAT_io_0098);
         //         ram:c09d c9              RET
+        assert!(
+            self.PC() == 0xc09d,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0xc09d
+        );
         true
     }
     fn hook_c09e(&mut self) -> bool {
@@ -1046,6 +1164,12 @@ impl Z80 {
         self.instr_hk__OUT_iNN_A(DAT_io_0099);
         //         ram:c0a8 c9              RET
         //
+        assert!(
+            self.PC() == 0xc0a8,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0xc0a8
+        );
         true
     }
     fn hook_c0ba(&mut self) -> bool {
