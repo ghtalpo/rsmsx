@@ -6748,12 +6748,12 @@ impl Z80 {
         }
     }
     /* NOP */
-    fn instr__NOP(&mut self) {}
+    pub(crate) fn instr__NOP(&mut self) {}
     /* LD BC,nnnn */
     fn_instr_ld_r16_nnnn!(instr__LD_BC_NNNN, BC, SetBC);
 
     /* LD (BC),A */
-    fn instr__LD_iBC_A(&mut self) {
+    pub(crate) fn instr__LD_iBC_A(&mut self) {
         let address = self.BC();
         self.memory.write_byte(address, self.data.A);
     }
@@ -6771,14 +6771,14 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_B_NN, B);
 
     /* RLCA */
-    fn instr__RLCA(&mut self) {
+    pub(crate) fn instr__RLCA(&mut self) {
         self.data.A = self.data.A.rotate_left(1);
         self.data.F =
             (self.data.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.data.A & (FLAG_C | FLAG_3 | FLAG_5));
     }
 
     /* EX AF,AF' */
-    fn instr__EX_AF_AF(&mut self) {
+    pub(crate) fn instr__EX_AF_AF(&mut self) {
         let old_a: u8 = self.data.A;
         let old_f: u8 = self.data.F;
         self.data.A = self.data.A_;
@@ -6806,14 +6806,14 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_C_NN, C);
 
     /* RRCA */
-    fn instr__RRCA(&mut self) {
+    pub(crate) fn instr__RRCA(&mut self) {
         self.data.F = (self.data.F & (FLAG_P | FLAG_Z | FLAG_S)) | (self.data.A & FLAG_C);
         self.data.A = self.data.A.rotate_right(1);
         self.data.F |= self.data.A & (FLAG_3 | FLAG_5);
     }
 
     /* DJNZ offset */
-    fn instr__DJNZ_OFFSET(&mut self) {
+    pub(crate) fn instr__DJNZ_OFFSET(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.data.B = self.data.B.wrapping_sub(1);
@@ -6847,7 +6847,7 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_D_NN, D);
 
     /* RLA */
-    fn instr__RLA(&mut self) {
+    pub(crate) fn instr__RLA(&mut self) {
         let byte_temp: u8 = self.data.A;
         self.data.A = (self.data.A << 1) | self.data.F & FLAG_C;
         self.data.F = (self.data.F & (FLAG_P | FLAG_Z | FLAG_S))
@@ -6856,7 +6856,7 @@ impl Z80 {
     }
 
     /* JR offset */
-    fn instr__JR_OFFSET(&mut self) {
+    pub(crate) fn instr__JR_OFFSET(&mut self) {
         self.jr();
         self.IncPC(1);
     }
@@ -6880,7 +6880,7 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_E_NN, E);
 
     /* RRA */
-    fn instr__RRA(&mut self) {
+    pub(crate) fn instr__RRA(&mut self) {
         let byte_temp: u8 = self.data.A;
         self.data.A = (self.data.A >> 1) | (self.data.F << 7);
         self.data.F = self.data.F & (FLAG_P | FLAG_Z | FLAG_S)
@@ -6889,7 +6889,7 @@ impl Z80 {
     }
 
     /* JR NZ,offset */
-    fn instr__JR_NZ_OFFSET(&mut self) {
+    pub(crate) fn instr__JR_NZ_OFFSET(&mut self) {
         if (self.data.F & FLAG_Z) == 0 {
             self.jr();
         } else {
@@ -6918,7 +6918,7 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_H_NN, H);
 
     /* DAA */
-    fn instr__DAA(&mut self) {
+    pub(crate) fn instr__DAA(&mut self) {
         let mut add: u8 = 0;
         let mut carry: u8 = self.data.F & FLAG_C;
         if ((self.data.F & FLAG_H) != 0) || ((self.data.A & 0x0f) > 9) {
@@ -6942,7 +6942,7 @@ impl Z80 {
     }
 
     /* JR Z,offset */
-    fn instr__JR_Z_OFFSET(&mut self) {
+    pub(crate) fn instr__JR_Z_OFFSET(&mut self) {
         if (self.data.F & FLAG_Z) != 0 {
             self.jr();
         } else {
@@ -6971,7 +6971,7 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_L_NN, L);
 
     /* CPL */
-    fn instr__CPL(&mut self) {
+    pub(crate) fn instr__CPL(&mut self) {
         self.data.A ^= 0xff;
         self.data.F = self.data.F & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S)
             | self.data.A & (FLAG_3 | FLAG_5)
@@ -6979,7 +6979,7 @@ impl Z80 {
     }
 
     /* JR NC,offset */
-    fn instr__JR_NC_OFFSET(&mut self) {
+    pub(crate) fn instr__JR_NC_OFFSET(&mut self) {
         if self.data.F & FLAG_C == 0 {
             self.jr();
         } else {
@@ -6993,7 +6993,7 @@ impl Z80 {
     fn_instr_ld_r16_nnnn!(instr__LD_SP_NNNN, SP, SetSP);
 
     /* LD (nnnn),A */
-    fn instr__LD_iNNNN_A(&mut self) {
+    pub(crate) fn instr__LD_iNNNN_A(&mut self) {
         let address = self.PC();
         let mut word_temp: u16 = (self.memory.read_byte(address)) as u16;
         self.IncPC(1);
@@ -7007,7 +7007,7 @@ impl Z80 {
     fn_instr_op_16!(instr__INC_SP, IncSP);
 
     /* INC (HL) */
-    fn instr__INC_iHL(&mut self) {
+    pub(crate) fn instr__INC_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.inc(&mut byte_temp);
@@ -7015,7 +7015,7 @@ impl Z80 {
     }
 
     /* DEC (HL) */
-    fn instr__DEC_iHL(&mut self) {
+    pub(crate) fn instr__DEC_iHL(&mut self) {
         let address = self.HL();
         let mut byte_temp: u8 = self.memory.read_byte(address);
         let _address = self.HL();
@@ -7025,7 +7025,7 @@ impl Z80 {
     }
 
     /* LD (HL),nn */
-    fn instr__LD_iHL_NN(&mut self) {
+    pub(crate) fn instr__LD_iHL_NN(&mut self) {
         let address = self.PC();
         let value = self.memory.read_byte(address);
         let address = self.HL();
@@ -7040,7 +7040,7 @@ impl Z80 {
     }
 
     /* JR C,offset */
-    fn instr__JR_C_OFFSET(&mut self) {
+    pub(crate) fn instr__JR_C_OFFSET(&mut self) {
         if self.data.F & FLAG_C != 0 {
             self.jr();
         } else {
@@ -7054,7 +7054,7 @@ impl Z80 {
     fn_instr_add_hl_r16!(instr__ADD_HL_SP, SP);
 
     /* LD A,(nnnn) */
-    fn instr__LD_A_iNNNN(&mut self) {
+    pub(crate) fn instr__LD_A_iNNNN(&mut self) {
         let address = self.PC();
         let mut word_temp: u16 = self.memory.read_byte(address) as u16;
         self.IncPC(1);
@@ -7077,80 +7077,80 @@ impl Z80 {
     fn_instr_ld_r8_nn!(instr__LD_A_NN, A);
 
     /* CCF */
-    fn instr__CCF(&mut self) {
+    pub(crate) fn instr__CCF(&mut self) {
         self.data.F = self.data.F & (FLAG_P | FLAG_Z | FLAG_S)
             | tern_op_b(self.data.F & FLAG_C != 0, FLAG_H, FLAG_C)
             | self.data.A & (FLAG_3 | FLAG_5);
     }
 
     /* LD B,B */
-    fn instr__LD_B_B(&mut self) {}
+    pub(crate) fn instr__LD_B_B(&mut self) {}
 
     /* LD B,C */
-    fn instr__LD_B_C(&mut self) {
+    pub(crate) fn instr__LD_B_C(&mut self) {
         self.data.B = self.data.C;
     }
 
     /* LD B,D */
-    fn instr__LD_B_D(&mut self) {
+    pub(crate) fn instr__LD_B_D(&mut self) {
         self.data.B = self.data.D;
     }
 
     /* LD B,E */
-    fn instr__LD_B_E(&mut self) {
+    pub(crate) fn instr__LD_B_E(&mut self) {
         self.data.B = self.data.E;
     }
 
     /* LD B,H */
-    fn instr__LD_B_H(&mut self) {
+    pub(crate) fn instr__LD_B_H(&mut self) {
         self.data.B = self.data.H;
     }
 
     /* LD B,L */
-    fn instr__LD_B_L(&mut self) {
+    pub(crate) fn instr__LD_B_L(&mut self) {
         self.data.B = self.data.L;
     }
 
     /* LD B,(HL) */
-    fn instr__LD_B_iHL(&mut self) {
+    pub(crate) fn instr__LD_B_iHL(&mut self) {
         self.data.B = self.memory.read_byte(self.HL());
     }
 
     /* LD B,A */
-    fn instr__LD_B_A(&mut self) {
+    pub(crate) fn instr__LD_B_A(&mut self) {
         self.data.B = self.data.A;
     }
 
     /* LD C,B */
-    fn instr__LD_C_B(&mut self) {
+    pub(crate) fn instr__LD_C_B(&mut self) {
         self.data.C = self.data.B;
     }
 
     /* LD C,C */
-    fn instr__LD_C_C(&mut self) {}
+    pub(crate) fn instr__LD_C_C(&mut self) {}
 
     /* LD C,D */
-    fn instr__LD_C_D(&mut self) {
+    pub(crate) fn instr__LD_C_D(&mut self) {
         self.data.C = self.data.D;
     }
 
     /* LD C,E */
-    fn instr__LD_C_E(&mut self) {
+    pub(crate) fn instr__LD_C_E(&mut self) {
         self.data.C = self.data.E;
     }
 
     /* LD C,H */
-    fn instr__LD_C_H(&mut self) {
+    pub(crate) fn instr__LD_C_H(&mut self) {
         self.data.C = self.data.H;
     }
 
     /* LD C,L */
-    fn instr__LD_C_L(&mut self) {
+    pub(crate) fn instr__LD_C_L(&mut self) {
         self.data.C = self.data.L;
     }
 
     /* LD C,(HL) */
-    fn instr__LD_C_iHL(&mut self) {
+    pub(crate) fn instr__LD_C_iHL(&mut self) {
         self.data.C = self.memory.read_byte(self.HL());
     }
 
@@ -7160,30 +7160,30 @@ impl Z80 {
     }
 
     /* LD D,B */
-    fn instr__LD_D_B(&mut self) {
+    pub(crate) fn instr__LD_D_B(&mut self) {
         self.data.D = self.data.B;
     }
 
     /* LD D,C */
-    fn instr__LD_D_C(&mut self) {
+    pub(crate) fn instr__LD_D_C(&mut self) {
         self.data.D = self.data.C;
     }
 
     /* LD D,D */
-    fn instr__LD_D_D(&mut self) {}
+    pub(crate) fn instr__LD_D_D(&mut self) {}
 
     /* LD D,E */
-    fn instr__LD_D_E(&mut self) {
+    pub(crate) fn instr__LD_D_E(&mut self) {
         self.data.D = self.data.E;
     }
 
     /* LD D,H */
-    fn instr__LD_D_H(&mut self) {
+    pub(crate) fn instr__LD_D_H(&mut self) {
         self.data.D = self.data.H;
     }
 
     /* LD D,L */
-    fn instr__LD_D_L(&mut self) {
+    pub(crate) fn instr__LD_D_L(&mut self) {
         self.data.D = self.data.L;
     }
 
@@ -7193,35 +7193,35 @@ impl Z80 {
     }
 
     /* LD D,A */
-    fn instr__LD_D_A(&mut self) {
+    pub(crate) fn instr__LD_D_A(&mut self) {
         self.data.D = self.data.A;
     }
 
     /* LD E,B */
-    fn instr__LD_E_B(&mut self) {
+    pub(crate) fn instr__LD_E_B(&mut self) {
         self.data.E = self.data.B;
     }
 
     /* LD E,C */
-    fn instr__LD_E_C(&mut self) {
+    pub(crate) fn instr__LD_E_C(&mut self) {
         self.data.E = self.data.C;
     }
 
     /* LD E,D */
-    fn instr__LD_E_D(&mut self) {
+    pub(crate) fn instr__LD_E_D(&mut self) {
         self.data.E = self.data.D;
     }
 
     /* LD E,E */
-    fn instr__LD_E_E(&mut self) {}
+    pub(crate) fn instr__LD_E_E(&mut self) {}
 
     /* LD E,H */
-    fn instr__LD_E_H(&mut self) {
+    pub(crate) fn instr__LD_E_H(&mut self) {
         self.data.E = self.data.H;
     }
 
     /* LD E,L */
-    fn instr__LD_E_L(&mut self) {
+    pub(crate) fn instr__LD_E_L(&mut self) {
         self.data.E = self.data.L;
     }
 
@@ -7231,83 +7231,83 @@ impl Z80 {
     }
 
     /* LD E,A */
-    fn instr__LD_E_A(&mut self) {
+    pub(crate) fn instr__LD_E_A(&mut self) {
         self.data.E = self.data.A;
     }
 
     /* LD H,B */
-    fn instr__LD_H_B(&mut self) {
+    pub(crate) fn instr__LD_H_B(&mut self) {
         self.data.H = self.data.B;
     }
 
     /* LD H,C */
-    fn instr__LD_H_C(&mut self) {
+    pub(crate) fn instr__LD_H_C(&mut self) {
         self.data.H = self.data.C;
     }
 
     /* LD H,D */
-    fn instr__LD_H_D(&mut self) {
+    pub(crate) fn instr__LD_H_D(&mut self) {
         self.data.H = self.data.D;
     }
 
     /* LD H,E */
-    fn instr__LD_H_E(&mut self) {
+    pub(crate) fn instr__LD_H_E(&mut self) {
         self.data.H = self.data.E;
     }
 
     /* LD H,H */
-    fn instr__LD_H_H(&mut self) {}
+    pub(crate) fn instr__LD_H_H(&mut self) {}
 
     /* LD H,L */
-    fn instr__LD_H_L(&mut self) {
+    pub(crate) fn instr__LD_H_L(&mut self) {
         self.data.H = self.data.L;
     }
 
     /* LD H,(HL) */
-    fn instr__LD_H_iHL(&mut self) {
+    pub(crate) fn instr__LD_H_iHL(&mut self) {
         self.data.H = self.memory.read_byte(self.HL());
     }
 
     /* LD H,A */
-    fn instr__LD_H_A(&mut self) {
+    pub(crate) fn instr__LD_H_A(&mut self) {
         self.data.H = self.data.A;
     }
 
     /* LD L,B */
-    fn instr__LD_L_B(&mut self) {
+    pub(crate) fn instr__LD_L_B(&mut self) {
         self.data.L = self.data.B;
     }
 
     /* LD L,C */
-    fn instr__LD_L_C(&mut self) {
+    pub(crate) fn instr__LD_L_C(&mut self) {
         self.data.L = self.data.C;
     }
 
     /* LD L,D */
-    fn instr__LD_L_D(&mut self) {
+    pub(crate) fn instr__LD_L_D(&mut self) {
         self.data.L = self.data.D;
     }
 
     /* LD L,E */
-    fn instr__LD_L_E(&mut self) {
+    pub(crate) fn instr__LD_L_E(&mut self) {
         self.data.L = self.data.E;
     }
 
     /* LD L,H */
-    fn instr__LD_L_H(&mut self) {
+    pub(crate) fn instr__LD_L_H(&mut self) {
         self.data.L = self.data.H;
     }
 
     /* LD L,L */
-    fn instr__LD_L_L(&mut self) {}
+    pub(crate) fn instr__LD_L_L(&mut self) {}
 
     /* LD L,(HL) */
-    fn instr__LD_L_iHL(&mut self) {
+    pub(crate) fn instr__LD_L_iHL(&mut self) {
         self.data.L = self.memory.read_byte(self.HL());
     }
 
     /* LD L,A */
-    fn instr__LD_L_A(&mut self) {
+    pub(crate) fn instr__LD_L_A(&mut self) {
         self.data.L = self.data.A;
     }
 
@@ -7330,7 +7330,7 @@ impl Z80 {
     fn_instr_ld_i_r16_r8!(instr__LD_iHL_L, HL, L);
 
     /* HALT */
-    fn instr__HALT(&mut self) {
+    pub(crate) fn instr__HALT(&mut self) {
         self.data.halted = true;
         self.DecPC(1);
     }
@@ -7360,7 +7360,7 @@ impl Z80 {
     fn_instr_ld_a_r16!(instr__LD_A_iHL, HL);
 
     /* LD A,A */
-    fn instr__LD_A_A(&mut self) {}
+    pub(crate) fn instr__LD_A_A(&mut self) {}
 
     /* ADD A,B */
     fn_instr_add_r8!(instr__ADD_A_B, B);
@@ -7381,7 +7381,7 @@ impl Z80 {
     fn_instr_add_r8!(instr__ADD_A_L, L);
 
     /* ADD A,(HL) */
-    fn instr__ADD_A_iHL(&mut self) {
+    pub(crate) fn instr__ADD_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.add(byte_temp);
@@ -7409,7 +7409,7 @@ impl Z80 {
     fn_instr_adc_r8!(instr__ADC_A_L, L);
 
     /* ADC A,(HL) */
-    fn instr__ADC_A_iHL(&mut self) {
+    pub(crate) fn instr__ADC_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.adc(byte_temp);
@@ -7437,7 +7437,7 @@ impl Z80 {
     fn_instr_sub_r8!(instr__SUB_A_L, L);
 
     /* SUB A,(HL) */
-    fn instr__SUB_A_iHL(&mut self) {
+    pub(crate) fn instr__SUB_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.sub(byte_temp);
@@ -7465,7 +7465,7 @@ impl Z80 {
     fn_instr_sbc_r8!(instr__SBC_A_L, L);
 
     /* SBC A,(HL) */
-    fn instr__SBC_A_iHL(&mut self) {
+    pub(crate) fn instr__SBC_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.sbc(byte_temp);
@@ -7493,7 +7493,7 @@ impl Z80 {
     fn_instr_and_r8!(instr__AND_A_L, L);
 
     /* AND A,(HL) */
-    fn instr__AND_A_iHL(&mut self) {
+    pub(crate) fn instr__AND_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.and(byte_temp);
@@ -7521,7 +7521,7 @@ impl Z80 {
     fn_instr_xor_r8!(instr__XOR_A_L, L);
 
     /* XOR A,(HL) */
-    fn instr__XOR_A_iHL(&mut self) {
+    pub(crate) fn instr__XOR_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.xor(byte_temp);
@@ -7549,7 +7549,7 @@ impl Z80 {
     fn_instr_or_r8!(instr__OR_A_L, L);
 
     /* OR A,(HL) */
-    fn instr__OR_A_iHL(&mut self) {
+    pub(crate) fn instr__OR_A_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
 
         self.or(byte_temp);
@@ -7577,7 +7577,7 @@ impl Z80 {
     fn_instr_cp_r8!(instr__CP_L, L);
 
     /* CP (HL) */
-    fn instr__CP_iHL(&mut self) {
+    pub(crate) fn instr__CP_iHL(&mut self) {
         let address = self.HL();
         let byte_temp: u8 = self.memory.read_byte(address);
 
@@ -7588,7 +7588,7 @@ impl Z80 {
     fn_instr_cp_r8!(instr__CP_A, A);
 
     /* RET NZ */
-    fn instr__RET_NZ(&mut self) {
+    pub(crate) fn instr__RET_NZ(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if (self.data.F & FLAG_Z) == 0 {
@@ -7600,7 +7600,7 @@ impl Z80 {
     fn_instr_pop_r16!(instr__POP_BC, C, B);
 
     /* JP NZ,nnnn */
-    fn instr__JP_NZ_NNNN(&mut self) {
+    pub(crate) fn instr__JP_NZ_NNNN(&mut self) {
         if (self.data.F & FLAG_Z) == 0 {
             self.jp();
         } else {
@@ -7613,12 +7613,12 @@ impl Z80 {
     }
 
     /* JP nnnn */
-    fn instr__JP_NNNN(&mut self) {
+    pub(crate) fn instr__JP_NNNN(&mut self) {
         self.jp();
     }
 
     /* CALL NZ,nnnn */
-    fn instr__CALL_NZ_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_NZ_NNNN(&mut self) {
         if (self.data.F & FLAG_Z) == 0 {
             self.call();
         } else {
@@ -7634,7 +7634,7 @@ impl Z80 {
     fn_instr_push_r16!(instr__PUSH_BC, C, B);
 
     /* ADD A,nn */
-    fn instr__ADD_A_NN(&mut self) {
+    pub(crate) fn instr__ADD_A_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -7642,14 +7642,14 @@ impl Z80 {
     }
 
     /* RST 00 */
-    fn instr__RST_00(&mut self) {
+    pub(crate) fn instr__RST_00(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x00);
     }
 
     /* RET Z */
-    fn instr__RET_Z(&mut self) {
+    pub(crate) fn instr__RET_Z(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if (self.data.F & FLAG_Z) != 0 {
@@ -7658,12 +7658,12 @@ impl Z80 {
     }
 
     /* RET */
-    fn instr__RET(&mut self) {
+    pub(crate) fn instr__RET(&mut self) {
         self.ret();
     }
 
     /* JP Z,nnnn */
-    fn instr__JP_Z_NNNN(&mut self) {
+    pub(crate) fn instr__JP_Z_NNNN(&mut self) {
         if (self.data.F & FLAG_Z) != 0 {
             self.jp();
         } else {
@@ -7676,10 +7676,10 @@ impl Z80 {
     }
 
     /* shift CB */
-    fn instr__SHIFT_CB(&mut self) {}
+    pub(crate) fn instr__SHIFT_CB(&mut self) {}
 
     /* CALL Z,nnnn */
-    fn instr__CALL_Z_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_Z_NNNN(&mut self) {
         if (self.data.F & FLAG_Z) != 0 {
             self.call();
         } else {
@@ -7692,12 +7692,12 @@ impl Z80 {
     }
 
     /* CALL nnnn */
-    fn instr__CALL_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_NNNN(&mut self) {
         self.call();
     }
 
     /* ADC A,nn */
-    fn instr__ADC_A_NN(&mut self) {
+    pub(crate) fn instr__ADC_A_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -7705,14 +7705,14 @@ impl Z80 {
     }
 
     /* RST 8 */
-    fn instr__RST_8(&mut self) {
+    pub(crate) fn instr__RST_8(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x8);
     }
 
     /* RET NC */
-    fn instr__RET_NC(&mut self) {
+    pub(crate) fn instr__RET_NC(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if self.data.F & FLAG_C == 0 {
@@ -7724,7 +7724,7 @@ impl Z80 {
     fn_instr_pop_r16!(instr__POP_DE, E, D);
 
     /* JP NC,nnnn */
-    fn instr__JP_NC_NNNN(&mut self) {
+    pub(crate) fn instr__JP_NC_NNNN(&mut self) {
         if self.data.F & FLAG_C == 0 {
             self.jp();
         } else {
@@ -7737,7 +7737,7 @@ impl Z80 {
     }
 
     /* OUT (nn),A */
-    fn instr__OUT_iNN_A(&mut self) {
+    pub(crate) fn instr__OUT_iNN_A(&mut self) {
         let address = self.PC();
         let out_temp: u16 = (self.memory.read_byte(address) as u16) + ((self.data.A as u16) << 8);
         self.IncPC(1);
@@ -7745,7 +7745,7 @@ impl Z80 {
     }
 
     /* CALL NC,nnnn */
-    fn instr__CALL_NC_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_NC_NNNN(&mut self) {
         if self.data.F & FLAG_C == 0 {
             self.call();
         } else {
@@ -7761,7 +7761,7 @@ impl Z80 {
     fn_instr_push_r16!(instr__PUSH_DE, E, D);
 
     /* SUB nn */
-    fn instr__SUB_NN(&mut self) {
+    pub(crate) fn instr__SUB_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -7769,14 +7769,14 @@ impl Z80 {
     }
 
     /* RST 10 */
-    fn instr__RST_10(&mut self) {
+    pub(crate) fn instr__RST_10(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x10);
     }
 
     /* RET C */
-    fn instr__RET_C(&mut self) {
+    pub(crate) fn instr__RET_C(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if self.data.F & FLAG_C != 0 {
@@ -7785,7 +7785,7 @@ impl Z80 {
     }
 
     /* EXX */
-    fn instr__EXX(&mut self) {
+    pub(crate) fn instr__EXX(&mut self) {
         let word_temp: u16 = self.BC();
         self.SetBC(self.BC_());
         self.SetBC_(word_temp);
@@ -7800,7 +7800,7 @@ impl Z80 {
     }
 
     /* JP C,nnnn */
-    fn instr__JP_C_NNNN(&mut self) {
+    pub(crate) fn instr__JP_C_NNNN(&mut self) {
         if self.data.F & FLAG_C != 0 {
             self.jp();
         } else {
@@ -7813,7 +7813,7 @@ impl Z80 {
     }
 
     /* IN A,(nn) */
-    fn instr__IN_A_iNN(&mut self) {
+    pub(crate) fn instr__IN_A_iNN(&mut self) {
         let address = self.PC();
         let in_temp: u16 = (self.memory.read_byte(address) as u16) + ((self.data.A as u16) << 8);
         self.IncPC(1);
@@ -7821,7 +7821,7 @@ impl Z80 {
     }
 
     /* CALL C,nnnn */
-    fn instr__CALL_C_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_C_NNNN(&mut self) {
         if self.data.F & FLAG_C != 0 {
             self.call();
         } else {
@@ -7834,10 +7834,10 @@ impl Z80 {
     }
 
     /* shift DD */
-    fn instr__SHIFT_DD(&mut self) {}
+    pub(crate) fn instr__SHIFT_DD(&mut self) {}
 
     /* SBC A,nn */
-    fn instr__SBC_A_NN(&mut self) {
+    pub(crate) fn instr__SBC_A_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -7845,14 +7845,14 @@ impl Z80 {
     }
 
     /* RST 18 */
-    fn instr__RST_18(&mut self) {
+    pub(crate) fn instr__RST_18(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x18);
     }
 
     /* RET PO */
-    fn instr__RET_PO(&mut self) {
+    pub(crate) fn instr__RET_PO(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if (self.data.F & FLAG_P) == 0 {
@@ -7864,7 +7864,7 @@ impl Z80 {
     fn_instr_pop_r16!(instr__POP_HL, L, H);
 
     /* JP PO,nnnn */
-    fn instr__JP_PO_NNNN(&mut self) {
+    pub(crate) fn instr__JP_PO_NNNN(&mut self) {
         if (self.data.F & FLAG_P) == 0 {
             self.jp();
         } else {
@@ -7877,7 +7877,7 @@ impl Z80 {
     }
 
     /* EX (SP),HL */
-    fn instr__EX_iSP_HL(&mut self) {
+    pub(crate) fn instr__EX_iSP_HL(&mut self) {
         let address = self.SP();
         let byte_temp_l = self.memory.read_byte(address);
         let sp = self.SP();
@@ -7895,7 +7895,7 @@ impl Z80 {
     }
 
     /* CALL PO,nnnn */
-    fn instr__CALL_PO_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_PO_NNNN(&mut self) {
         if (self.data.F & FLAG_P) == 0 {
             self.call();
         } else {
@@ -7911,7 +7911,7 @@ impl Z80 {
     fn_instr_push_r16!(instr__PUSH_HL, L, H);
 
     /* AND nn */
-    fn instr__AND_NN(&mut self) {
+    pub(crate) fn instr__AND_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -7919,14 +7919,14 @@ impl Z80 {
     }
 
     /* RST 20 */
-    fn instr__RST_20(&mut self) {
+    pub(crate) fn instr__RST_20(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x20);
     }
 
     /* RET PE */
-    fn instr__RET_PE(&mut self) {
+    pub(crate) fn instr__RET_PE(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if (self.data.F & FLAG_P) != 0 {
@@ -7935,13 +7935,13 @@ impl Z80 {
     }
 
     /* JP HL */
-    fn instr__JP_HL(&mut self) {
+    pub(crate) fn instr__JP_HL(&mut self) {
         self.SetPC(self.HL());
         /* NB: NOT INDIRECT! */
     }
 
     /* JP PE,nnnn */
-    fn instr__JP_PE_NNNN(&mut self) {
+    pub(crate) fn instr__JP_PE_NNNN(&mut self) {
         if (self.data.F & FLAG_P) != 0 {
             self.jp();
         } else {
@@ -7954,14 +7954,14 @@ impl Z80 {
     }
 
     /* EX DE,HL */
-    fn instr__EX_DE_HL(&mut self) {
+    pub(crate) fn instr__EX_DE_HL(&mut self) {
         let word_temp: u16 = self.DE();
         self.SetDE(self.HL());
         self.SetHL(word_temp);
     }
 
     /* CALL PE,nnnn */
-    fn instr__CALL_PE_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_PE_NNNN(&mut self) {
         if (self.data.F & FLAG_P) != 0 {
             self.call();
         } else {
@@ -7974,10 +7974,10 @@ impl Z80 {
     }
 
     /* shift ED */
-    fn instr__SHIFT_ED(&mut self) {}
+    pub(crate) fn instr__SHIFT_ED(&mut self) {}
 
     /* XOR A,nn */
-    fn instr__XOR_A_NN(&mut self) {
+    pub(crate) fn instr__XOR_A_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -7985,14 +7985,14 @@ impl Z80 {
     }
 
     /* RST 28 */
-    fn instr__RST_28(&mut self) {
+    pub(crate) fn instr__RST_28(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x28);
     }
 
     /* RET P */
-    fn instr__RET_P(&mut self) {
+    pub(crate) fn instr__RET_P(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if (self.data.F & FLAG_S) == 0 {
@@ -8004,7 +8004,7 @@ impl Z80 {
     fn_instr_pop_r16!(instr__POP_AF, F, A);
 
     /* JP P,nnnn */
-    fn instr__JP_P_NNNN(&mut self) {
+    pub(crate) fn instr__JP_P_NNNN(&mut self) {
         if (self.data.F & FLAG_S) == 0 {
             self.jp();
         } else {
@@ -8017,12 +8017,12 @@ impl Z80 {
     }
 
     /* DI */
-    fn instr__DI(&mut self) {
+    pub(crate) fn instr__DI(&mut self) {
         (self.data.IFF1, self.data.IFF2) = (0, 0);
     }
 
     /* CALL P,nnnn */
-    fn instr__CALL_P_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_P_NNNN(&mut self) {
         if (self.data.F & FLAG_S) == 0 {
             self.call();
         } else {
@@ -8038,7 +8038,7 @@ impl Z80 {
     fn_instr_push_r16!(instr__PUSH_AF, F, A);
 
     /* OR nn */
-    fn instr__OR_NN(&mut self) {
+    pub(crate) fn instr__OR_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -8046,14 +8046,14 @@ impl Z80 {
     }
 
     /* RST 30 */
-    fn instr__RST_30(&mut self) {
+    pub(crate) fn instr__RST_30(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x30);
     }
 
     /* RET M */
-    fn instr__RET_M(&mut self) {
+    pub(crate) fn instr__RET_M(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         if (self.data.F & FLAG_S) != 0 {
@@ -8062,14 +8062,14 @@ impl Z80 {
     }
 
     /* LD SP,HL */
-    fn instr__LD_SP_HL(&mut self) {
+    pub(crate) fn instr__LD_SP_HL(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.SetSP(self.HL());
     }
 
     /* JP M,nnnn */
-    fn instr__JP_M_NNNN(&mut self) {
+    pub(crate) fn instr__JP_M_NNNN(&mut self) {
         if (self.data.F & FLAG_S) != 0 {
             self.jp();
         } else {
@@ -8082,7 +8082,7 @@ impl Z80 {
     }
 
     /* EI */
-    fn instr__EI(&mut self) {
+    pub(crate) fn instr__EI(&mut self) {
         /* Interrupts are not accepted immediately after an EI, but are
         accepted after the next instruction */
         (self.data.IFF1, self.data.IFF2) = (1, 1);
@@ -8091,7 +8091,7 @@ impl Z80 {
     }
 
     /* CALL M,nnnn */
-    fn instr__CALL_M_NNNN(&mut self) {
+    pub(crate) fn instr__CALL_M_NNNN(&mut self) {
         if (self.data.F & FLAG_S) != 0 {
             self.call()
         } else {
@@ -8104,10 +8104,10 @@ impl Z80 {
     }
 
     /* shift FD */
-    fn instr__SHIFT_FD(&mut self) {}
+    pub(crate) fn instr__SHIFT_FD(&mut self) {}
 
     /* CP nn */
-    fn instr__CP_NN(&mut self) {
+    pub(crate) fn instr__CP_NN(&mut self) {
         let address = self.PC();
         let byte_temp: u8 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -8115,44 +8115,44 @@ impl Z80 {
     }
 
     /* RST 38 */
-    fn instr__RST_38(&mut self) {
+    pub(crate) fn instr__RST_38(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.rst(0x38);
     }
 
     /* RLC B */
-    fn instrCB__RLC_B(&mut self) {
+    pub(crate) fn instrCB__RLC_B(&mut self) {
         self.data.B = self.rlc(self.data.B);
     }
 
     /* RLC C */
-    fn instrCB__RLC_C(&mut self) {
+    pub(crate) fn instrCB__RLC_C(&mut self) {
         self.data.C = self.rlc(self.data.C);
     }
 
     /* RLC D */
-    fn instrCB__RLC_D(&mut self) {
+    pub(crate) fn instrCB__RLC_D(&mut self) {
         self.data.D = self.rlc(self.data.D);
     }
 
     /* RLC E */
-    fn instrCB__RLC_E(&mut self) {
+    pub(crate) fn instrCB__RLC_E(&mut self) {
         self.data.E = self.rlc(self.data.E);
     }
 
     /* RLC H */
-    fn instrCB__RLC_H(&mut self) {
+    pub(crate) fn instrCB__RLC_H(&mut self) {
         self.data.H = self.rlc(self.data.H);
     }
 
     /* RLC L */
-    fn instrCB__RLC_L(&mut self) {
+    pub(crate) fn instrCB__RLC_L(&mut self) {
         self.data.L = self.rlc(self.data.L);
     }
 
     /* RLC (HL) */
-    fn instrCB__RLC_iHL(&mut self) {
+    pub(crate) fn instrCB__RLC_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.rlc(byte_temp);
@@ -8160,42 +8160,42 @@ impl Z80 {
     }
 
     /* RLC A */
-    fn instrCB__RLC_A(&mut self) {
+    pub(crate) fn instrCB__RLC_A(&mut self) {
         self.data.A = self.rlc(self.data.A);
     }
 
     /* RRC B */
-    fn instrCB__RRC_B(&mut self) {
+    pub(crate) fn instrCB__RRC_B(&mut self) {
         self.data.B = self.rrc(self.data.B);
     }
 
     /* RRC C */
-    fn instrCB__RRC_C(&mut self) {
+    pub(crate) fn instrCB__RRC_C(&mut self) {
         self.data.C = self.rrc(self.data.C);
     }
 
     /* RRC D */
-    fn instrCB__RRC_D(&mut self) {
+    pub(crate) fn instrCB__RRC_D(&mut self) {
         self.data.D = self.rrc(self.data.D);
     }
 
     /* RRC E */
-    fn instrCB__RRC_E(&mut self) {
+    pub(crate) fn instrCB__RRC_E(&mut self) {
         self.data.E = self.rrc(self.data.E);
     }
 
     /* RRC H */
-    fn instrCB__RRC_H(&mut self) {
+    pub(crate) fn instrCB__RRC_H(&mut self) {
         self.data.H = self.rrc(self.data.H);
     }
 
     /* RRC L */
-    fn instrCB__RRC_L(&mut self) {
+    pub(crate) fn instrCB__RRC_L(&mut self) {
         self.data.L = self.rrc(self.data.L);
     }
 
     /* RRC (HL) */
-    fn instrCB__RRC_iHL(&mut self) {
+    pub(crate) fn instrCB__RRC_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.rrc(byte_temp);
@@ -8203,42 +8203,42 @@ impl Z80 {
     }
 
     /* RRC A */
-    fn instrCB__RRC_A(&mut self) {
+    pub(crate) fn instrCB__RRC_A(&mut self) {
         self.data.A = self.rrc(self.data.A);
     }
 
     /* RL B */
-    fn instrCB__RL_B(&mut self) {
+    pub(crate) fn instrCB__RL_B(&mut self) {
         self.data.B = self.rl(self.data.B);
     }
 
     /* RL C */
-    fn instrCB__RL_C(&mut self) {
+    pub(crate) fn instrCB__RL_C(&mut self) {
         self.data.C = self.rl(self.data.C);
     }
 
     /* RL D */
-    fn instrCB__RL_D(&mut self) {
+    pub(crate) fn instrCB__RL_D(&mut self) {
         self.data.D = self.rl(self.data.D);
     }
 
     /* RL E */
-    fn instrCB__RL_E(&mut self) {
+    pub(crate) fn instrCB__RL_E(&mut self) {
         self.data.E = self.rl(self.data.E);
     }
 
     /* RL H */
-    fn instrCB__RL_H(&mut self) {
+    pub(crate) fn instrCB__RL_H(&mut self) {
         self.data.H = self.rl(self.data.H);
     }
 
     /* RL L */
-    fn instrCB__RL_L(&mut self) {
+    pub(crate) fn instrCB__RL_L(&mut self) {
         self.data.L = self.rl(self.data.L);
     }
 
     /* RL (HL) */
-    fn instrCB__RL_iHL(&mut self) {
+    pub(crate) fn instrCB__RL_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.rl(byte_temp);
@@ -8246,42 +8246,42 @@ impl Z80 {
     }
 
     /* RL A */
-    fn instrCB__RL_A(&mut self) {
+    pub(crate) fn instrCB__RL_A(&mut self) {
         self.data.A = self.rl(self.data.A);
     }
 
     /* RR B */
-    fn instrCB__RR_B(&mut self) {
+    pub(crate) fn instrCB__RR_B(&mut self) {
         self.data.B = self.rr(self.data.B);
     }
 
     /* RR C */
-    fn instrCB__RR_C(&mut self) {
+    pub(crate) fn instrCB__RR_C(&mut self) {
         self.data.C = self.rr(self.data.C);
     }
 
     /* RR D */
-    fn instrCB__RR_D(&mut self) {
+    pub(crate) fn instrCB__RR_D(&mut self) {
         self.data.D = self.rr(self.data.D);
     }
 
     /* RR E */
-    fn instrCB__RR_E(&mut self) {
+    pub(crate) fn instrCB__RR_E(&mut self) {
         self.data.E = self.rr(self.data.E);
     }
 
     /* RR H */
-    fn instrCB__RR_H(&mut self) {
+    pub(crate) fn instrCB__RR_H(&mut self) {
         self.data.H = self.rr(self.data.H);
     }
 
     /* RR L */
-    fn instrCB__RR_L(&mut self) {
+    pub(crate) fn instrCB__RR_L(&mut self) {
         self.data.L = self.rr(self.data.L);
     }
 
     /* RR (HL) */
-    fn instrCB__RR_iHL(&mut self) {
+    pub(crate) fn instrCB__RR_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.rr(byte_temp);
@@ -8289,42 +8289,42 @@ impl Z80 {
     }
 
     /* RR A */
-    fn instrCB__RR_A(&mut self) {
+    pub(crate) fn instrCB__RR_A(&mut self) {
         self.data.A = self.rr(self.data.A);
     }
 
     /* SLA B */
-    fn instrCB__SLA_B(&mut self) {
+    pub(crate) fn instrCB__SLA_B(&mut self) {
         self.data.B = self.sla(self.data.B);
     }
 
     /* SLA C */
-    fn instrCB__SLA_C(&mut self) {
+    pub(crate) fn instrCB__SLA_C(&mut self) {
         self.data.C = self.sla(self.data.C);
     }
 
     /* SLA D */
-    fn instrCB__SLA_D(&mut self) {
+    pub(crate) fn instrCB__SLA_D(&mut self) {
         self.data.D = self.sla(self.data.D);
     }
 
     /* SLA E */
-    fn instrCB__SLA_E(&mut self) {
+    pub(crate) fn instrCB__SLA_E(&mut self) {
         self.data.E = self.sla(self.data.E);
     }
 
     /* SLA H */
-    fn instrCB__SLA_H(&mut self) {
+    pub(crate) fn instrCB__SLA_H(&mut self) {
         self.data.H = self.sla(self.data.H);
     }
 
     /* SLA L */
-    fn instrCB__SLA_L(&mut self) {
+    pub(crate) fn instrCB__SLA_L(&mut self) {
         self.data.L = self.sla(self.data.L);
     }
 
     /* SLA (HL) */
-    fn instrCB__SLA_iHL(&mut self) {
+    pub(crate) fn instrCB__SLA_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.sla(byte_temp);
@@ -8332,42 +8332,42 @@ impl Z80 {
     }
 
     /* SLA A */
-    fn instrCB__SLA_A(&mut self) {
+    pub(crate) fn instrCB__SLA_A(&mut self) {
         self.data.A = self.sla(self.data.A);
     }
 
     /* SRA B */
-    fn instrCB__SRA_B(&mut self) {
+    pub(crate) fn instrCB__SRA_B(&mut self) {
         self.data.B = self.sra(self.data.B);
     }
 
     /* SRA C */
-    fn instrCB__SRA_C(&mut self) {
+    pub(crate) fn instrCB__SRA_C(&mut self) {
         self.data.C = self.sra(self.data.C);
     }
 
     /* SRA D */
-    fn instrCB__SRA_D(&mut self) {
+    pub(crate) fn instrCB__SRA_D(&mut self) {
         self.data.D = self.sra(self.data.D);
     }
 
     /* SRA E */
-    fn instrCB__SRA_E(&mut self) {
+    pub(crate) fn instrCB__SRA_E(&mut self) {
         self.data.E = self.sra(self.data.E);
     }
 
     /* SRA H */
-    fn instrCB__SRA_H(&mut self) {
+    pub(crate) fn instrCB__SRA_H(&mut self) {
         self.data.H = self.sra(self.data.H);
     }
 
     /* SRA L */
-    fn instrCB__SRA_L(&mut self) {
+    pub(crate) fn instrCB__SRA_L(&mut self) {
         self.data.L = self.sra(self.data.L);
     }
 
     /* SRA (HL) */
-    fn instrCB__SRA_iHL(&mut self) {
+    pub(crate) fn instrCB__SRA_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.sra(byte_temp);
@@ -8375,42 +8375,42 @@ impl Z80 {
     }
 
     /* SRA A */
-    fn instrCB__SRA_A(&mut self) {
+    pub(crate) fn instrCB__SRA_A(&mut self) {
         self.data.A = self.sra(self.data.A);
     }
 
     /* SLL B */
-    fn instrCB__SLL_B(&mut self) {
+    pub(crate) fn instrCB__SLL_B(&mut self) {
         self.data.B = self.sll(self.data.B);
     }
 
     /* SLL C */
-    fn instrCB__SLL_C(&mut self) {
+    pub(crate) fn instrCB__SLL_C(&mut self) {
         self.data.C = self.sll(self.data.C);
     }
 
     /* SLL D */
-    fn instrCB__SLL_D(&mut self) {
+    pub(crate) fn instrCB__SLL_D(&mut self) {
         self.data.D = self.sll(self.data.D);
     }
 
     /* SLL E */
-    fn instrCB__SLL_E(&mut self) {
+    pub(crate) fn instrCB__SLL_E(&mut self) {
         self.data.E = self.sll(self.data.E);
     }
 
     /* SLL H */
-    fn instrCB__SLL_H(&mut self) {
+    pub(crate) fn instrCB__SLL_H(&mut self) {
         self.data.H = self.sll(self.data.H);
     }
 
     /* SLL L */
-    fn instrCB__SLL_L(&mut self) {
+    pub(crate) fn instrCB__SLL_L(&mut self) {
         self.data.L = self.sll(self.data.L);
     }
 
     /* SLL (HL) */
-    fn instrCB__SLL_iHL(&mut self) {
+    pub(crate) fn instrCB__SLL_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.sll(byte_temp);
@@ -8418,42 +8418,42 @@ impl Z80 {
     }
 
     /* SLL A */
-    fn instrCB__SLL_A(&mut self) {
+    pub(crate) fn instrCB__SLL_A(&mut self) {
         self.data.A = self.sll(self.data.A);
     }
 
     /* SRL B */
-    fn instrCB__SRL_B(&mut self) {
+    pub(crate) fn instrCB__SRL_B(&mut self) {
         self.data.B = self.srl(self.data.B);
     }
 
     /* SRL C */
-    fn instrCB__SRL_C(&mut self) {
+    pub(crate) fn instrCB__SRL_C(&mut self) {
         self.data.C = self.srl(self.data.C);
     }
 
     /* SRL D */
-    fn instrCB__SRL_D(&mut self) {
+    pub(crate) fn instrCB__SRL_D(&mut self) {
         self.data.D = self.srl(self.data.D);
     }
 
     /* SRL E */
-    fn instrCB__SRL_E(&mut self) {
+    pub(crate) fn instrCB__SRL_E(&mut self) {
         self.data.E = self.srl(self.data.E);
     }
 
     /* SRL H */
-    fn instrCB__SRL_H(&mut self) {
+    pub(crate) fn instrCB__SRL_H(&mut self) {
         self.data.H = self.srl(self.data.H);
     }
 
     /* SRL L */
-    fn instrCB__SRL_L(&mut self) {
+    pub(crate) fn instrCB__SRL_L(&mut self) {
         self.data.L = self.srl(self.data.L);
     }
 
     /* SRL (HL) */
-    fn instrCB__SRL_iHL(&mut self) {
+    pub(crate) fn instrCB__SRL_iHL(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         byte_temp = self.srl(byte_temp);
@@ -8461,1032 +8461,1032 @@ impl Z80 {
     }
 
     /* SRL A */
-    fn instrCB__SRL_A(&mut self) {
+    pub(crate) fn instrCB__SRL_A(&mut self) {
         self.data.A = self.srl(self.data.A);
     }
 
     /* BIT 0,B */
-    fn instrCB__BIT_0_B(&mut self) {
+    pub(crate) fn instrCB__BIT_0_B(&mut self) {
         self.bit(0, self.data.B);
     }
 
     /* BIT 0,C */
-    fn instrCB__BIT_0_C(&mut self) {
+    pub(crate) fn instrCB__BIT_0_C(&mut self) {
         self.bit(0, self.data.C);
     }
 
     /* BIT 0,D */
-    fn instrCB__BIT_0_D(&mut self) {
+    pub(crate) fn instrCB__BIT_0_D(&mut self) {
         self.bit(0, self.data.D);
     }
 
     /* BIT 0,E */
-    fn instrCB__BIT_0_E(&mut self) {
+    pub(crate) fn instrCB__BIT_0_E(&mut self) {
         self.bit(0, self.data.E);
     }
 
     /* BIT 0,H */
-    fn instrCB__BIT_0_H(&mut self) {
+    pub(crate) fn instrCB__BIT_0_H(&mut self) {
         self.bit(0, self.data.H);
     }
 
     /* BIT 0,L */
-    fn instrCB__BIT_0_L(&mut self) {
+    pub(crate) fn instrCB__BIT_0_L(&mut self) {
         self.bit(0, self.data.L);
     }
 
     /* BIT 0,(HL) */
-    fn instrCB__BIT_0_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_0_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(0, byte_temp)
     }
 
     /* BIT 0,A */
-    fn instrCB__BIT_0_A(&mut self) {
+    pub(crate) fn instrCB__BIT_0_A(&mut self) {
         self.bit(0, self.data.A)
     }
 
     /* BIT 1,B */
-    fn instrCB__BIT_1_B(&mut self) {
+    pub(crate) fn instrCB__BIT_1_B(&mut self) {
         self.bit(1, self.data.B)
     }
 
     /* BIT 1,C */
-    fn instrCB__BIT_1_C(&mut self) {
+    pub(crate) fn instrCB__BIT_1_C(&mut self) {
         self.bit(1, self.data.C)
     }
 
     /* BIT 1,D */
-    fn instrCB__BIT_1_D(&mut self) {
+    pub(crate) fn instrCB__BIT_1_D(&mut self) {
         self.bit(1, self.data.D)
     }
 
     /* BIT 1,E */
-    fn instrCB__BIT_1_E(&mut self) {
+    pub(crate) fn instrCB__BIT_1_E(&mut self) {
         self.bit(1, self.data.E)
     }
 
     /* BIT 1,H */
-    fn instrCB__BIT_1_H(&mut self) {
+    pub(crate) fn instrCB__BIT_1_H(&mut self) {
         self.bit(1, self.data.H)
     }
 
     /* BIT 1,L */
-    fn instrCB__BIT_1_L(&mut self) {
+    pub(crate) fn instrCB__BIT_1_L(&mut self) {
         self.bit(1, self.data.L)
     }
 
     /* BIT 1,(HL) */
-    fn instrCB__BIT_1_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_1_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(1, byte_temp);
     }
 
     /* BIT 1,A */
-    fn instrCB__BIT_1_A(&mut self) {
+    pub(crate) fn instrCB__BIT_1_A(&mut self) {
         self.bit(1, self.data.A);
     }
 
     /* BIT 2,B */
-    fn instrCB__BIT_2_B(&mut self) {
+    pub(crate) fn instrCB__BIT_2_B(&mut self) {
         self.bit(2, self.data.B);
     }
 
     /* BIT 2,C */
-    fn instrCB__BIT_2_C(&mut self) {
+    pub(crate) fn instrCB__BIT_2_C(&mut self) {
         self.bit(2, self.data.C);
     }
 
     /* BIT 2,D */
-    fn instrCB__BIT_2_D(&mut self) {
+    pub(crate) fn instrCB__BIT_2_D(&mut self) {
         self.bit(2, self.data.D);
     }
 
     /* BIT 2,E */
-    fn instrCB__BIT_2_E(&mut self) {
+    pub(crate) fn instrCB__BIT_2_E(&mut self) {
         self.bit(2, self.data.E);
     }
 
     /* BIT 2,H */
-    fn instrCB__BIT_2_H(&mut self) {
+    pub(crate) fn instrCB__BIT_2_H(&mut self) {
         self.bit(2, self.data.H);
     }
 
     /* BIT 2,L */
-    fn instrCB__BIT_2_L(&mut self) {
+    pub(crate) fn instrCB__BIT_2_L(&mut self) {
         self.bit(2, self.data.L);
     }
 
     /* BIT 2,(HL) */
-    fn instrCB__BIT_2_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_2_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(2, byte_temp);
     }
 
     /* BIT 2,A */
-    fn instrCB__BIT_2_A(&mut self) {
+    pub(crate) fn instrCB__BIT_2_A(&mut self) {
         self.bit(2, self.data.A);
     }
 
     /* BIT 3,B */
-    fn instrCB__BIT_3_B(&mut self) {
+    pub(crate) fn instrCB__BIT_3_B(&mut self) {
         self.bit(3, self.data.B);
     }
 
     /* BIT 3,C */
-    fn instrCB__BIT_3_C(&mut self) {
+    pub(crate) fn instrCB__BIT_3_C(&mut self) {
         self.bit(3, self.data.C);
     }
 
     /* BIT 3,D */
-    fn instrCB__BIT_3_D(&mut self) {
+    pub(crate) fn instrCB__BIT_3_D(&mut self) {
         self.bit(3, self.data.D)
     }
 
     /* BIT 3,E */
-    fn instrCB__BIT_3_E(&mut self) {
+    pub(crate) fn instrCB__BIT_3_E(&mut self) {
         self.bit(3, self.data.E)
     }
 
     /* BIT 3,H */
-    fn instrCB__BIT_3_H(&mut self) {
+    pub(crate) fn instrCB__BIT_3_H(&mut self) {
         self.bit(3, self.data.H)
     }
 
     /* BIT 3,L */
-    fn instrCB__BIT_3_L(&mut self) {
+    pub(crate) fn instrCB__BIT_3_L(&mut self) {
         self.bit(3, self.data.L)
     }
 
     /* BIT 3,(HL) */
-    fn instrCB__BIT_3_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_3_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(3, byte_temp);
     }
 
     /* BIT 3,A */
-    fn instrCB__BIT_3_A(&mut self) {
+    pub(crate) fn instrCB__BIT_3_A(&mut self) {
         self.bit(3, self.data.A);
     }
 
     /* BIT 4,B */
-    fn instrCB__BIT_4_B(&mut self) {
+    pub(crate) fn instrCB__BIT_4_B(&mut self) {
         self.bit(4, self.data.B);
     }
 
     /* BIT 4,C */
-    fn instrCB__BIT_4_C(&mut self) {
+    pub(crate) fn instrCB__BIT_4_C(&mut self) {
         self.bit(4, self.data.C);
     }
 
     /* BIT 4,D */
-    fn instrCB__BIT_4_D(&mut self) {
+    pub(crate) fn instrCB__BIT_4_D(&mut self) {
         self.bit(4, self.data.D);
     }
 
     /* BIT 4,E */
-    fn instrCB__BIT_4_E(&mut self) {
+    pub(crate) fn instrCB__BIT_4_E(&mut self) {
         self.bit(4, self.data.E);
     }
 
     /* BIT 4,H */
-    fn instrCB__BIT_4_H(&mut self) {
+    pub(crate) fn instrCB__BIT_4_H(&mut self) {
         self.bit(4, self.data.H);
     }
 
     /* BIT 4,L */
-    fn instrCB__BIT_4_L(&mut self) {
+    pub(crate) fn instrCB__BIT_4_L(&mut self) {
         self.bit(4, self.data.L);
     }
 
     /* BIT 4,(HL) */
-    fn instrCB__BIT_4_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_4_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(4, byte_temp);
     }
 
     /* BIT 4,A */
-    fn instrCB__BIT_4_A(&mut self) {
+    pub(crate) fn instrCB__BIT_4_A(&mut self) {
         self.bit(4, self.data.A);
     }
 
     /* BIT 5,B */
-    fn instrCB__BIT_5_B(&mut self) {
+    pub(crate) fn instrCB__BIT_5_B(&mut self) {
         self.bit(5, self.data.B);
     }
 
     /* BIT 5,C */
-    fn instrCB__BIT_5_C(&mut self) {
+    pub(crate) fn instrCB__BIT_5_C(&mut self) {
         self.bit(5, self.data.C);
     }
 
     /* BIT 5,D */
-    fn instrCB__BIT_5_D(&mut self) {
+    pub(crate) fn instrCB__BIT_5_D(&mut self) {
         self.bit(5, self.data.D);
     }
 
     /* BIT 5,E */
-    fn instrCB__BIT_5_E(&mut self) {
+    pub(crate) fn instrCB__BIT_5_E(&mut self) {
         self.bit(5, self.data.E);
     }
 
     /* BIT 5,H */
-    fn instrCB__BIT_5_H(&mut self) {
+    pub(crate) fn instrCB__BIT_5_H(&mut self) {
         self.bit(5, self.data.H);
     }
 
     /* BIT 5,L */
-    fn instrCB__BIT_5_L(&mut self) {
+    pub(crate) fn instrCB__BIT_5_L(&mut self) {
         self.bit(5, self.data.L);
     }
 
     /* BIT 5,(HL) */
-    fn instrCB__BIT_5_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_5_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(5, byte_temp);
     }
 
     /* BIT 5,A */
-    fn instrCB__BIT_5_A(&mut self) {
+    pub(crate) fn instrCB__BIT_5_A(&mut self) {
         self.bit(5, self.data.A);
     }
 
     /* BIT 6,B */
-    fn instrCB__BIT_6_B(&mut self) {
+    pub(crate) fn instrCB__BIT_6_B(&mut self) {
         self.bit(6, self.data.B);
     }
 
     /* BIT 6,C */
-    fn instrCB__BIT_6_C(&mut self) {
+    pub(crate) fn instrCB__BIT_6_C(&mut self) {
         self.bit(6, self.data.C);
     }
 
     /* BIT 6,D */
-    fn instrCB__BIT_6_D(&mut self) {
+    pub(crate) fn instrCB__BIT_6_D(&mut self) {
         self.bit(6, self.data.D);
     }
 
     /* BIT 6,E */
-    fn instrCB__BIT_6_E(&mut self) {
+    pub(crate) fn instrCB__BIT_6_E(&mut self) {
         self.bit(6, self.data.E);
     }
 
     /* BIT 6,H */
-    fn instrCB__BIT_6_H(&mut self) {
+    pub(crate) fn instrCB__BIT_6_H(&mut self) {
         self.bit(6, self.data.H)
     }
 
     /* BIT 6,L */
-    fn instrCB__BIT_6_L(&mut self) {
+    pub(crate) fn instrCB__BIT_6_L(&mut self) {
         self.bit(6, self.data.L)
     }
 
     /* BIT 6,(HL) */
-    fn instrCB__BIT_6_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_6_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(6, byte_temp);
     }
 
     /* BIT 6,A */
-    fn instrCB__BIT_6_A(&mut self) {
+    pub(crate) fn instrCB__BIT_6_A(&mut self) {
         self.bit(6, self.data.A);
     }
 
     /* BIT 7,B */
-    fn instrCB__BIT_7_B(&mut self) {
+    pub(crate) fn instrCB__BIT_7_B(&mut self) {
         self.bit(7, self.data.B);
     }
 
     /* BIT 7,C */
-    fn instrCB__BIT_7_C(&mut self) {
+    pub(crate) fn instrCB__BIT_7_C(&mut self) {
         self.bit(7, self.data.C);
     }
 
     /* BIT 7,D */
-    fn instrCB__BIT_7_D(&mut self) {
+    pub(crate) fn instrCB__BIT_7_D(&mut self) {
         self.bit(7, self.data.D);
     }
 
     /* BIT 7,E */
-    fn instrCB__BIT_7_E(&mut self) {
+    pub(crate) fn instrCB__BIT_7_E(&mut self) {
         self.bit(7, self.data.E);
     }
 
     /* BIT 7,H */
-    fn instrCB__BIT_7_H(&mut self) {
+    pub(crate) fn instrCB__BIT_7_H(&mut self) {
         self.bit(7, self.data.H);
     }
 
     /* BIT 7,L */
-    fn instrCB__BIT_7_L(&mut self) {
+    pub(crate) fn instrCB__BIT_7_L(&mut self) {
         self.bit(7, self.data.L);
     }
 
     /* BIT 7,(HL) */
-    fn instrCB__BIT_7_iHL(&mut self) {
+    pub(crate) fn instrCB__BIT_7_iHL(&mut self) {
         let byte_temp = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.bit(7, byte_temp);
     }
 
     /* BIT 7,A */
-    fn instrCB__BIT_7_A(&mut self) {
+    pub(crate) fn instrCB__BIT_7_A(&mut self) {
         self.bit(7, self.data.A);
     }
 
     /* RES 0,B */
-    fn instrCB__RES_0_B(&mut self) {
+    pub(crate) fn instrCB__RES_0_B(&mut self) {
         self.data.B &= 0xfe;
     }
 
     /* RES 0,C */
-    fn instrCB__RES_0_C(&mut self) {
+    pub(crate) fn instrCB__RES_0_C(&mut self) {
         self.data.C &= 0xfe;
     }
 
     /* RES 0,D */
-    fn instrCB__RES_0_D(&mut self) {
+    pub(crate) fn instrCB__RES_0_D(&mut self) {
         self.data.D &= 0xfe;
     }
 
     /* RES 0,E */
-    fn instrCB__RES_0_E(&mut self) {
+    pub(crate) fn instrCB__RES_0_E(&mut self) {
         self.data.E &= 0xfe;
     }
 
     /* RES 0,H */
-    fn instrCB__RES_0_H(&mut self) {
+    pub(crate) fn instrCB__RES_0_H(&mut self) {
         self.data.H &= 0xfe;
     }
 
     /* RES 0,L */
-    fn instrCB__RES_0_L(&mut self) {
+    pub(crate) fn instrCB__RES_0_L(&mut self) {
         self.data.L &= 0xfe;
     }
 
     /* RES 0,(HL) */
-    fn instrCB__RES_0_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_0_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xfe);
     }
 
     /* RES 0,A */
-    fn instrCB__RES_0_A(&mut self) {
+    pub(crate) fn instrCB__RES_0_A(&mut self) {
         self.data.A &= 0xfe;
     }
 
     /* RES 1,B */
-    fn instrCB__RES_1_B(&mut self) {
+    pub(crate) fn instrCB__RES_1_B(&mut self) {
         self.data.B &= 0xfd;
     }
 
     /* RES 1,C */
-    fn instrCB__RES_1_C(&mut self) {
+    pub(crate) fn instrCB__RES_1_C(&mut self) {
         self.data.C &= 0xfd;
     }
 
     /* RES 1,D */
-    fn instrCB__RES_1_D(&mut self) {
+    pub(crate) fn instrCB__RES_1_D(&mut self) {
         self.data.D &= 0xfd;
     }
 
     /* RES 1,E */
-    fn instrCB__RES_1_E(&mut self) {
+    pub(crate) fn instrCB__RES_1_E(&mut self) {
         self.data.E &= 0xfd;
     }
 
     /* RES 1,H */
-    fn instrCB__RES_1_H(&mut self) {
+    pub(crate) fn instrCB__RES_1_H(&mut self) {
         self.data.H &= 0xfd;
     }
 
     /* RES 1,L */
-    fn instrCB__RES_1_L(&mut self) {
+    pub(crate) fn instrCB__RES_1_L(&mut self) {
         self.data.L &= 0xfd;
     }
 
     /* RES 1,(HL) */
-    fn instrCB__RES_1_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_1_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xfd);
     }
 
     /* RES 1,A */
-    fn instrCB__RES_1_A(&mut self) {
+    pub(crate) fn instrCB__RES_1_A(&mut self) {
         self.data.A &= 0xfd;
     }
 
     /* RES 2,B */
-    fn instrCB__RES_2_B(&mut self) {
+    pub(crate) fn instrCB__RES_2_B(&mut self) {
         self.data.B &= 0xfb;
     }
 
     /* RES 2,C */
-    fn instrCB__RES_2_C(&mut self) {
+    pub(crate) fn instrCB__RES_2_C(&mut self) {
         self.data.C &= 0xfb;
     }
 
     /* RES 2,D */
-    fn instrCB__RES_2_D(&mut self) {
+    pub(crate) fn instrCB__RES_2_D(&mut self) {
         self.data.D &= 0xfb;
     }
 
     /* RES 2,E */
-    fn instrCB__RES_2_E(&mut self) {
+    pub(crate) fn instrCB__RES_2_E(&mut self) {
         self.data.E &= 0xfb;
     }
 
     /* RES 2,H */
-    fn instrCB__RES_2_H(&mut self) {
+    pub(crate) fn instrCB__RES_2_H(&mut self) {
         self.data.H &= 0xfb;
     }
 
     /* RES 2,L */
-    fn instrCB__RES_2_L(&mut self) {
+    pub(crate) fn instrCB__RES_2_L(&mut self) {
         self.data.L &= 0xfb;
     }
 
     /* RES 2,(HL) */
-    fn instrCB__RES_2_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_2_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xfb)
     }
 
     /* RES 2,A */
-    fn instrCB__RES_2_A(&mut self) {
+    pub(crate) fn instrCB__RES_2_A(&mut self) {
         self.data.A &= 0xfb
     }
 
     /* RES 3,B */
-    fn instrCB__RES_3_B(&mut self) {
+    pub(crate) fn instrCB__RES_3_B(&mut self) {
         self.data.B &= 0xf7
     }
 
     /* RES 3,C */
-    fn instrCB__RES_3_C(&mut self) {
+    pub(crate) fn instrCB__RES_3_C(&mut self) {
         self.data.C &= 0xf7
     }
 
     /* RES 3,D */
-    fn instrCB__RES_3_D(&mut self) {
+    pub(crate) fn instrCB__RES_3_D(&mut self) {
         self.data.D &= 0xf7
     }
 
     /* RES 3,E */
-    fn instrCB__RES_3_E(&mut self) {
+    pub(crate) fn instrCB__RES_3_E(&mut self) {
         self.data.E &= 0xf7
     }
 
     /* RES 3,H */
-    fn instrCB__RES_3_H(&mut self) {
+    pub(crate) fn instrCB__RES_3_H(&mut self) {
         self.data.H &= 0xf7
     }
 
     /* RES 3,L */
-    fn instrCB__RES_3_L(&mut self) {
+    pub(crate) fn instrCB__RES_3_L(&mut self) {
         self.data.L &= 0xf7
     }
 
     /* RES 3,(HL) */
-    fn instrCB__RES_3_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_3_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xf7);
     }
 
     /* RES 3,A */
-    fn instrCB__RES_3_A(&mut self) {
+    pub(crate) fn instrCB__RES_3_A(&mut self) {
         self.data.A &= 0xf7;
     }
 
     /* RES 4,B */
-    fn instrCB__RES_4_B(&mut self) {
+    pub(crate) fn instrCB__RES_4_B(&mut self) {
         self.data.B &= 0xef;
     }
 
     /* RES 4,C */
-    fn instrCB__RES_4_C(&mut self) {
+    pub(crate) fn instrCB__RES_4_C(&mut self) {
         self.data.C &= 0xef;
     }
 
     /* RES 4,D */
-    fn instrCB__RES_4_D(&mut self) {
+    pub(crate) fn instrCB__RES_4_D(&mut self) {
         self.data.D &= 0xef;
     }
 
     /* RES 4,E */
-    fn instrCB__RES_4_E(&mut self) {
+    pub(crate) fn instrCB__RES_4_E(&mut self) {
         self.data.E &= 0xef;
     }
 
     /* RES 4,H */
-    fn instrCB__RES_4_H(&mut self) {
+    pub(crate) fn instrCB__RES_4_H(&mut self) {
         self.data.H &= 0xef;
     }
 
     /* RES 4,L */
-    fn instrCB__RES_4_L(&mut self) {
+    pub(crate) fn instrCB__RES_4_L(&mut self) {
         self.data.L &= 0xef;
     }
 
     /* RES 4,(HL) */
-    fn instrCB__RES_4_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_4_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xef);
     }
 
     /* RES 4,A */
-    fn instrCB__RES_4_A(&mut self) {
+    pub(crate) fn instrCB__RES_4_A(&mut self) {
         self.data.A &= 0xef;
     }
 
     /* RES 5,B */
-    fn instrCB__RES_5_B(&mut self) {
+    pub(crate) fn instrCB__RES_5_B(&mut self) {
         self.data.B &= 0xdf;
     }
 
     /* RES 5,C */
-    fn instrCB__RES_5_C(&mut self) {
+    pub(crate) fn instrCB__RES_5_C(&mut self) {
         self.data.C &= 0xdf;
     }
 
     /* RES 5,D */
-    fn instrCB__RES_5_D(&mut self) {
+    pub(crate) fn instrCB__RES_5_D(&mut self) {
         self.data.D &= 0xdf;
     }
 
     /* RES 5,E */
-    fn instrCB__RES_5_E(&mut self) {
+    pub(crate) fn instrCB__RES_5_E(&mut self) {
         self.data.E &= 0xdf;
     }
 
     /* RES 5,H */
-    fn instrCB__RES_5_H(&mut self) {
+    pub(crate) fn instrCB__RES_5_H(&mut self) {
         self.data.H &= 0xdf;
     }
 
     /* RES 5,L */
-    fn instrCB__RES_5_L(&mut self) {
+    pub(crate) fn instrCB__RES_5_L(&mut self) {
         self.data.L &= 0xdf;
     }
 
     /* RES 5,(HL) */
-    fn instrCB__RES_5_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_5_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xdf);
     }
 
     /* RES 5,A */
-    fn instrCB__RES_5_A(&mut self) {
+    pub(crate) fn instrCB__RES_5_A(&mut self) {
         self.data.A &= 0xdf;
     }
 
     /* RES 6,B */
-    fn instrCB__RES_6_B(&mut self) {
+    pub(crate) fn instrCB__RES_6_B(&mut self) {
         self.data.B &= 0xbf
     }
 
     /* RES 6,C */
-    fn instrCB__RES_6_C(&mut self) {
+    pub(crate) fn instrCB__RES_6_C(&mut self) {
         self.data.C &= 0xbf
     }
 
     /* RES 6,D */
-    fn instrCB__RES_6_D(&mut self) {
+    pub(crate) fn instrCB__RES_6_D(&mut self) {
         self.data.D &= 0xbf
     }
 
     /* RES 6,E */
-    fn instrCB__RES_6_E(&mut self) {
+    pub(crate) fn instrCB__RES_6_E(&mut self) {
         self.data.E &= 0xbf
     }
 
     /* RES 6,H */
-    fn instrCB__RES_6_H(&mut self) {
+    pub(crate) fn instrCB__RES_6_H(&mut self) {
         self.data.H &= 0xbf
     }
 
     /* RES 6,L */
-    fn instrCB__RES_6_L(&mut self) {
+    pub(crate) fn instrCB__RES_6_L(&mut self) {
         self.data.L &= 0xbf
     }
 
     /* RES 6,(HL) */
-    fn instrCB__RES_6_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_6_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0xbf);
     }
 
     /* RES 6,A */
-    fn instrCB__RES_6_A(&mut self) {
+    pub(crate) fn instrCB__RES_6_A(&mut self) {
         self.data.A &= 0xbf;
     }
 
     /* RES 7,B */
-    fn instrCB__RES_7_B(&mut self) {
+    pub(crate) fn instrCB__RES_7_B(&mut self) {
         self.data.B &= 0x7f;
     }
 
     /* RES 7,C */
-    fn instrCB__RES_7_C(&mut self) {
+    pub(crate) fn instrCB__RES_7_C(&mut self) {
         self.data.C &= 0x7f;
     }
 
     /* RES 7,D */
-    fn instrCB__RES_7_D(&mut self) {
+    pub(crate) fn instrCB__RES_7_D(&mut self) {
         self.data.D &= 0x7f;
     }
 
     /* RES 7,E */
-    fn instrCB__RES_7_E(&mut self) {
+    pub(crate) fn instrCB__RES_7_E(&mut self) {
         self.data.E &= 0x7f;
     }
 
     /* RES 7,H */
-    fn instrCB__RES_7_H(&mut self) {
+    pub(crate) fn instrCB__RES_7_H(&mut self) {
         self.data.H &= 0x7f;
     }
 
     /* RES 7,L */
-    fn instrCB__RES_7_L(&mut self) {
+    pub(crate) fn instrCB__RES_7_L(&mut self) {
         self.data.L &= 0x7f;
     }
 
     /* RES 7,(HL) */
-    fn instrCB__RES_7_iHL(&mut self) {
+    pub(crate) fn instrCB__RES_7_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp & 0x7f);
     }
 
     /* RES 7,A */
-    fn instrCB__RES_7_A(&mut self) {
+    pub(crate) fn instrCB__RES_7_A(&mut self) {
         self.data.A &= 0x7f;
     }
 
     /* SET 0,B */
-    fn instrCB__SET_0_B(&mut self) {
+    pub(crate) fn instrCB__SET_0_B(&mut self) {
         self.data.B |= 0x01;
     }
 
     /* SET 0,C */
-    fn instrCB__SET_0_C(&mut self) {
+    pub(crate) fn instrCB__SET_0_C(&mut self) {
         self.data.C |= 0x01;
     }
 
     /* SET 0,D */
-    fn instrCB__SET_0_D(&mut self) {
+    pub(crate) fn instrCB__SET_0_D(&mut self) {
         self.data.D |= 0x01;
     }
 
     /* SET 0,E */
-    fn instrCB__SET_0_E(&mut self) {
+    pub(crate) fn instrCB__SET_0_E(&mut self) {
         self.data.E |= 0x01;
     }
 
     /* SET 0,H */
-    fn instrCB__SET_0_H(&mut self) {
+    pub(crate) fn instrCB__SET_0_H(&mut self) {
         self.data.H |= 0x01;
     }
 
     /* SET 0,L */
-    fn instrCB__SET_0_L(&mut self) {
+    pub(crate) fn instrCB__SET_0_L(&mut self) {
         self.data.L |= 0x01;
     }
 
     /* SET 0,(HL) */
-    fn instrCB__SET_0_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_0_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x01);
     }
 
     /* SET 0,A */
-    fn instrCB__SET_0_A(&mut self) {
+    pub(crate) fn instrCB__SET_0_A(&mut self) {
         self.data.A |= 0x01;
     }
 
     /* SET 1,B */
-    fn instrCB__SET_1_B(&mut self) {
+    pub(crate) fn instrCB__SET_1_B(&mut self) {
         self.data.B |= 0x02;
     }
 
     /* SET 1,C */
-    fn instrCB__SET_1_C(&mut self) {
+    pub(crate) fn instrCB__SET_1_C(&mut self) {
         self.data.C |= 0x02;
     }
 
     /* SET 1,D */
-    fn instrCB__SET_1_D(&mut self) {
+    pub(crate) fn instrCB__SET_1_D(&mut self) {
         self.data.D |= 0x02;
     }
 
     /* SET 1,E */
-    fn instrCB__SET_1_E(&mut self) {
+    pub(crate) fn instrCB__SET_1_E(&mut self) {
         self.data.E |= 0x02;
     }
 
     /* SET 1,H */
-    fn instrCB__SET_1_H(&mut self) {
+    pub(crate) fn instrCB__SET_1_H(&mut self) {
         self.data.H |= 0x02;
     }
 
     /* SET 1,L */
-    fn instrCB__SET_1_L(&mut self) {
+    pub(crate) fn instrCB__SET_1_L(&mut self) {
         self.data.L |= 0x02;
     }
 
     /* SET 1,(HL) */
-    fn instrCB__SET_1_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_1_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x02)
     }
 
     /* SET 1,A */
-    fn instrCB__SET_1_A(&mut self) {
+    pub(crate) fn instrCB__SET_1_A(&mut self) {
         self.data.A |= 0x02;
     }
 
     /* SET 2,B */
-    fn instrCB__SET_2_B(&mut self) {
+    pub(crate) fn instrCB__SET_2_B(&mut self) {
         self.data.B |= 0x04;
     }
 
     /* SET 2,C */
-    fn instrCB__SET_2_C(&mut self) {
+    pub(crate) fn instrCB__SET_2_C(&mut self) {
         self.data.C |= 0x04;
     }
 
     /* SET 2,D */
-    fn instrCB__SET_2_D(&mut self) {
+    pub(crate) fn instrCB__SET_2_D(&mut self) {
         self.data.D |= 0x04;
     }
 
     /* SET 2,E */
-    fn instrCB__SET_2_E(&mut self) {
+    pub(crate) fn instrCB__SET_2_E(&mut self) {
         self.data.E |= 0x04;
     }
 
     /* SET 2,H */
-    fn instrCB__SET_2_H(&mut self) {
+    pub(crate) fn instrCB__SET_2_H(&mut self) {
         self.data.H |= 0x04;
     }
 
     /* SET 2,L */
-    fn instrCB__SET_2_L(&mut self) {
+    pub(crate) fn instrCB__SET_2_L(&mut self) {
         self.data.L |= 0x04;
     }
 
     /* SET 2,(HL) */
-    fn instrCB__SET_2_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_2_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x04)
     }
 
     /* SET 2,A */
-    fn instrCB__SET_2_A(&mut self) {
+    pub(crate) fn instrCB__SET_2_A(&mut self) {
         self.data.A |= 0x04;
     }
 
     /* SET 3,B */
-    fn instrCB__SET_3_B(&mut self) {
+    pub(crate) fn instrCB__SET_3_B(&mut self) {
         self.data.B |= 0x08;
     }
 
     /* SET 3,C */
-    fn instrCB__SET_3_C(&mut self) {
+    pub(crate) fn instrCB__SET_3_C(&mut self) {
         self.data.C |= 0x08;
     }
 
     /* SET 3,D */
-    fn instrCB__SET_3_D(&mut self) {
+    pub(crate) fn instrCB__SET_3_D(&mut self) {
         self.data.D |= 0x08;
     }
 
     /* SET 3,E */
-    fn instrCB__SET_3_E(&mut self) {
+    pub(crate) fn instrCB__SET_3_E(&mut self) {
         self.data.E |= 0x08;
     }
 
     /* SET 3,H */
-    fn instrCB__SET_3_H(&mut self) {
+    pub(crate) fn instrCB__SET_3_H(&mut self) {
         self.data.H |= 0x08;
     }
 
     /* SET 3,L */
-    fn instrCB__SET_3_L(&mut self) {
+    pub(crate) fn instrCB__SET_3_L(&mut self) {
         self.data.L |= 0x08;
     }
 
     /* SET 3,(HL) */
-    fn instrCB__SET_3_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_3_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x08)
     }
 
     /* SET 3,A */
-    fn instrCB__SET_3_A(&mut self) {
+    pub(crate) fn instrCB__SET_3_A(&mut self) {
         self.data.A |= 0x08;
     }
 
     /* SET 4,B */
-    fn instrCB__SET_4_B(&mut self) {
+    pub(crate) fn instrCB__SET_4_B(&mut self) {
         self.data.B |= 0x10;
     }
 
     /* SET 4,C */
-    fn instrCB__SET_4_C(&mut self) {
+    pub(crate) fn instrCB__SET_4_C(&mut self) {
         self.data.C |= 0x10;
     }
 
     /* SET 4,D */
-    fn instrCB__SET_4_D(&mut self) {
+    pub(crate) fn instrCB__SET_4_D(&mut self) {
         self.data.D |= 0x10;
     }
 
     /* SET 4,E */
-    fn instrCB__SET_4_E(&mut self) {
+    pub(crate) fn instrCB__SET_4_E(&mut self) {
         self.data.E |= 0x10;
     }
 
     /* SET 4,H */
-    fn instrCB__SET_4_H(&mut self) {
+    pub(crate) fn instrCB__SET_4_H(&mut self) {
         self.data.H |= 0x10;
     }
 
     /* SET 4,L */
-    fn instrCB__SET_4_L(&mut self) {
+    pub(crate) fn instrCB__SET_4_L(&mut self) {
         self.data.L |= 0x10;
     }
 
     /* SET 4,(HL) */
-    fn instrCB__SET_4_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_4_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x10)
     }
 
     /* SET 4,A */
-    fn instrCB__SET_4_A(&mut self) {
+    pub(crate) fn instrCB__SET_4_A(&mut self) {
         self.data.A |= 0x10;
     }
 
     /* SET 5,B */
-    fn instrCB__SET_5_B(&mut self) {
+    pub(crate) fn instrCB__SET_5_B(&mut self) {
         self.data.B |= 0x20;
     }
 
     /* SET 5,C */
-    fn instrCB__SET_5_C(&mut self) {
+    pub(crate) fn instrCB__SET_5_C(&mut self) {
         self.data.C |= 0x20;
     }
 
     /* SET 5,D */
-    fn instrCB__SET_5_D(&mut self) {
+    pub(crate) fn instrCB__SET_5_D(&mut self) {
         self.data.D |= 0x20;
     }
 
     /* SET 5,E */
-    fn instrCB__SET_5_E(&mut self) {
+    pub(crate) fn instrCB__SET_5_E(&mut self) {
         self.data.E |= 0x20;
     }
 
     /* SET 5,H */
-    fn instrCB__SET_5_H(&mut self) {
+    pub(crate) fn instrCB__SET_5_H(&mut self) {
         self.data.H |= 0x20;
     }
 
     /* SET 5,L */
-    fn instrCB__SET_5_L(&mut self) {
+    pub(crate) fn instrCB__SET_5_L(&mut self) {
         self.data.L |= 0x20;
     }
 
     /* SET 5,(HL) */
-    fn instrCB__SET_5_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_5_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x20)
     }
 
     /* SET 5,A */
-    fn instrCB__SET_5_A(&mut self) {
+    pub(crate) fn instrCB__SET_5_A(&mut self) {
         self.data.A |= 0x20;
     }
 
     /* SET 6,B */
-    fn instrCB__SET_6_B(&mut self) {
+    pub(crate) fn instrCB__SET_6_B(&mut self) {
         self.data.B |= 0x40;
     }
 
     /* SET 6,C */
-    fn instrCB__SET_6_C(&mut self) {
+    pub(crate) fn instrCB__SET_6_C(&mut self) {
         self.data.C |= 0x40;
     }
 
     /* SET 6,D */
-    fn instrCB__SET_6_D(&mut self) {
+    pub(crate) fn instrCB__SET_6_D(&mut self) {
         self.data.D |= 0x40;
     }
 
     /* SET 6,E */
-    fn instrCB__SET_6_E(&mut self) {
+    pub(crate) fn instrCB__SET_6_E(&mut self) {
         self.data.E |= 0x40;
     }
 
     /* SET 6,H */
-    fn instrCB__SET_6_H(&mut self) {
+    pub(crate) fn instrCB__SET_6_H(&mut self) {
         self.data.H |= 0x40;
     }
 
     /* SET 6,L */
-    fn instrCB__SET_6_L(&mut self) {
+    pub(crate) fn instrCB__SET_6_L(&mut self) {
         self.data.L |= 0x40;
     }
 
     /* SET 6,(HL) */
-    fn instrCB__SET_6_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_6_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x40)
     }
 
     /* SET 6,A */
-    fn instrCB__SET_6_A(&mut self) {
+    pub(crate) fn instrCB__SET_6_A(&mut self) {
         self.data.A |= 0x40;
     }
 
     /* SET 7,B */
-    fn instrCB__SET_7_B(&mut self) {
+    pub(crate) fn instrCB__SET_7_B(&mut self) {
         self.data.B |= 0x80;
     }
 
     /* SET 7,C */
-    fn instrCB__SET_7_C(&mut self) {
+    pub(crate) fn instrCB__SET_7_C(&mut self) {
         self.data.C |= 0x80;
     }
 
     /* SET 7,D */
-    fn instrCB__SET_7_D(&mut self) {
+    pub(crate) fn instrCB__SET_7_D(&mut self) {
         self.data.D |= 0x80;
     }
 
     /* SET 7,E */
-    fn instrCB__SET_7_E(&mut self) {
+    pub(crate) fn instrCB__SET_7_E(&mut self) {
         self.data.E |= 0x80;
     }
 
     /* SET 7,H */
-    fn instrCB__SET_7_H(&mut self) {
+    pub(crate) fn instrCB__SET_7_H(&mut self) {
         self.data.H |= 0x80;
     }
 
     /* SET 7,L */
-    fn instrCB__SET_7_L(&mut self) {
+    pub(crate) fn instrCB__SET_7_L(&mut self) {
         self.data.L |= 0x80;
     }
 
     /* SET 7,(HL) */
-    fn instrCB__SET_7_iHL(&mut self) {
+    pub(crate) fn instrCB__SET_7_iHL(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq(self.HL(), 1);
         self.memory.write_byte(self.HL(), byte_temp | 0x80)
     }
 
     /* SET 7,A */
-    fn instrCB__SET_7_A(&mut self) {
+    pub(crate) fn instrCB__SET_7_A(&mut self) {
         self.data.A |= 0x80;
     }
 
     /* IN B,(C) */
-    fn instrED__IN_B_iC(&mut self) {
+    pub(crate) fn instrED__IN_B_iC(&mut self) {
         // self.in(&self.data.B, self.BC())
         let bc = self.BC();
         self.data.B = self.in_u8_ex(bc);
     }
 
     /* OUT (C),B */
-    fn instrED__OUT_iC_B(&mut self) {
+    pub(crate) fn instrED__OUT_iC_B(&mut self) {
         self.write_port(self.BC(), self.data.B);
     }
 
     /* SBC HL,BC */
-    fn instrED__SBC_HL_BC(&mut self) {
+    pub(crate) fn instrED__SBC_HL_BC(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         self.sbc16(self.BC());
@@ -9496,42 +9496,42 @@ impl Z80 {
     fn_instr_ld_i_nnnn_r16!(instrED__LD_iNNNN_BC, C, B);
 
     /* NEG */
-    fn instrED__NEG(&mut self) {
+    pub(crate) fn instrED__NEG(&mut self) {
         let byte_temp = self.data.A;
         self.data.A = 0;
         self.sub(byte_temp);
     }
 
     /* RETN */
-    fn instrED__RETN(&mut self) {
+    pub(crate) fn instrED__RETN(&mut self) {
         self.data.IFF1 = self.data.IFF2;
         self.ret();
     }
 
     /* IM 0 */
-    fn instrED__IM_0(&mut self) {
+    pub(crate) fn instrED__IM_0(&mut self) {
         self.data.IM = 0;
     }
 
     /* LD I,A */
-    fn instrED__LD_I_A(&mut self) {
+    pub(crate) fn instrED__LD_I_A(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.data.I = self.data.A;
     }
 
     /* IN C,(C) */
-    fn instrED__IN_C_iC(&mut self) {
+    pub(crate) fn instrED__IN_C_iC(&mut self) {
         self.data.C = self.in_u8_ex(self.BC());
     }
 
     /* OUT (C),C */
-    fn instrED__OUT_iC_C(&mut self) {
+    pub(crate) fn instrED__OUT_iC_C(&mut self) {
         self.write_port(self.BC(), self.data.C);
     }
 
     /* ADC HL,BC */
-    fn instrED__ADC_HL_BC(&mut self) {
+    pub(crate) fn instrED__ADC_HL_BC(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         self.adc16(self.BC());
@@ -9541,7 +9541,7 @@ impl Z80 {
     fn_instr_ld_hl_i_nnnn!(instrED__LD_BC_iNNNN, C, B);
 
     /* LD R,A */
-    fn instrED__LD_R_A(&mut self) {
+    pub(crate) fn instrED__LD_R_A(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         /* Keep the RZX instruction counter right */
@@ -9550,12 +9550,12 @@ impl Z80 {
     }
 
     /* IN D,(C) */
-    fn instrED__IN_D_iC(&mut self) {
+    pub(crate) fn instrED__IN_D_iC(&mut self) {
         self.data.D = self.in_u8_ex(self.BC());
     }
 
     /* OUT (C),D */
-    fn instrED__OUT_iC_D(&mut self) {
+    pub(crate) fn instrED__OUT_iC_D(&mut self) {
         self.write_port(self.BC(), self.data.D);
     }
 
@@ -9570,12 +9570,12 @@ impl Z80 {
     fn_instr_ld_i_nnnn_r16!(instrED__LD_iNNNN_DE, E, D);
 
     /* IM 1 */
-    fn instrED__IM_1(&mut self) {
+    pub(crate) fn instrED__IM_1(&mut self) {
         self.data.IM = 1;
     }
 
     /* LD A,I */
-    fn instrED__LD_A_I(&mut self) {
+    pub(crate) fn instrED__LD_A_I(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.data.A = self.data.I;
@@ -9585,18 +9585,18 @@ impl Z80 {
     }
 
     /* IN E,(C) */
-    fn instrED__IN_E_iC(&mut self) {
+    pub(crate) fn instrED__IN_E_iC(&mut self) {
         let port = self.BC();
         self.data.E = self.in_u8_ex(port);
     }
 
     /* OUT (C),E */
-    fn instrED__OUT_iC_E(&mut self) {
+    pub(crate) fn instrED__OUT_iC_E(&mut self) {
         self.write_port(self.BC(), self.data.E);
     }
 
     /* ADC HL,DE */
-    fn instrED__ADC_HL_DE(&mut self) {
+    pub(crate) fn instrED__ADC_HL_DE(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         self.adc16(self.DE());
@@ -9606,12 +9606,12 @@ impl Z80 {
     fn_instr_ld_hl_i_nnnn!(instrED__LD_DE_iNNNN, E, D);
 
     /* IM 2 */
-    fn instrED__IM_2(&mut self) {
+    pub(crate) fn instrED__IM_2(&mut self) {
         self.data.IM = 2;
     }
 
     /* LD A,R */
-    fn instrED__LD_A_R(&mut self) {
+    pub(crate) fn instrED__LD_A_R(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         self.data.A = (self.data.R & 0x7f) as u8 | (self.data.R7 & 0x80);
@@ -9621,17 +9621,17 @@ impl Z80 {
     }
 
     /* IN H,(C) */
-    fn instrED__IN_H_iC(&mut self) {
+    pub(crate) fn instrED__IN_H_iC(&mut self) {
         self.data.H = self.in_u8_ex(self.BC());
     }
 
     /* OUT (C),H */
-    fn instrED__OUT_iC_H(&mut self) {
+    pub(crate) fn instrED__OUT_iC_H(&mut self) {
         self.write_port(self.BC(), self.data.H);
     }
 
     /* SBC HL,HL */
-    fn instrED__SBC_HL_HL(&mut self) {
+    pub(crate) fn instrED__SBC_HL_HL(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         self.sbc16(self.HL())
@@ -9641,7 +9641,7 @@ impl Z80 {
     fn_instr_ld_i_nnnn_r16!(instrED__LD_iNNNN_HL, L, H);
 
     /* RRD */
-    fn instrED__RRD(&mut self) {
+    pub(crate) fn instrED__RRD(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 4);
         self.memory
@@ -9651,17 +9651,17 @@ impl Z80 {
     }
 
     /* IN L,(C) */
-    fn instrED__IN_L_iC(&mut self) {
+    pub(crate) fn instrED__IN_L_iC(&mut self) {
         self.data.L = self.in_u8_ex(self.BC());
     }
 
     /* OUT (C),L */
-    fn instrED__OUT_iC_L(&mut self) {
+    pub(crate) fn instrED__OUT_iC_L(&mut self) {
         self.write_port(self.BC(), self.data.L);
     }
 
     /* ADC HL,HL */
-    fn instrED__ADC_HL_HL(&mut self) {
+    pub(crate) fn instrED__ADC_HL_HL(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         self.adc16(self.HL());
@@ -9671,7 +9671,7 @@ impl Z80 {
     fn_instr_ld_hl_i_nnnn!(instrED__LD_HL_iNNNN, L, H);
 
     /* RLD */
-    fn instrED__RLD(&mut self) {
+    pub(crate) fn instrED__RLD(&mut self) {
         let byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.contend_read_no_mreq_loop(self.HL(), 1, 4);
         self.memory
@@ -9681,17 +9681,17 @@ impl Z80 {
     }
 
     /* IN F,(C) */
-    fn instrED__IN_F_iC(&mut self) {
+    pub(crate) fn instrED__IN_F_iC(&mut self) {
         let _byte_temp: u8 = self.in_u8_ex(self.BC());
     }
 
     /* OUT (C),0 */
-    fn instrED__OUT_iC_0(&mut self) {
+    pub(crate) fn instrED__OUT_iC_0(&mut self) {
         self.write_port(self.BC(), 0);
     }
 
     /* SBC HL,SP */
-    fn instrED__SBC_HL_SP(&mut self) {
+    pub(crate) fn instrED__SBC_HL_SP(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         let value = self.SP();
@@ -9699,24 +9699,24 @@ impl Z80 {
     }
 
     /* LD (nnnn),SP */
-    fn instrED__LD_iNNNN_SP(&mut self) {
+    pub(crate) fn instrED__LD_iNNNN_SP(&mut self) {
         let (sph, spl) = split_word(self.data.sp);
         self.ld16nnrr(spl, sph);
         // break
     }
 
     /* IN A,(C) */
-    fn instrED__IN_A_iC(&mut self) {
+    pub(crate) fn instrED__IN_A_iC(&mut self) {
         self.data.A = self.in_u8_ex(self.BC());
     }
 
     /* OUT (C),A */
-    fn instrED__OUT_iC_A(&mut self) {
+    pub(crate) fn instrED__OUT_iC_A(&mut self) {
         self.write_port(self.BC(), self.data.A);
     }
 
     /* ADC HL,SP */
-    fn instrED__ADC_HL_SP(&mut self) {
+    pub(crate) fn instrED__ADC_HL_SP(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         let value = self.SP();
@@ -9724,7 +9724,7 @@ impl Z80 {
     }
 
     /* LD SP,(nnnn) */
-    fn instrED__LD_SP_iNNNN(&mut self) {
+    pub(crate) fn instrED__LD_SP_iNNNN(&mut self) {
         // let (sph, spl) = splitWord(self.SP());
         let (spl, sph) = self.ld16rrnn_ex();
         self.SetSP(join_bytes(sph, spl));
@@ -9732,7 +9732,7 @@ impl Z80 {
     }
 
     /* LDI */
-    fn instrED__LDI(&mut self) {
+    pub(crate) fn instrED__LDI(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.DecBC();
         self.memory.write_byte(self.DE(), byte_temp);
@@ -9747,7 +9747,7 @@ impl Z80 {
     }
 
     /* CPI */
-    fn instrED__CPI(&mut self) {
+    pub(crate) fn instrED__CPI(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.data.A - value;
         let lookup: u8 =
@@ -9767,7 +9767,7 @@ impl Z80 {
     }
 
     /* INI */
-    fn instrED__INI(&mut self) {
+    pub(crate) fn instrED__INI(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let in_i_temp: u8 = self.read_port(self.BC());
@@ -9787,7 +9787,7 @@ impl Z80 {
     }
 
     /* OUTI */
-    fn instrED__OUTI(&mut self) {
+    pub(crate) fn instrED__OUTI(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let out_i_temp: u8 = self.memory.read_byte(self.HL());
@@ -9807,7 +9807,7 @@ impl Z80 {
     }
 
     /* LDD */
-    fn instrED__LDD(&mut self) {
+    pub(crate) fn instrED__LDD(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.DecBC();
         self.memory.write_byte(self.DE(), byte_temp);
@@ -9822,7 +9822,7 @@ impl Z80 {
     }
 
     /* CPD */
-    fn instrED__CPD(&mut self) {
+    pub(crate) fn instrED__CPD(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.data.A - value;
         let lookup: u8 =
@@ -9842,7 +9842,7 @@ impl Z80 {
     }
 
     /* IND */
-    fn instrED__IND(&mut self) {
+    pub(crate) fn instrED__IND(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let in_i_temp: u8 = self.read_port(self.BC());
@@ -9862,7 +9862,7 @@ impl Z80 {
     }
 
     /* OUTD */
-    fn instrED__OUTD(&mut self) {
+    pub(crate) fn instrED__OUTD(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let out_i_temp: u8 = self.memory.read_byte(self.HL());
@@ -9882,7 +9882,7 @@ impl Z80 {
     }
 
     /* LDIR */
-    fn instrED__LDIR(&mut self) {
+    pub(crate) fn instrED__LDIR(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.write_byte(self.DE(), byte_temp);
         self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
@@ -9904,7 +9904,7 @@ impl Z80 {
     }
 
     /* CPIR */
-    fn instrED__CPIR(&mut self) {
+    pub(crate) fn instrED__CPIR(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.data.A - value;
         let lookup: u8 =
@@ -9931,7 +9931,7 @@ impl Z80 {
     }
 
     /* INIR */
-    fn instrED__INIR(&mut self) {
+    pub(crate) fn instrED__INIR(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let in_i_temp: u8 = self.read_port(self.BC());
@@ -9959,7 +9959,7 @@ impl Z80 {
     }
 
     /* OTIR */
-    fn instrED__OTIR(&mut self) {
+    pub(crate) fn instrED__OTIR(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let out_i_temp: u8 = self.memory.read_byte(self.HL());
@@ -9988,7 +9988,7 @@ impl Z80 {
     }
 
     /* LDDR */
-    fn instrED__LDDR(&mut self) {
+    pub(crate) fn instrED__LDDR(&mut self) {
         let mut byte_temp: u8 = self.memory.read_byte(self.HL());
         self.memory.write_byte(self.DE(), byte_temp);
         self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
@@ -10010,7 +10010,7 @@ impl Z80 {
     }
 
     /* CPDR */
-    fn instrED__CPDR(&mut self) {
+    pub(crate) fn instrED__CPDR(&mut self) {
         let value: u8 = self.memory.read_byte(self.HL());
         let mut byte_temp: u8 = self.data.A - value;
         let lookup: u8 =
@@ -10037,7 +10037,7 @@ impl Z80 {
     }
 
     /* INDR */
-    fn instrED__INDR(&mut self) {
+    pub(crate) fn instrED__INDR(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let in_i_temp: u8 = self.read_port(self.BC());
@@ -10065,7 +10065,7 @@ impl Z80 {
     }
 
     /* OTDR */
-    fn instrED__OTDR(&mut self) {
+    pub(crate) fn instrED__OTDR(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq(_address, 1);
         let address = self.HL();
@@ -10094,12 +10094,12 @@ impl Z80 {
     }
 
     /* slttrap */
-    fn instrED__SLTTRAP(&mut self) {
+    pub(crate) fn instrED__SLTTRAP(&mut self) {
         self.slt_trap(self.HL() as i16, self.data.A);
     }
 
     /* ADD ix,BC */
-    fn instrDD__ADD_REG_BC(&mut self) {
+    pub(crate) fn instrDD__ADD_REG_BC(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.ix, self.BC())
@@ -10110,7 +10110,7 @@ impl Z80 {
     }
 
     /* ADD ix,DE */
-    fn instrDD__ADD_REG_DE(&mut self) {
+    pub(crate) fn instrDD__ADD_REG_DE(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.ix, self.DE())
@@ -10121,7 +10121,7 @@ impl Z80 {
     }
 
     /* LD ix,nnnn */
-    fn instrDD__LD_REG_NNNN(&mut self) {
+    pub(crate) fn instrDD__LD_REG_NNNN(&mut self) {
         let address = self.PC();
         let b1 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -10135,31 +10135,31 @@ impl Z80 {
     fn_instr_ld_i_nnnn_r16!(instrDD__LD_iNNNN_REG, IXL, IXH);
 
     /* INC ix */
-    fn instrDD__INC_REG(&mut self) {
+    pub(crate) fn instrDD__INC_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.IncIX()
     }
 
     /* INC IXH */
-    fn instrDD__INC_REGH(&mut self) {
+    pub(crate) fn instrDD__INC_REGH(&mut self) {
         self.incIXH()
     }
 
     /* DEC IXH */
-    fn instrDD__DEC_REGH(&mut self) {
+    pub(crate) fn instrDD__DEC_REGH(&mut self) {
         self.decIXH()
     }
 
     /* LD IXH,nn */
-    fn instrDD__LD_REGH_NN(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_NN(&mut self) {
         let address = self.PC();
         self.data.IXH = self.memory.read_byte(address);
         self.IncPC(1);
     }
 
     /* ADD ix,ix */
-    fn instrDD__ADD_REG_REG(&mut self) {
+    pub(crate) fn instrDD__ADD_REG_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.ix, self.IX());
@@ -10173,24 +10173,24 @@ impl Z80 {
     fn_instr_ld_hl_i_nnnn!(instrDD__LD_REG_iNNNN, IXL, IXH);
 
     /* DEC ix */
-    fn instrDD__DEC_REG(&mut self) {
+    pub(crate) fn instrDD__DEC_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.DecIX()
     }
 
     /* INC IXL */
-    fn instrDD__INC_REGL(&mut self) {
+    pub(crate) fn instrDD__INC_REGL(&mut self) {
         self.incIXL()
     }
 
     /* DEC IXL */
-    fn instrDD__DEC_REGL(&mut self) {
+    pub(crate) fn instrDD__DEC_REGL(&mut self) {
         self.decIXL()
     }
 
     /* LD IXL,nn */
-    fn instrDD__LD_REGL_NN(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_NN(&mut self) {
         let address = self.PC();
         self.data.IXL = self.memory.read_byte(address);
         self.IncPC(1);
@@ -10203,7 +10203,7 @@ impl Z80 {
     fn_instr_dd_op_i_reg_p_dd!(instrDD__DEC_iREGpDD, dec);
 
     /* LD (ix+dd),nn */
-    fn instrDD__LD_iREGpDD_NN(&mut self) {
+    pub(crate) fn instrDD__LD_iREGpDD_NN(&mut self) {
         let address = self.PC();
         let offset = self.memory.read_byte(address);
         self.IncPC(1);
@@ -10217,7 +10217,7 @@ impl Z80 {
     }
 
     /* ADD ix,SP */
-    fn instrDD__ADD_REG_SP(&mut self) {
+    pub(crate) fn instrDD__ADD_REG_SP(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.ix, self.SP());
@@ -10228,12 +10228,12 @@ impl Z80 {
     }
 
     /* LD B,IXH */
-    fn instrDD__LD_B_REGH(&mut self) {
+    pub(crate) fn instrDD__LD_B_REGH(&mut self) {
         self.data.B = self.data.IXH
     }
 
     /* LD B,IXL */
-    fn instrDD__LD_B_REGL(&mut self) {
+    pub(crate) fn instrDD__LD_B_REGL(&mut self) {
         self.data.B = self.data.IXL
     }
 
@@ -10241,12 +10241,12 @@ impl Z80 {
     fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_B_iREGpDD, B);
 
     /* LD C,IXH */
-    fn instrDD__LD_C_REGH(&mut self) {
+    pub(crate) fn instrDD__LD_C_REGH(&mut self) {
         self.data.C = self.data.IXH
     }
 
     /* LD C,IXL */
-    fn instrDD__LD_C_REGL(&mut self) {
+    pub(crate) fn instrDD__LD_C_REGL(&mut self) {
         self.data.C = self.data.IXL
     }
 
@@ -10254,12 +10254,12 @@ impl Z80 {
     fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_C_iREGpDD, C);
 
     /* LD D,IXH */
-    fn instrDD__LD_D_REGH(&mut self) {
+    pub(crate) fn instrDD__LD_D_REGH(&mut self) {
         self.data.D = self.data.IXH
     }
 
     /* LD D,IXL */
-    fn instrDD__LD_D_REGL(&mut self) {
+    pub(crate) fn instrDD__LD_D_REGL(&mut self) {
         self.data.D = self.data.IXL
     }
 
@@ -10267,12 +10267,12 @@ impl Z80 {
     fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_D_iREGpDD, D);
 
     /* LD E,IXH */
-    fn instrDD__LD_E_REGH(&mut self) {
+    pub(crate) fn instrDD__LD_E_REGH(&mut self) {
         self.data.E = self.data.IXH
     }
 
     /* LD E,IXL */
-    fn instrDD__LD_E_REGL(&mut self) {
+    pub(crate) fn instrDD__LD_E_REGL(&mut self) {
         self.data.E = self.data.IXL
     }
 
@@ -10280,30 +10280,30 @@ impl Z80 {
     fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_E_iREGpDD, E);
 
     /* LD IXH,B */
-    fn instrDD__LD_REGH_B(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_B(&mut self) {
         self.data.IXH = self.data.B
     }
 
     /* LD IXH,C */
-    fn instrDD__LD_REGH_C(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_C(&mut self) {
         self.data.IXH = self.data.C
     }
 
     /* LD IXH,D */
-    fn instrDD__LD_REGH_D(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_D(&mut self) {
         self.data.IXH = self.data.D
     }
 
     /* LD IXH,E */
-    fn instrDD__LD_REGH_E(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_E(&mut self) {
         self.data.IXH = self.data.E
     }
 
     /* LD IXH,IXH */
-    fn instrDD__LD_REGH_REGH(&mut self) {}
+    pub(crate) fn instrDD__LD_REGH_REGH(&mut self) {}
 
     /* LD IXH,IXL */
-    fn instrDD__LD_REGH_REGL(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_REGL(&mut self) {
         self.data.IXH = self.data.IXL
     }
 
@@ -10311,43 +10311,43 @@ impl Z80 {
     fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_H_iREGpDD, H);
 
     /* LD IXH,A */
-    fn instrDD__LD_REGH_A(&mut self) {
+    pub(crate) fn instrDD__LD_REGH_A(&mut self) {
         self.data.IXH = self.data.A
     }
 
     /* LD IXL,B */
-    fn instrDD__LD_REGL_B(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_B(&mut self) {
         self.data.IXL = self.data.B
     }
 
     /* LD IXL,C */
-    fn instrDD__LD_REGL_C(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_C(&mut self) {
         self.data.IXL = self.data.C
     }
 
     /* LD IXL,D */
-    fn instrDD__LD_REGL_D(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_D(&mut self) {
         self.data.IXL = self.data.D
     }
 
     /* LD IXL,E */
-    fn instrDD__LD_REGL_E(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_E(&mut self) {
         self.data.IXL = self.data.E
     }
 
     /* LD IXL,IXH */
-    fn instrDD__LD_REGL_REGH(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_REGH(&mut self) {
         self.data.IXL = self.data.IXH
     }
 
     /* LD IXL,IXL */
-    fn instrDD__LD_REGL_REGL(&mut self) {}
+    pub(crate) fn instrDD__LD_REGL_REGL(&mut self) {}
 
     /* LD L,(ix+dd) */
     fn_instr_dd_ld_r_i_reg_p_dd!(instrDD__LD_L_iREGpDD, L);
 
     /* LD IXL,A */
-    fn instrDD__LD_REGL_A(&mut self) {
+    pub(crate) fn instrDD__LD_REGL_A(&mut self) {
         self.data.IXL = self.data.A
     }
 
@@ -10454,13 +10454,13 @@ impl Z80 {
     fn_instr_dd_op_a_i_reg_p_dd!(instrDD__CP_A_iREGpDD, cp);
 
     /* shift DDFDCB */
-    fn instrDD__SHIFT_DDFDCB(&mut self) {}
+    pub(crate) fn instrDD__SHIFT_DDFDCB(&mut self) {}
 
     /* POP ix */
     fn_instr_pop_r16!(instrDD__POP_REG, IXL, IXH);
 
     /* EX (SP),ix */
-    fn instrDD__EX_iSP_REG(&mut self) {
+    pub(crate) fn instrDD__EX_iSP_REG(&mut self) {
         let address = self.SP();
         let byte_temp_l = self.memory.read_byte(address);
         let sp = self.SP();
@@ -10481,19 +10481,19 @@ impl Z80 {
     fn_instr_push_r16!(instrDD__PUSH_REG, IXL, IXH);
 
     /* JP ix */
-    fn instrDD__JP_REG(&mut self) {
+    pub(crate) fn instrDD__JP_REG(&mut self) {
         self.SetPC(self.IX()); /* NB: NOT INDIRECT! */
     }
 
     /* LD SP,ix */
-    fn instrDD__LD_SP_REG(&mut self) {
+    pub(crate) fn instrDD__LD_SP_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.SetSP(self.IX());
     }
 
     /* ADD iy,BC */
-    fn instrFD__ADD_REG_BC(&mut self) {
+    pub(crate) fn instrFD__ADD_REG_BC(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.iy, self.BC());
@@ -10504,7 +10504,7 @@ impl Z80 {
     }
 
     /* ADD iy,DE */
-    fn instrFD__ADD_REG_DE(&mut self) {
+    pub(crate) fn instrFD__ADD_REG_DE(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.iy, self.DE());
@@ -10515,7 +10515,7 @@ impl Z80 {
     }
 
     /* LD iy,nnnn */
-    fn instrFD__LD_REG_NNNN(&mut self) {
+    pub(crate) fn instrFD__LD_REG_NNNN(&mut self) {
         let address = self.PC();
         let b1 = self.memory.read_byte(address);
         self.IncPC(1);
@@ -10529,31 +10529,31 @@ impl Z80 {
     fn_instr_ld_i_nnnn_r16!(instrFD__LD_iNNNN_REG, IYL, IYH);
 
     /* INC iy */
-    fn instrFD__INC_REG(&mut self) {
+    pub(crate) fn instrFD__INC_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.IncIY()
     }
 
     /* INC IYH */
-    fn instrFD__INC_REGH(&mut self) {
+    pub(crate) fn instrFD__INC_REGH(&mut self) {
         self.incIYH()
     }
 
     /* DEC IYH */
-    fn instrFD__DEC_REGH(&mut self) {
+    pub(crate) fn instrFD__DEC_REGH(&mut self) {
         self.decIYH()
     }
 
     /* LD IYH,nn */
-    fn instrFD__LD_REGH_NN(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_NN(&mut self) {
         let address = self.PC();
         self.data.IYH = self.memory.read_byte(address);
         self.IncPC(1);
     }
 
     /* ADD iy,iy */
-    fn instrFD__ADD_REG_REG(&mut self) {
+    pub(crate) fn instrFD__ADD_REG_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.iy, self.IY())
@@ -10567,24 +10567,24 @@ impl Z80 {
     fn_instr_ld_hl_i_nnnn!(instrFD__LD_REG_iNNNN, IYL, IYH);
 
     /* DEC iy */
-    fn instrFD__DEC_REG(&mut self) {
+    pub(crate) fn instrFD__DEC_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.DecIY()
     }
 
     /* INC IYL */
-    fn instrFD__INC_REGL(&mut self) {
+    pub(crate) fn instrFD__INC_REGL(&mut self) {
         self.incIYL()
     }
 
     /* DEC IYL */
-    fn instrFD__DEC_REGL(&mut self) {
+    pub(crate) fn instrFD__DEC_REGL(&mut self) {
         self.decIYL()
     }
 
     /* LD IYL,nn */
-    fn instrFD__LD_REGL_NN(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_NN(&mut self) {
         let address = self.PC();
         self.data.IYL = self.memory.read_byte(address);
         self.IncPC(1);
@@ -10597,7 +10597,7 @@ impl Z80 {
     fn_instr_fd_op_i_reg_p_dd!(instrFD__DEC_iREGpDD, dec);
 
     /* LD (iy+dd),nn */
-    fn instrFD__LD_iREGpDD_NN(&mut self) {
+    pub(crate) fn instrFD__LD_iREGpDD_NN(&mut self) {
         let address = self.PC();
         let offset = self.memory.read_byte(address);
         self.IncPC(1);
@@ -10611,7 +10611,7 @@ impl Z80 {
     }
 
     /* ADD iy,SP */
-    fn instrFD__ADD_REG_SP(&mut self) {
+    pub(crate) fn instrFD__ADD_REG_SP(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 7);
         // self.add16(self.iy, self.SP())
@@ -10622,12 +10622,12 @@ impl Z80 {
     }
 
     /* LD B,IYH */
-    fn instrFD__LD_B_REGH(&mut self) {
+    pub(crate) fn instrFD__LD_B_REGH(&mut self) {
         self.data.B = self.data.IYH
     }
 
     /* LD B,IYL */
-    fn instrFD__LD_B_REGL(&mut self) {
+    pub(crate) fn instrFD__LD_B_REGL(&mut self) {
         self.data.B = self.data.IYL
     }
 
@@ -10635,12 +10635,12 @@ impl Z80 {
     fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_B_iREGpDD, B);
 
     /* LD C,IYH */
-    fn instrFD__LD_C_REGH(&mut self) {
+    pub(crate) fn instrFD__LD_C_REGH(&mut self) {
         self.data.C = self.data.IYH
     }
 
     /* LD C,IYL */
-    fn instrFD__LD_C_REGL(&mut self) {
+    pub(crate) fn instrFD__LD_C_REGL(&mut self) {
         self.data.C = self.data.IYL
     }
 
@@ -10648,12 +10648,12 @@ impl Z80 {
     fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_C_iREGpDD, C);
 
     /* LD D,IYH */
-    fn instrFD__LD_D_REGH(&mut self) {
+    pub(crate) fn instrFD__LD_D_REGH(&mut self) {
         self.data.D = self.data.IYH
     }
 
     /* LD D,IYL */
-    fn instrFD__LD_D_REGL(&mut self) {
+    pub(crate) fn instrFD__LD_D_REGL(&mut self) {
         self.data.D = self.data.IYL
     }
 
@@ -10661,12 +10661,12 @@ impl Z80 {
     fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_D_iREGpDD, D);
 
     /* LD E,IYH */
-    fn instrFD__LD_E_REGH(&mut self) {
+    pub(crate) fn instrFD__LD_E_REGH(&mut self) {
         self.data.E = self.data.IYH
     }
 
     /* LD E,IYL */
-    fn instrFD__LD_E_REGL(&mut self) {
+    pub(crate) fn instrFD__LD_E_REGL(&mut self) {
         self.data.E = self.data.IYL
     }
 
@@ -10674,30 +10674,30 @@ impl Z80 {
     fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_E_iREGpDD, E);
 
     /* LD IYH,B */
-    fn instrFD__LD_REGH_B(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_B(&mut self) {
         self.data.IYH = self.data.B
     }
 
     /* LD IYH,C */
-    fn instrFD__LD_REGH_C(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_C(&mut self) {
         self.data.IYH = self.data.C
     }
 
     /* LD IYH,D */
-    fn instrFD__LD_REGH_D(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_D(&mut self) {
         self.data.IYH = self.data.D
     }
 
     /* LD IYH,E */
-    fn instrFD__LD_REGH_E(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_E(&mut self) {
         self.data.IYH = self.data.E
     }
 
     /* LD IYH,IYH */
-    fn instrFD__LD_REGH_REGH(&mut self) {}
+    pub(crate) fn instrFD__LD_REGH_REGH(&mut self) {}
 
     /* LD IYH,IYL */
-    fn instrFD__LD_REGH_REGL(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_REGL(&mut self) {
         self.data.IYH = self.data.IYL
     }
 
@@ -10705,43 +10705,43 @@ impl Z80 {
     fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_H_iREGpDD, H);
 
     /* LD IYH,A */
-    fn instrFD__LD_REGH_A(&mut self) {
+    pub(crate) fn instrFD__LD_REGH_A(&mut self) {
         self.data.IYH = self.data.A
     }
 
     /* LD IYL,B */
-    fn instrFD__LD_REGL_B(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_B(&mut self) {
         self.data.IYL = self.data.B
     }
 
     /* LD IYL,C */
-    fn instrFD__LD_REGL_C(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_C(&mut self) {
         self.data.IYL = self.data.C
     }
 
     /* LD IYL,D */
-    fn instrFD__LD_REGL_D(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_D(&mut self) {
         self.data.IYL = self.data.D
     }
 
     /* LD IYL,E */
-    fn instrFD__LD_REGL_E(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_E(&mut self) {
         self.data.IYL = self.data.E
     }
 
     /* LD IYL,IYH */
-    fn instrFD__LD_REGL_REGH(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_REGH(&mut self) {
         self.data.IYL = self.data.IYH
     }
 
     /* LD IYL,IYL */
-    fn instrFD__LD_REGL_REGL(&mut self) {}
+    pub(crate) fn instrFD__LD_REGL_REGL(&mut self) {}
 
     /* LD L,(iy+dd) */
     fn_instr_fd_ld_r_i_reg_p_dd!(instrFD__LD_L_iREGpDD, L);
 
     /* LD IYL,A */
-    fn instrFD__LD_REGL_A(&mut self) {
+    pub(crate) fn instrFD__LD_REGL_A(&mut self) {
         self.data.IYL = self.data.A
     }
 
@@ -10848,13 +10848,13 @@ impl Z80 {
     fn_instr_fd_op_a_i_reg_p_dd!(instrFD__CP_A_iREGpDD, cp);
 
     /* shift DDFDCB */
-    fn instrFD__SHIFT_DDFDCB(&mut self) {}
+    pub(crate) fn instrFD__SHIFT_DDFDCB(&mut self) {}
 
     /* POP iy */
     fn_instr_pop_r16!(instrFD__POP_REG, IYL, IYH);
 
     /* EX (SP),iy */
-    fn instrFD__EX_iSP_REG(&mut self) {
+    pub(crate) fn instrFD__EX_iSP_REG(&mut self) {
         let address = self.SP();
         let byte_temp_l = self.memory.read_byte(address);
         let address = self.SP() + 1;
@@ -10875,12 +10875,12 @@ impl Z80 {
     fn_instr_push_r16!(instrFD__PUSH_REG, IYL, IYH);
 
     /* JP iy */
-    fn instrFD__JP_REG(&mut self) {
+    pub(crate) fn instrFD__JP_REG(&mut self) {
         self.SetPC(self.IY()); /* NB: NOT INDIRECT! */
     }
 
     /* LD SP,iy */
-    fn instrFD__LD_SP_REG(&mut self) {
+    pub(crate) fn instrFD__LD_SP_REG(&mut self) {
         let _address = self.IR();
         self.memory.contend_read_no_mreq_loop(_address, 1, 2);
         self.SetSP(self.IY());
