@@ -203,9 +203,9 @@ impl Z80 {
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__LD_H_NN(&mut self, nn: u8) {
-        self.IncPC(1);
+        self.IncPC(2);
         self.data.H = nn;
-        self.increase_cycles(4);
+        self.increase_cycles(7);
     }
     pub(crate) fn instr_hk__LD_L_A(&mut self) {
         self.IncPC(1);
@@ -250,11 +250,11 @@ impl Z80 {
         self.increase_cycles(7);
     }
     pub(crate) fn instr_hk__LD_iNNNN_HL(&mut self, mut nnnn: u16) {
-        self.IncPC(4);
+        self.IncPC(3);
         self.memory.write_byte(nnnn, self.data.L);
         nnnn += 1;
         self.memory.write_byte(nnnn, self.data.H);
-        self.increase_cycles(20);
+        self.increase_cycles(16);
     }
     pub(crate) fn instr_hk__LD_iNNNN_DE(&mut self, mut nnnn: u16) {
         self.IncPC(4);
