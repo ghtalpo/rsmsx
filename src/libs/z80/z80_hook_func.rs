@@ -304,6 +304,22 @@ impl Z80 {
         );
         true
     }
+    fn hook_4b61(&mut self) -> bool {
+        //         ram:4b61 21 08 28        LD         HL,0x2808                                        IN a: val
+        self.instr_hk__LD_HL_NNNN(0x2808);
+        //         ram:4b64 01 30 02        LD         BC,0x230
+        self.instr_hk__LD_BC_NNNN(0x230);
+        //         ram:4b67 cd ba c0        CALL       sb_fill_vram_guess_c0ba                          IN
+        assert!(self.call_hook(0xc0ba));
+        //         ram:4b6a c9              RET
+        assert!(
+            self.PC() == 0x4b6a,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x4b6a
+        );
+        true
+    }
     fn hook_4c17(&mut self) -> bool {
         // println!("hook_4c17");
         //         ram:4c17 d5              PUSH       DE                                               IN bc:wh?
@@ -458,22 +474,6 @@ impl Z80 {
             "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
             self.PC(),
             0x4c5a
-        );
-        true
-    }
-    fn hook_4b61(&mut self) -> bool {
-        //         ram:4b61 21 08 28        LD         HL,0x2808                                        IN a: val
-        self.instr_hk__LD_HL_NNNN(0x2808);
-        //         ram:4b64 01 30 02        LD         BC,0x230
-        self.instr_hk__LD_BC_NNNN(0x230);
-        //         ram:4b67 cd ba c0        CALL       sb_fill_vram_guess_c0ba                          IN
-        assert!(self.call_hook(0xc0ba));
-        //         ram:4b6a c9              RET
-        assert!(
-            self.PC() == 0x4b6a,
-            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
-            self.PC(),
-            0x4b6a
         );
         true
     }
