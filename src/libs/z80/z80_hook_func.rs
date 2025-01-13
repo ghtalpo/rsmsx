@@ -31,10 +31,19 @@ impl Z80 {
                 | 0x4705
                 | 0x471c
                 | 0x4763
+                | 0x47f1
+                | 0x47f5
+                | 0x47f9
+                | 0x480d
                 | 0x4b61
                 | 0x4c17
+                | 0x5194
+                | 0x53fb
+                | 0x5445
+                | 0x547c
                 | 0x566f
                 | 0x5687
+                | 0x600a
                 | 0x606f
                 | 0x6079
                 | 0x60db
@@ -56,6 +65,11 @@ impl Z80 {
                 | 0x8be4
                 | 0x8bea
                 | 0x8bf1
+                | 0xb60e
+                | 0xb634
+                | 0xb6ac
+                | 0xb7a9
+                | 0xb7bd
                 | 0xc085
                 | 0xc094
                 | 0xc09e
@@ -69,10 +83,19 @@ impl Z80 {
             0x4705 => self.hook_4705(),
             0x471c => self.hook_471c(),
             0x4763 => self.hook_4763(),
+            0x47f1 => self.hook_47f1(),
+            0x47f5 => self.hook_47f5(),
+            0x47f9 => self.hook_47f9(),
+            0x480d => self.hook_480d(),
             0x4b61 => self.hook_4b61(),
             0x4c17 => self.hook_4c17(),
+            0x5194 => self.hook_5194(),
+            0x53fb => self.hook_53fb(),
+            0x5445 => self.hook_5445(),
+            0x547c => self.hook_547c(),
             0x566f => self.hook_566f(),
             0x5687 => self.hook_5687(),
+            0x600a => self.hook_600a(),
             0x606f => self.hook_606f(),
             0x6079 => self.hook_6079(),
             0x60db => self.hook_60db(),
@@ -94,6 +117,11 @@ impl Z80 {
             0x8be4 => self.hook_8be4(),
             0x8bea => self.hook_8bea(),
             0x8bf1 => self.hook_8bf1(),
+            0xb60e => self.hook_b60e(),
+            0xb634 => self.hook_b634(),
+            0xb6ac => self.hook_b6ac(),
+            0xb7a9 => self.hook_b7a9(),
+            0xb7bd => self.hook_b7bd(),
             0xc085 => self.hook_c085(),
             0xc094 => self.hook_c094(),
             0xc09e => self.hook_c09e(),
@@ -125,10 +153,12 @@ impl Z80 {
     pub(crate) fn is_known_caller(&self, addr: u16) -> bool {
         match addr {
             0x4010..=0x422b => true, // in looped func
+            0x42e2..=0x4307 => true, // in spin lock? func
             0x431c..0x4403 => true,  // in looped func
             0x4a21..=0x4b60 => true, // in looped func
             0x4c5b..0x4e51 => true,  // in bios call func
             0x4e54..0x4e61 => true,  // in looped func
+            0x51c2..0x53fa => true,  // in looped func
             0x54e3..0x55ef => true,  // in looped func
             0x55f2..0x5629 => true,  // in looped func
             0x587b..0x6009 => true,  // in looped func
@@ -314,10 +344,55 @@ impl Z80 {
         );
         true
     }
+    fn hook_47f1(&mut self) -> bool {
+        // log::info!("hook_47f1");
+        self.instr_hk__LD_C_NN(0x06);
+        // ram:47f3 18  22           JR         sb_get_char_internal_4817                        undefined sb_get_char_internal_4
+        self.internal_4817()
+    }
+    fn hook_47f5(&mut self) -> bool {
+        // log::info!("hook_47f5");
+        self.instr_hk__LD_C_NN(0x07);
+        self.internal_4817()
+    }
+    fn hook_47f9(&mut self) -> bool {
+        // log::info!("hook_47f9");
+        self.instr_hk__LD_C_NN(0x08);
+        self.internal_4817()
+    }
+    fn hook_47fd(&mut self) -> bool {
+        // log::info!("hook_47fd");
+        self.instr_hk__LD_C_NN(0x09);
+        self.internal_4817()
+    }
     fn hook_4801(&mut self) -> bool {
         // log::info!("hook_4801");
         self.instr_hk__LD_C_NN(0xa);
         // ram:4803 18  12           JR         sb_get_char_internal_4817                        undefined sb_get_char_internal_4
+        self.internal_4817()
+    }
+    fn hook_4805(&mut self) -> bool {
+        // log::info!("hook_4805");
+        self.instr_hk__LD_C_NN(0x0b);
+        self.internal_4817()
+    }
+    fn hook_4809(&mut self) -> bool {
+        // log::info!("hook_4809");
+        self.instr_hk__LD_C_NN(0x0d);
+        self.internal_4817()
+    }
+    fn hook_480d(&mut self) -> bool {
+        // log::info!("hook_480d");
+        self.instr_hk__LD_C_NN(0x0f);
+        self.internal_4817()
+    }
+    fn hook_4811(&mut self) -> bool {
+        // log::info!("hook_4811");
+        self.instr_hk__LD_C_NN(0x10);
+        self.internal_4817()
+    }
+    fn internal_4817(&mut self) -> bool {
+        self.SetPC(0x4817);
         //         ram:4817 06  00           LD         B,0x0
         self.instr_hk__LD_B_NN(0x0);
         //         ram:4819 2a  54  c2       LD         HL,(pt_char_c254 )
@@ -332,6 +407,11 @@ impl Z80 {
             0x481d
         );
         true
+    }
+    fn hook_4815(&mut self) -> bool {
+        // log::info!("hook_4811");
+        self.instr_hk__LD_C_NN(0x11);
+        self.internal_4817()
     }
     fn hook_4b61(&mut self) -> bool {
         //         ram:4b61 21 08 28        LD         HL,0x2808                                        IN a: val
@@ -563,6 +643,235 @@ impl Z80 {
     //     //
     //     true
     // }
+    fn hook_5194(&mut self) -> bool {
+        //         ram:5194 11  11  02       LD         DE,0x211                                         maybe character command in the i
+        self.instr_hk__LD_DE_NNNN(0x211);
+        //                                                                                              prints HEALING, LEAVE, STAY, SPE
+        //         ram:5197 01  06  09       LD         BC,0x906
+        self.instr_hk__LD_BC_NNNN(0x906);
+        //         ram:519a cd  17  4c       CALL       fn_draw_border_guess_4c17                        IN bc:wh?
+        assert!(self.call_hook(0x4c17));
+        //                                                                                                 de:origin?
+        //         ram:519d 21  ee  56       LD         HL,s_HEALING_ram_56ee                            = "HEALING"
+        self.instr_hk__LD_HL_NNNN(0x56ee);
+        //         ram:51a0 11  12  03       LD         DE,0x312
+        self.instr_hk__LD_DE_NNNN(0x312);
+        //         ram:51a3 cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:51a6 21  f6  56       LD         HL,s_LEAVE_ram_56f6                              = "LEAVE"
+        self.instr_hk__LD_HL_NNNN(0x56f6);
+        //         ram:51a9 11  13  03       LD         DE,0x313
+        self.instr_hk__LD_DE_NNNN(0x313);
+        //         ram:51ac cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:51af 21  fc  56       LD         HL,s_STAY_ram_56fc                               = "STAY"
+        self.instr_hk__LD_HL_NNNN(0x56fc);
+        //         ram:51b2 11  14  03       LD         DE,0x314
+        self.instr_hk__LD_DE_NNNN(0x314);
+        //         ram:51b5 cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:51b8 21  e8  56       LD         HL,s_SPELL_ram_56e8                              = "SPELL"
+        self.instr_hk__LD_HL_NNNN(0x56e8);
+        //         ram:51bb 11  15  03       LD         DE,0x315
+        self.instr_hk__LD_DE_NNNN(0x315);
+        //         ram:51be cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:51c1 c9              RET
+        true
+    }
+    fn hook_53fb(&mut self) -> bool {
+        //
+        //                              *************************************************************
+        //                              *                           FUNCTION
+        //                              *************************************************************
+        //                              undefined  sb_print_level_rank_53FB ()
+        //              undefined         A:1            <RETURN>
+        //                              sb_print_level_rank_53FB                        XREF[2]:     ram:52f4 (c) , ram:53a5 (c)
+        //         ram:53fb cd  f1  47       CALL       sb_get_char_level_47F1                           undefined sb_get_char_level_47F1
+        assert!(self.call_hook(0x47F1));
+        //         ram:53fe 7e              LD         A,(HL)
+        self.instr_hk__LD_A_iHL();
+        //         ram:53ff 11  06  09       LD         DE,0x906
+        self.instr_hk__LD_DE_NNNN(0x906);
+        //         ram:5402 c6  30           ADD        A,'0'
+        self.instr_hk__ADD_A_NN(0x30);
+        //         ram:5404 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+        assert!(self.call_hook(0x89d6));
+        //                                                                                                 de: xy?
+        //                                                                                              OUT d: d+1
+        //         ram:5407 cd  0d  48       CALL       sb_is_dungeon_master_480D                        undefined sb_is_dungeon_master_4
+        assert!(self.call_hook(0x480D));
+        //         ram:540a 7e              LD         A,(HL)
+        self.instr_hk__LD_A_iHL();
+        //         ram:540b b7              OR         A
+        self.instr_hk__OR_A_A();
+        //         ram:540c ca  15  54       JP         Z,LAB_ram_5415
+        self.IncPC(3);
+        self.increase_cycles(10);
+        if (self.data.F & FLAG_Z) != 0 {
+            // JP LAB_ram_5415;
+            self.SetPC(0x5415);
+            //                              LAB_ram_5415                                    XREF[1]:     ram:540c (j)
+            //         ram:5415 cd  f5  47       CALL       sb_get_char_class_47F5                           0; "FIGHTER"
+            assert!(self.call_hook(0x47F5));
+            //                                                                                              1; "CLERIC"
+            //                                                                                              2; "THIEF"
+            //                                                                                              3; "MAGICIAN"
+            //         ram:5418 6e              LD         L,(HL)
+            self.instr_hk__LD_L_iHL();
+            //         ram:5419 26  00           LD         H,0x0
+            self.instr_hk__LD_H_NN(0x0);
+            //         ram:541b 11  12  00       LD         DE,0x12
+            self.instr_hk__LD_DE_NNNN(0x12);
+            //         ram:541e cd  a9  b7       CALL       sb_multiply_guess_B7A9                           hl <- hl * de ?
+            assert!(self.call_hook(0xB7A9));
+            //         ram:5421 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:5422 cd  f1  47       CALL       sb_get_char_level_47F1                           undefined sb_get_char_level_47F1
+            assert!(self.call_hook(0x47F1));
+            //         ram:5425 7e              LD         A,(HL=>DAT_ram_0012 )                            = ??
+            self.instr_hk__LD_A_iHL();
+            //         ram:5426 3d              DEC        A
+            self.instr_hk__DEC_A();
+            //         ram:5427 87              ADD        A,A
+            self.instr_hk__ADD_A_A();
+            //         ram:5428 4f              LD         C,A
+            self.instr_hk__LD_C_A();
+            //         ram:5429 06  00           LD         B,0x0
+            self.instr_hk__LD_B_NN(0x0);
+            //         ram:542b 21  15  57       LD         HL,rank_names_5715                               = 575Dh
+            self.instr_hk__LD_HL_NNNN(0x5715);
+            //         ram:542e 09              ADD        HL,BC
+            self.instr_hk__ADD_HL_BC();
+            //         ram:542f 19              ADD        HL,DE
+            self.instr_hk__ADD_HL_DE();
+            //         ram:5430 5e              LD         E,(HL)
+            self.instr_hk__LD_E_iHL();
+            //         ram:5431 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:5432 66              LD         H,(HL)
+            self.instr_hk__LD_H_iHL();
+            //         ram:5433 6b              LD         L,E
+            self.instr_hk__LD_L_E();
+        } else {
+            self.SetPC(0x540f);
+            // ram:540f
+            //         ram:540f 21  06  57       LD         HL,s_DUNGEON_MASTER_ram_5706                     = "DUNGEON MASTER"
+            self.instr_hk__LD_HL_NNNN(0x5706);
+            //         ram:5412 c3  34  54       JP         LAB_ram_5434
+            self.IncPC(3);
+            self.increase_cycles(10); //JP LAB_ram_5434;
+        }
+        self.SetPC(0x5434);
+
+        //                              LAB_ram_5434                                    XREF[1]:     ram:5412 (j)
+        //         ram:5434 e5              PUSH       HL=>s_DUNGEON_MASTER_ram_5706                    = "DUNGEON MASTER"
+        self.instr_hk__PUSH_HL();
+        //         ram:5435 11  08  03       LD         DE,0x308
+        self.instr_hk__LD_DE_NNNN(0x308);
+        //         ram:5438 06  0e           LD         B,0xe
+        self.instr_hk__LD_B_NN(0xe);
+        //         ram:543a cd  db  60       CALL       sb_print_spaces_60db                             IN b: cnt
+        assert!(self.call_hook(0x60db));
+        //                                                                                                  de: xy
+        //                              -- Flow Override: CALL_RETURN (CALL_TERMINATOR)
+        //         ram:543d e1              POP        HL
+        self.instr_hk__POP_HL();
+        //         ram:543e 11  08  03       LD         DE,0x308
+        self.instr_hk__LD_DE_NNNN(0x308);
+        //         ram:5441 cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:5444 c9              RET
+        //
+        true
+    }
+    fn hook_5445(&mut self) -> bool {
+        //         ram:5445 11  08  15       LD         DE,0x1508
+        self.instr_hk__LD_DE_NNNN(0x1508);
+        //         ram:5448 06  07           LD         B,0x7
+        self.instr_hk__LD_B_NN(0x7);
+        //         ram:544a cd  db  60       CALL       sb_print_spaces_60db                             IN b: cnt
+        assert!(self.call_hook(0x60db));
+        //                                                                                                  de: xy
+        //                              -- Flow Override: CALL_RETURN (CALL_TERMINATOR)
+        //         ram:544d cd  f9  47       CALL       sb_get_char_hp_47F9                              undefined sb_get_char_hp_47F9()
+        assert!(self.call_hook(0x47F9));
+        //         ram:5450 e5              PUSH       HL
+        self.instr_hk__PUSH_HL();
+        //         ram:5451 6e              LD         L,(HL)
+        self.instr_hk__LD_L_iHL();
+        //         ram:5452 26  00           LD         H,0x0
+        self.instr_hk__LD_H_NN(0x0);
+        //         ram:5454 11  b0  c7       LD         DE,bt_buffer_c7b0
+        self.instr_hk__LD_DE_NNNN(0xc7b0);
+        //         ram:5457 cd  bd  b7       CALL       sb_itoa_guess_B7BD                               IN hl: val
+        assert!(self.call_hook(0xB7BD));
+        //                                                                                                 de: p_buf
+        //         ram:545a 21  b0  c7       LD         HL,bt_buffer_c7b0
+        self.instr_hk__LD_HL_NNNN(0xc7b0);
+        //         ram:545d 11  08  15       LD         DE,0x1508
+        self.instr_hk__LD_DE_NNNN(0x1508);
+        //         ram:5460 cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:5463 3e  2f           LD         A,0x2f
+        self.instr_hk__LD_A_NN(0x2f);
+        //         ram:5465 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+        assert!(self.call_hook(0x89d6));
+        //                                                                                                 de: xy?
+        //                                                                                              OUT d: d+1
+        //         ram:5468 e1              POP        HL
+        self.instr_hk__POP_HL();
+        //         ram:5469 23              INC        HL
+        self.instr_hk__INC_HL();
+        //         ram:546a d5              PUSH       DE
+        self.instr_hk__PUSH_DE();
+        //         ram:546b 6e              LD         L,(HL)
+        self.instr_hk__LD_L_iHL();
+        //         ram:546c 26  00           LD         H,0x0
+        self.instr_hk__LD_H_NN(0x0);
+        //         ram:546e 11  b0  c7       LD         DE,bt_buffer_c7b0
+        self.instr_hk__LD_DE_NNNN(0xc7b0);
+        //         ram:5471 cd  bd  b7       CALL       sb_itoa_guess_B7BD                               IN hl: val
+        assert!(self.call_hook(0xB7BD));
+        //                                                                                                 de: p_buf
+        //         ram:5474 21  b0  c7       LD         HL,bt_buffer_c7b0
+        self.instr_hk__LD_HL_NNNN(0xc7b0);
+        //         ram:5477 d1              POP        DE
+        self.instr_hk__POP_DE();
+        //         ram:5478 cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:547b c9              RET
+        //
+        true
+    }
+    fn hook_547c(&mut self) -> bool {
+        //         ram:547c cd  45  54       CALL       sb_print_hp_max_5445                             undefined sb_print_hp_max_5445()
+        assert!(self.call_hook(0x5445));
+        //         ram:547f 11  0d  03       LD         DE,0x30d
+        self.instr_hk__LD_DE_NNNN(0x30d);
+        //         ram:5482 06  07           LD         B,0x7
+        self.instr_hk__LD_B_NN(0x7);
+        //         ram:5484 cd  db  60       CALL       sb_print_spaces_60db                             IN b: cnt
+        assert!(self.call_hook(0x60db));
+        //                                                                                                  de: xy
+        //                              -- Flow Override: CALL_RETURN (CALL_TERMINATOR)
+        //         ram:5487 cd  91  54       CALL       sb_get_gold_str_5491                             OUT hl<-pstr
+        assert!(self.call_hook(0x5491));
+        //         ram:548a 11  0d  03       LD         DE,0x30d
+        self.instr_hk__LD_DE_NNNN(0x30d);
+        //         ram:548d cd  c7  89       CALL       fn_print_xy_89c7                                 IN de: pos
+        assert!(self.call_hook(0x89c7));
+        //                                                                                                 hl: pstr
+        //         ram:5490 c9              RET
+        true
+    }
     fn hook_566f(&mut self) -> bool {
         //         ram:566f 3a  47  c2       LD         A,(bt_cmds_idx_c247 )
         self.instr_hk__LD_A_iNNNN(0xc247);
@@ -612,6 +921,25 @@ impl Z80 {
         //         ram:5692 cd  db  60       CALL       sb_print_spaces_60db                             IN b: cnt
         assert!(self.call_hook(0x60db));
         //         ram:5695 c9              RET
+        true
+    }
+    fn hook_600a(&mut self) -> bool {
+        //         ram:600a 3a  1b  c2       LD         A,(bt_player_idx_c21b )                          hl <- c100 + 19h * player_idx
+        self.instr_hk__LD_A_iNNNN(0xc21b);
+        //         ram:600d 5f              LD         E,A
+        self.instr_hk__LD_E_A();
+        //         ram:600e 16  00           LD         D,0x0
+        self.instr_hk__LD_D_NN(0x0);
+        //         ram:6010 21  19  00       LD         HL,char_19h_size
+        self.instr_hk__LD_HL_NNNN(0x0019);
+        //         ram:6013 cd  a9  b7       CALL       sb_multiply_guess_B7A9                           hl <- hl * de ?
+        assert!(self.call_hook(0xB7A9));
+        //         ram:6016 11  00  c1       LD         DE,BYTE_ram_c100
+        self.instr_hk__LD_DE_NNNN(0xc100);
+        //         ram:6019 19              ADD        HL,DE
+        self.instr_hk__ADD_HL_DE();
+        //         ram:601a c9              RET
+        //
         true
     }
     fn hook_606f(&mut self) -> bool {
@@ -1565,6 +1893,398 @@ impl Z80 {
         //         ram:8bf4 cd  63  47       CALL       fn_add_player_idx_to_addr_4763                   hl <- hl + player_idx
         assert!(self.call_hook(0x4763));
         //         ram:8bf7 c9              RET
+        true
+    }
+    fn hook_b60e(&mut self) -> bool {
+        //         ram:b60e ed  5b  44  c2    LD         DE,(wd_rand_seed_c244 )                          OUT hl, a
+        self.instr_hk__LD_DE_iNNNN(0xc244);
+        //         ram:b612 01  cd  43       LD         BC,0x43cd
+        self.instr_hk__LD_BC_NNNN(0x43cd);
+        //         ram:b615 3e  10           LD         A,0x10
+        self.instr_hk__LD_A_NN(0x10);
+        //         ram:b617 26  00           LD         H,0x0
+        self.instr_hk__LD_H_NN(0x0);
+        //         ram:b619 69              LD         L,C
+        self.instr_hk__LD_L_C();
+        //                              LAB_ram_b61a                                    XREF[1]:     ram:b623 (j)
+        loop {
+            self.SetPC(0xb61a);
+            //         ram:b61a 29              ADD        HL,HL
+            self.instr_hk__ADD_HL_HL();
+            //         ram:b61b eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:b61c 29              ADD        HL,HL
+            self.instr_hk__ADD_HL_HL();
+            //         ram:b61d eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:b61e d2  22  b6       JP         NC,LAB_ram_b622
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_C) == 0 {
+                // JP LAB_ram_b622;
+            } else {
+                //         ram:b621 09              ADD        HL,BC
+                self.instr_hk__ADD_HL_BC();
+            }
+            //                              LAB_ram_b622                                    XREF[1]:     ram:b61e (j)
+            //         ram:b622 3d              DEC        A
+            self.instr_hk__DEC_A();
+            //         ram:b623 c2  1a  b6       JP         NZ,LAB_ram_b61a
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_Z) == 0 {
+                // JP LAB_ram_b61a;
+            } else {
+                break;
+            }
+        }
+        self.SetPC(0xb626);
+        //         ram:b626 11  45  13       LD         DE,0x1345
+        self.instr_hk__LD_DE_NNNN(0x1345);
+        //         ram:b629 19              ADD        HL,DE
+        self.instr_hk__ADD_HL_DE();
+        //         ram:b62a 22  44  c2       LD         (wd_rand_seed_c244 ),HL
+        self.instr_hk__LD_iNNNN_HL(0xc244);
+        //         ram:b62d ed  5f           LD         A,R
+        self.instr_hk__LD_A_R();
+        //         ram:b62f ad              XOR        L
+        self.instr_hk__XOR_A_L();
+        //         ram:b630 6f              LD         L,A
+        self.instr_hk__LD_L_A();
+        //         ram:b631 ac              XOR        H
+        self.instr_hk__XOR_A_H();
+        //         ram:b632 67              LD         H,A
+        self.instr_hk__LD_H_A();
+        //         ram:b633 c9              RET
+        //
+        true
+    }
+    fn hook_b634(&mut self) -> bool {
+        //         ram:b634 21  00  00       LD         HL,0x0                                           IN a:
+        self.instr_hk__LD_HL_NNNN(0x0);
+        //                                                                                                 b: cnt
+        //                                                                                              OUT hl
+        //         ram:b637 54              LD         D,H
+        self.instr_hk__LD_D_H();
+        //         ram:b638 5f              LD         E,A
+        self.instr_hk__LD_E_A();
+        //                              LAB_ram_b639                                    XREF[1]:     ram:b649 (j)
+        loop {
+            self.SetPC(0xb639);
+            //         ram:b639 c5              PUSH       BC
+            self.instr_hk__PUSH_BC();
+            //         ram:b63a d5              PUSH       DE
+            self.instr_hk__PUSH_DE();
+            //         ram:b63b e5              PUSH       HL
+            self.instr_hk__PUSH_HL();
+            //         ram:b63c d5              PUSH       DE
+            self.instr_hk__PUSH_DE();
+            //         ram:b63d cd  0e  b6       CALL       sb_rand_guess_B60E                               OUT hl, a
+            assert!(self.call_hook(0xB60E));
+            //         ram:b640 d1              POP        DE
+            self.instr_hk__POP_DE();
+            //         ram:b641 cd  ac  b6       CALL       sb_calc_b6ac                                     IN de, hl
+            assert!(self.call_hook(0xb6ac));
+            //                                                                                              OUT de, hl
+            //WRONG? OUT de, hl
+            //         ram:b644 e1              POP        HL
+            self.instr_hk__POP_HL();
+            //         ram:b645 19              ADD        HL,DE
+            self.instr_hk__ADD_HL_DE();
+            //         ram:b646 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:b647 d1              POP        DE
+            self.instr_hk__POP_DE();
+            //         ram:b648 c1              POP        BC
+            self.instr_hk__POP_BC();
+            //         ram:b649 10  ee           DJNZ       LAB_ram_b639
+            self.IncPC(2);
+            self.decB();
+            if self.data.B != 0 {
+                self.increase_cycles(13);
+                //JP LAB_ram_b639;
+            } else {
+                self.increase_cycles(8);
+                break;
+            }
+        }
+        //         ram:b64b c9              RET
+        //
+        true
+    }
+    fn hook_b6ac(&mut self) -> bool {
+        //         ram:b6ac 42              LD         B,D                                              IN de, hl
+        self.instr_hk__LD_B_D();
+        //                                                                                              OUT de, hl
+        //WRONG? OUT de, hl
+        //         ram:b6ad 4b              LD         C,E
+        self.instr_hk__LD_C_E();
+        //         ram:b6ae eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:b6af 21  00  00       LD         HL,0x0
+        self.instr_hk__LD_HL_NNNN(0x0);
+        //         ram:b6b2 3e  10           LD         A,0x10
+        self.instr_hk__LD_A_NN(0x10);
+        //                              loop_b6b4                                       XREF[1]:     ram:b6c8 (j)
+        loop {
+            self.SetPC(0xb6b4);
+            //         ram:b6b4 f5              PUSH       AF
+            self.instr_hk__PUSH_AF();
+            //         ram:b6b5 29              ADD        HL,HL                                            hl *= 2
+            self.instr_hk__ADD_HL_HL();
+            //         ram:b6b6 af              XOR        A
+            self.instr_hk__XOR_A_A();
+            //         ram:b6b7 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:b6b8 29              ADD        HL,HL
+            self.instr_hk__ADD_HL_HL();
+            //         ram:b6b9 eb              EX         DE,HL                                            de *= 2
+            self.instr_hk__EX_DE_HL();
+            //         ram:b6ba 8d              ADC        A,L
+            self.instr_hk__ADC_A_L();
+            //         ram:b6bb 91              SUB        C
+            self.instr_hk__SUB_A_C();
+            //         ram:b6bc 6f              LD         L,A
+            self.instr_hk__LD_L_A();
+            //         ram:b6bd 7c              LD         A,H
+            self.instr_hk__LD_A_H();
+            //         ram:b6be 98              SBC        A,B
+            self.instr_hk__SBC_A_B();
+            //         ram:b6bf 67              LD         H,A
+            self.instr_hk__LD_H_A();
+            //         ram:b6c0 1c              INC        E
+            self.instr_hk__INC_E();
+            //         ram:b6c1 d2  c6  b6       JP         NC,chk_b6c6
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_C) == 0 {
+                // JP chk_b6c6;
+            } else {
+                //         ram:b6c4 09              ADD        HL,BC
+                self.instr_hk__ADD_HL_BC();
+                //         ram:b6c5 1d              DEC        E
+                self.instr_hk__DEC_E();
+            }
+            //                              chk_b6c6                                        XREF[1]:     ram:b6c1 (j)
+            //         ram:b6c6 f1              POP        AF
+            self.instr_hk__POP_AF();
+            //         ram:b6c7 3d              DEC        A
+            self.instr_hk__DEC_A();
+            //         ram:b6c8 c2  b4  b6       JP         NZ,loop_b6b4
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_Z) == 0 {
+                // JP loop_b6b4;
+            } else {
+                break;
+            }
+        }
+        //         ram:b6cb eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:b6cc c9              RET
+        //
+        true
+    }
+    fn hook_b7a9(&mut self) -> bool {
+        // ram:b7a9 44              LD         B,H                                              hl <- hl * de ?
+        self.instr_hk__LD_B_H();
+        // ram:b7aa 4d              LD         C,L
+        self.instr_hk__LD_C_L();
+        // ram:b7ab 21  00  00       LD         HL,0x0
+        self.instr_hk__LD_HL_NNNN(0x0);
+        // ram:b7ae 3e  10           LD         A,0x10
+        self.instr_hk__LD_A_NN(0x10);
+        //         LAB_ram_b7b0                                    XREF[1]:     ram:b7b9 (j)
+        loop {
+            self.SetPC(0xb7b0);
+            // ram:b7b0 29              ADD        HL,HL
+            self.instr_hk__ADD_HL_HL();
+            // ram:b7b1 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            // ram:b7b2 29              ADD        HL,HL
+            self.instr_hk__ADD_HL_HL();
+            // ram:b7b3 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            // ram:b7b4 d2  b8  b7       JP         NC,LAB_ram_b7b8
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_C) == 0 {
+                // JP LAB_ram_b7b8;
+            } else {
+                // ram:b7b7
+                // ram:b7b7 09              ADD        HL,BC
+                self.instr_hk__ADD_HL_BC();
+            }
+            //         LAB_ram_b7b8                                    XREF[1]:     ram:b7b4 (j)
+            // ram:b7b8 3d              DEC        A
+            self.instr_hk__DEC_A();
+            // ram:b7b9 c2  b0  b7       JP         NZ,LAB_ram_b7b0
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_Z) == 0 {
+                // JP LAB_ram_b7b0;
+            } else {
+                break;
+            }
+        }
+        // ram:b7bc c9              RET
+        //
+        true
+    }
+    fn hook_b7bd(&mut self) -> bool {
+        //         ram:b7bd e5              PUSH       HL                                               IN hl: val
+        self.instr_hk__PUSH_HL();
+        //                                                                                                 de: p_buf
+        //         ram:b7be eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:b7bf 22  68  c2       LD         (wd_p_buffer_c268 ),HL
+        self.instr_hk__LD_iNNNN_HL(0xc268);
+        //         ram:b7c2 e1              POP        HL
+        self.instr_hk__POP_HL();
+        //         ram:b7c3 af              XOR        A
+        self.instr_hk__XOR_A_A();
+        //         ram:b7c4 32  67  c2       LD         (BYTE_ram_c267 ),A
+        self.instr_hk__LD_iNNNN_A(0xc267);
+        //         ram:b7c7 11  10  27       LD         DE,0x2710
+        self.instr_hk__LD_DE_NNNN(0x2710);
+        //         ram:b7ca 3e  01           LD         A,0x1
+        self.instr_hk__LD_A_NN(0x1);
+        //                              LAB_ram_b7cc                                    XREF[1]:     ram:b814 (j)
+        loop {
+            self.SetPC(0xb7cc);
+            //         ram:b7cc fe  05           CP         0x5
+            self.instr_hk__CP_NN(0x5);
+            //         ram:b7ce d2  17  b8       JP         NC,LAB_ram_b817
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_C) == 0 {
+                break; //JP LAB_ram_b817;
+            }
+            //         ram:b7d1 f5              PUSH       AF
+            self.instr_hk__PUSH_AF();
+            //         ram:b7d2 d5              PUSH       DE
+            self.instr_hk__PUSH_DE();
+            //         ram:b7d3 e5              PUSH       HL
+            self.instr_hk__PUSH_HL();
+            //         ram:b7d4 cd  ac  b6       CALL       sb_calc_b6ac                                     IN de, hl
+            assert!(self.call_hook(0xb6ac));
+            //                                                                                              OUT de, hl
+            //WRONG? OUT de, hl
+            //         ram:b7d7 7d              LD         A,L
+            self.instr_hk__LD_A_L();
+            //         ram:b7d8 b7              OR         A
+            self.instr_hk__OR_A_A();
+            //         ram:b7d9 ca  ee  b7       JP         Z,LAB_ram_b7ee
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_Z) != 0 {
+                self.SetPC(0xb7ee);
+                // JP LAB_ram_b7ee;
+                //                              LAB_ram_b7ee                                    XREF[1]:     ram:b7d9 (j)
+                //         ram:b7ee 3a  67  c2       LD         A,(BYTE_ram_c267 )
+                self.instr_hk__LD_A_iNNNN(0xc267);
+                //         ram:b7f1 b7              OR         A
+                self.instr_hk__OR_A_A();
+                //         ram:b7f2 ca  fe  b7       JP         Z,LAB_ram_b7fe
+                self.IncPC(3);
+                self.increase_cycles(10);
+                if (self.data.F & FLAG_Z) != 0 {
+                    // JP LAB_ram_b7fe;
+                } else {
+                    self.SetPC(0xb7f5);
+                    //         ram:b7f5
+                    //         ram:b7f5 2a  68  c2       LD         HL,(wd_p_buffer_c268 )
+                    self.instr_hk__LD_HL_iNNNN(0xc268);
+                    //         ram:b7f8 36  30           LD         (HL),0x30
+                    self.instr_hk__LD_iHL_NN(0x30);
+                    //         ram:b7fa 23              INC        HL
+                    self.instr_hk__INC_HL();
+                    //         ram:b7fb 22  68  c2       LD         (wd_p_buffer_c268 ),HL
+                    self.instr_hk__LD_iNNNN_HL(0xc268);
+                    // JP LAB_ram_b7fe;
+                }
+            } else {
+                self.SetPC(0xb7dc);
+                //         ram:b7dc c6  30           ADD        A,0x30
+                self.instr_hk__ADD_A_NN(0x30);
+                //         ram:b7de 2a  68  c2       LD         HL,(wd_p_buffer_c268 )
+                self.instr_hk__LD_HL_iNNNN(0xc268);
+                //         ram:b7e1 77              LD         (HL),A
+                self.instr_hk__LD_iHL_A();
+                //         ram:b7e2 23              INC        HL
+                self.instr_hk__INC_HL();
+                //         ram:b7e3 22  68  c2       LD         (wd_p_buffer_c268 ),HL
+                self.instr_hk__LD_iNNNN_HL(0xc268);
+                //         ram:b7e6 3e  01           LD         A,0x1
+                self.instr_hk__LD_A_NN(0x1);
+                //         ram:b7e8 32  67  c2       LD         (BYTE_ram_c267 ),A
+                self.instr_hk__LD_iNNNN_A(0xc267);
+                //         ram:b7eb c3  fe  b7       JP         LAB_ram_b7fe
+                self.IncPC(3);
+                self.increase_cycles(10); //JP LAB_ram_b7fe;
+            }
+            self.SetPC(0xb7fe);
+
+            //                              LAB_ram_b7fe                                    XREF[2]:     ram:b7eb (j) , ram:b7f2 (j)
+            //         ram:b7fe e1              POP        HL
+            self.instr_hk__POP_HL();
+            //         ram:b7ff d1              POP        DE
+            self.instr_hk__POP_DE();
+            //         ram:b800 d5              PUSH       DE
+            self.instr_hk__PUSH_DE();
+            //         ram:b801 cd  ac  b6       CALL       sb_calc_b6ac                                     IN de, hl
+            assert!(self.call_hook(0xb6ac));
+            //                                                                                              OUT de, hl
+            //WRONG? OUT de, hl
+            //         ram:b804 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:b805 d1              POP        DE
+            self.instr_hk__POP_DE();
+            //         ram:b806 f1              POP        AF
+            self.instr_hk__POP_AF();
+            //         ram:b807 e5              PUSH       HL
+            self.instr_hk__PUSH_HL();
+            //         ram:b808 f5              PUSH       AF
+            self.instr_hk__PUSH_AF();
+            //         ram:b809 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:b80a 11  0a  00       LD         DE,0xa
+            self.instr_hk__LD_DE_NNNN(0xa);
+            //         ram:b80d cd  ac  b6       CALL       sb_calc_b6ac                                     IN de, hl
+            assert!(self.call_hook(0xb6ac));
+            //                                                                                              OUT de, hl
+            //WRONG? OUT de, hl
+            //         ram:b810 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:b811 f1              POP        AF
+            self.instr_hk__POP_AF();
+            //         ram:b812 3c              INC        A
+            self.instr_hk__INC_A();
+            //         ram:b813 e1              POP        HL
+            self.instr_hk__POP_HL();
+            //         ram:b814 c3  cc  b7       JP         LAB_ram_b7cc
+            self.IncPC(3);
+            self.increase_cycles(10); //JP LAB_ram_b7cc;
+        }
+        self.SetPC(0xb817);
+
+        //                              LAB_ram_b817                                    XREF[1]:     ram:b7ce (j)
+        //         ram:b817 7d              LD         A,L
+        self.instr_hk__LD_A_L();
+        //         ram:b818 c6  30           ADD        A,0x30
+        self.instr_hk__ADD_A_NN(0x30);
+        //         ram:b81a 2a  68  c2       LD         HL,(wd_p_buffer_c268 )
+        self.instr_hk__LD_HL_iNNNN(0xc268);
+        //         ram:b81d 77              LD         (HL),A
+        self.instr_hk__LD_iHL_A();
+        //         ram:b81e 23              INC        HL
+        self.instr_hk__INC_HL();
+        //         ram:b81f 22  68  c2       LD         (wd_p_buffer_c268 ),HL
+        self.instr_hk__LD_iNNNN_HL(0xc268);
+        //         ram:b822 36  00           LD         (HL),0x0
+        self.instr_hk__LD_iHL_NN(0x0);
+        //         ram:b824 c9              RET
+        //
         true
     }
     fn hook_c085(&mut self) -> bool {

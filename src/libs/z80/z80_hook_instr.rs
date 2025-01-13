@@ -5,6 +5,12 @@ impl Z80 {
     pub(crate) fn increase_cycles(&mut self, n: u64) {
         self.data.cycles += n;
     }
+    // adc
+    pub(crate) fn instr_hk__ADC_A_L(&mut self) {
+        self.IncPC(1);
+        self.instr__ADC_A_L();
+        self.increase_cycles(4);
+    }
     // add
     pub(crate) fn instr_hk__ADD_HL_BC(&mut self) {
         self.IncPC(1);
@@ -75,6 +81,26 @@ impl Z80 {
     pub(crate) fn instr_hk__DEC_C(&mut self) {
         self.IncPC(1);
         self.instr__DEC_C();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__DEC_D(&mut self) {
+        self.IncPC(1);
+        self.instr__DEC_D();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__DEC_E(&mut self) {
+        self.IncPC(1);
+        self.instr__DEC_E();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__DEC_H(&mut self) {
+        self.IncPC(1);
+        self.instr__DEC_H();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__DEC_L(&mut self) {
+        self.IncPC(1);
+        self.instr__DEC_L();
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__DEC_BC(&mut self) {
@@ -177,6 +203,11 @@ impl Z80 {
         self.instr__LD_H_iHL();
         self.increase_cycles(7);
     }
+    pub(crate) fn instr_hk__LD_L_iHL(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_L_iHL();
+        self.increase_cycles(7);
+    }
     pub(crate) fn instr_hk__LD_A_iNNNN(&mut self, nnnn: u16) {
         self.IncPC(3);
         self.data.A = self.memory.read_byte(nnnn);
@@ -202,9 +233,24 @@ impl Z80 {
         self.instr__LD_A_L();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__LD_A_R(&mut self) {
+        self.IncPC(2);
+        self.instrED__LD_A_R();
+        self.increase_cycles(9);
+    }
     pub(crate) fn instr_hk__LD_B_A(&mut self) {
         self.IncPC(1);
         self.instr__LD_B_A();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_B_D(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_B_D();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_B_H(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_B_H();
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__LD_C_A(&mut self) {
@@ -215,6 +261,16 @@ impl Z80 {
     pub(crate) fn instr_hk__LD_C_B(&mut self) {
         self.IncPC(1);
         self.instr__LD_C_B();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_C_E(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_C_E();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_C_L(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_C_L();
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__LD_D_H(&mut self) {
@@ -230,6 +286,11 @@ impl Z80 {
     pub(crate) fn instr_hk__LD_E_H(&mut self) {
         self.IncPC(1);
         self.instr__LD_E_H();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_H_A(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_H_A();
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__LD_H_B(&mut self) {
@@ -287,6 +348,13 @@ impl Z80 {
         self.SetDE(nnnn);
         self.increase_cycles(10);
     }
+    pub(crate) fn instr_hk__LD_DE_iNNNN(&mut self, mut nnnn: u16) {
+        self.IncPC(4);
+        self.data.E = self.memory.read_byte(nnnn);
+        nnnn += 1;
+        self.data.D = self.memory.read_byte(nnnn);
+        self.increase_cycles(20);
+    }
     pub(crate) fn instr_hk__LD_HL_iNNNN(&mut self, mut nnnn: u16) {
         self.IncPC(3);
         self.data.L = self.memory.read_byte(nnnn);
@@ -309,6 +377,14 @@ impl Z80 {
         self.instr__LD_iHL_E();
         self.increase_cycles(7);
     }
+    pub(crate) fn instr_hk__LD_iHL_NN(&mut self, nn: u8) {
+        self.IncPC(2);
+        // self.instr__LD_iHL_NN();
+        let address = self.HL();
+        self.memory.write_byte(address, nn);
+        self.increase_cycles(10);
+    }
+
     pub(crate) fn instr_hk__LD_iNNNN_HL(&mut self, mut nnnn: u16) {
         self.IncPC(3);
         self.memory.write_byte(nnnn, self.data.L);
@@ -405,6 +481,11 @@ impl Z80 {
         self.increase_cycles(8);
     }
     // sbc
+    pub(crate) fn instr_hk__SBC_A_B(&mut self) {
+        self.IncPC(1);
+        self.instr__SBC_A_B();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__SBC_HL_DE(&mut self) {
         self.IncPC(2);
         self.instrED__SBC_HL_DE();
@@ -416,10 +497,26 @@ impl Z80 {
         self.instr__SCF();
         self.increase_cycles(4);
     }
+    // sub
+    pub(crate) fn instr_hk__SUB_A_C(&mut self) {
+        self.IncPC(1);
+        self.instr__SUB_A_C();
+        self.increase_cycles(4);
+    }
     // xor
     pub(crate) fn instr_hk__XOR_A_A(&mut self) {
         self.IncPC(1);
         self.instr__XOR_A_A();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__XOR_A_H(&mut self) {
+        self.IncPC(1);
+        self.instr__XOR_A_H();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__XOR_A_L(&mut self) {
+        self.IncPC(1);
+        self.instr__XOR_A_L();
         self.increase_cycles(4);
     }
 }
