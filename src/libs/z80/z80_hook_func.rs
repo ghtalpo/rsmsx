@@ -32,6 +32,7 @@ impl Z80 {
                 | 0x471c
                 | 0x4763
                 | 0x4b61
+                | 0x4c17
                 | 0x6ed6
                 | 0x8840
                 | 0x8964
@@ -62,6 +63,7 @@ impl Z80 {
             0x471c => self.hook_471c(),
             0x4763 => self.hook_4763(),
             0x4b61 => self.hook_4b61(),
+            0x4c17 => self.hook_4c17(),
             0x6ed6 => self.hook_6ed6(),
             0x8840 => self.hook_8840(),
             0x8964 => self.hook_8964(),
@@ -302,6 +304,163 @@ impl Z80 {
         );
         true
     }
+    fn hook_4c17(&mut self) -> bool {
+        // println!("hook_4c17");
+        //         ram:4c17 d5              PUSH       DE                                               IN bc:wh?
+        self.instr_hk__PUSH_DE();
+        //                                                                                                 de:origin?
+        //         ram:4c18 05              DEC        B
+        self.instr_hk__DEC_B();
+        //         ram:4c19 05              DEC        B
+        self.instr_hk__DEC_B();
+        //         ram:4c1a 0d              DEC        C
+        self.instr_hk__DEC_C();
+        //         ram:4c1b c5              PUSH       BC
+        self.instr_hk__PUSH_BC();
+        //         ram:4c1c 3e  5b           LD         A,'['
+        self.instr_hk__LD_A_NN(0x5b);
+        //         ram:4c1e cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+        assert!(self.call_hook(0x89d6));
+        //                                                                                                 de: xy?
+        //                                                                                              OUT d: d+1
+        //                              LAB_ram_4c21                                    XREF[1]:     ram:4c26 (j)
+        loop {
+            self.SetPC(0x4c21);
+            //         ram:4c21 3e  26           LD         A,'&'
+            self.instr_hk__LD_A_NN(0x26);
+            //         ram:4c23 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+            assert!(self.call_hook(0x89d6));
+            //                                                                                                 de: xy?
+            //                                                                                              OUT d: d+1
+            //         ram:4c26 10  f9           DJNZ       LAB_ram_4c21
+            self.IncPC(2);
+            self.decB();
+            if self.data.B != 0 {
+                self.increase_cycles(13);
+                // JP LAB_ram_4c21;
+            } else {
+                self.increase_cycles(8);
+                break;
+            }
+        }
+        self.SetPC(0x4c28);
+        //         ram:4c28 3e  5c           LD         A,'\'
+        self.instr_hk__LD_A_NN(0x5c);
+        //         ram:4c2a cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+        assert!(self.call_hook(0x89d6));
+        //                                                                                                 de: xy?
+        //                                                                                              OUT d: d+1
+        //         ram:4c2d c1              POP        BC
+        self.instr_hk__POP_BC();
+        //         ram:4c2e d1              POP        DE
+        self.instr_hk__POP_DE();
+        //                              LAB_ram_4c2f                                    XREF[1]:     ram:4c46 (j)
+        loop {
+            self.SetPC(0x4c2f);
+            //         ram:4c2f c5              PUSH       BC
+            self.instr_hk__PUSH_BC();
+            //         ram:4c30 1c              INC        E
+            self.instr_hk__INC_E();
+            //         ram:4c31 d5              PUSH       DE
+            self.instr_hk__PUSH_DE();
+            //         ram:4c32 3e  25           LD         A,'%'
+            self.instr_hk__LD_A_NN(0x25);
+            //         ram:4c34 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+            assert!(self.call_hook(0x89d6));
+            //                                                                                                 de: xy?
+            //                                                                                              OUT d: d+1
+            //                              LAB_ram_4c37                                    XREF[1]:     ram:4c3c (j)
+            loop {
+                self.SetPC(0x4c37);
+                //         ram:4c37 3e  20           LD         A,' '
+                self.instr_hk__LD_A_NN(0x20);
+                //         ram:4c39 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+                assert!(self.call_hook(0x89d6));
+                //                                                                                                 de: xy?
+                //                                                                                              OUT d: d+1
+                //         ram:4c3c 10  f9           DJNZ       LAB_ram_4c37
+                self.IncPC(2);
+                self.decB();
+                if self.data.B != 0 {
+                    self.increase_cycles(13);
+                    // JP LAB_ram_4c37;
+                } else {
+                    self.increase_cycles(8);
+                    break;
+                }
+            }
+            self.SetPC(0x4c3e);
+            //         ram:4c3e 3e  25           LD         A,'%'
+            self.instr_hk__LD_A_NN(0x25);
+            //         ram:4c40 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+            assert!(self.call_hook(0x89d6));
+            //                                                                                                 de: xy?
+            //                                                                                              OUT d: d+1
+            //         ram:4c43 d1              POP        DE
+            self.instr_hk__POP_DE();
+            //         ram:4c44 c1              POP        BC
+            self.instr_hk__POP_BC();
+            //         ram:4c45 0d              DEC        C
+            self.instr_hk__DEC_C();
+            //         ram:4c46 c2  2f  4c       JP         NZ,LAB_ram_4c2f
+            self.IncPC(3);
+            self.increase_cycles(10);
+            if (self.data.F & FLAG_Z) == 0 {
+                // JP LAB_ram_4c2f;
+            } else {
+                break;
+            }
+        }
+        self.SetPC(0x4c49);
+        //         ram:4c49 3e  5d           LD         A,']'
+        self.instr_hk__LD_A_NN(0x5d);
+        //         ram:4c4b cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+        assert!(self.call_hook(0x89d6));
+        //                                                                                                 de: xy?
+        //                                                                                              OUT d: d+1
+        //                              LAB_ram_4c4e                                    XREF[1]:     ram:4c53 (j)
+        assert!(
+            self.PC() == 0x4c4e,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x4c4e
+        );
+        loop {
+            self.SetPC(0x4c4e);
+            //         ram:4c4e 3e  26           LD         A,'&'
+            self.instr_hk__LD_A_NN(0x26);
+            //         ram:4c50 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+            assert!(self.call_hook(0x89d6));
+            //                                                                                                 de: xy?
+            //                                                                                              OUT d: d+1
+            //         ram:4c53 10  f9           DJNZ       LAB_ram_4c4e
+            self.IncPC(2);
+            self.decB();
+            if self.data.B != 0 {
+                self.increase_cycles(13);
+                // JP LAB_ram_4c4e;
+            } else {
+                self.increase_cycles(8);
+                break;
+            }
+        }
+        self.SetPC(0x4c55);
+        //         ram:4c55 3e  5e           LD         A,'^'
+        self.instr_hk__LD_A_NN(0x5e);
+        //         ram:4c57 cd  d6  89       CALL       fn_putchar_xy_89d6                               IN a: char(not ascii?)
+        assert!(self.call_hook(0x89d6));
+        //                                                                                                 de: xy?
+        //                                                                                              OUT d: d+1
+        //         ram:4c5a c9              RET
+        //
+        assert!(
+            self.PC() == 0x4c5a,
+            "cur.pc:0x{:04x} ~= tgt.pc:0x{:04x}",
+            self.PC(),
+            0x4c5a
+        );
+        true
+    }
     fn hook_4b61(&mut self) -> bool {
         //         ram:4b61 21 08 28        LD         HL,0x2808                                        IN a: val
         self.instr_hk__LD_HL_NNNN(0x2808);
@@ -444,7 +603,7 @@ impl Z80 {
         true
     }
     fn hook_8840(&mut self) -> bool {
-        println!("hook_8840");
+        // println!("hook_8840");
         //         ram:8840 f5              PUSH       AF                                               IN
         self.instr_hk__PUSH_AF();
         //         ram:8841 c5              PUSH       BC
@@ -1173,7 +1332,7 @@ impl Z80 {
         true
     }
     fn hook_c0ba(&mut self) -> bool {
-        println!("hook_c0ba BC?{} pc:{:04x}", self.BC(), self.PC());
+        // println!("hook_c0ba BC?{} pc:{:04x}", self.BC(), self.PC());
         // assert!(false);
         //         ram:c0ba f5              PUSH       AF                                               IN
         self.instr_hk__PUSH_AF();
@@ -1207,7 +1366,7 @@ impl Z80 {
                 //         ram:c0c8 f1              POP        AF
                 self.instr_hk__POP_AF();
                 //         ram:c0c9 c9              RET
-                println!("hook_c0ba leaving BC?{} pc:{:04x}", self.BC(), self.PC());
+                // println!("hook_c0ba leaving BC?{} pc:{:04x}", self.BC(), self.PC());
                 // assert!(false);
                 assert!(
                     self.PC() == 0xc0c9,
