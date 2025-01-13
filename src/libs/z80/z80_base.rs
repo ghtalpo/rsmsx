@@ -642,6 +642,18 @@ impl Z80 {
         }
     }
 
+    pub fn jp_hl(&mut self) {
+        let jmp_tgt = self.HL();
+        if self.has_hook(jmp_tgt) {
+            // println!("jp_iHL:0x{:04x}", jmp_tgt);
+            let skip = self.call_hook(jmp_tgt);
+            assert!(skip);
+            self.ret();
+        } else {
+            self.SetPC(jmp_tgt);
+        }
+    }
+
     pub fn call(&mut self) {
         let call_temp_l: u8 = self.memory.read_byte(self.data.pc);
         self.data.pc += 1;

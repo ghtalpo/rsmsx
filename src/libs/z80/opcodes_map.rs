@@ -7936,7 +7936,8 @@ impl Z80 {
 
     /* JP HL */
     pub(crate) fn instr__JP_HL(&mut self) {
-        self.SetPC(self.HL());
+        // self.SetPC(self.HL());
+        self.jp_hl();
         /* NB: NOT INDIRECT! */
     }
 
