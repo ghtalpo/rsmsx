@@ -84,8 +84,10 @@ def convert_to_lua(line):
                     elif is_reg16(tgt[:2]):
                         if is_reg8(oprr[1]):
                             return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1])
+                        elif is_reg8(oprr[1][0]) and oprr[1][1:3] == "=>":
+                            return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1][0])
                         else:
-                            return "write_byte(z80, z80_gen.%s(z80), %s)" % (tgt[:2], oprr[1])
+                            assert(False)
                     else:
                         return "WRONGz %s %s" % (op,opr)
                 else:
