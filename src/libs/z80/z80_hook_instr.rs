@@ -82,6 +82,11 @@ impl Z80 {
         self.instr__DEC_BC();
         self.increase_cycles(6);
     }
+    pub(crate) fn instr_hk__DEC_HL(&mut self) {
+        self.IncPC(1);
+        self.instr__DEC_HL();
+        self.increase_cycles(6);
+    }
     // di
     pub(crate) fn instr_hk__DI(&mut self) {
         self.IncPC(1);
@@ -167,6 +172,11 @@ impl Z80 {
         self.instr__LD_E_iHL();
         self.increase_cycles(7);
     }
+    pub(crate) fn instr_hk__LD_H_iHL(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_H_iHL();
+        self.increase_cycles(7);
+    }
     pub(crate) fn instr_hk__LD_A_iNNNN(&mut self, nnnn: u16) {
         self.IncPC(3);
         self.data.A = self.memory.read_byte(nnnn);
@@ -192,9 +202,19 @@ impl Z80 {
         self.instr__LD_A_L();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__LD_B_A(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_B_A();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__LD_C_A(&mut self) {
         self.IncPC(1);
         self.instr__LD_C_A();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_C_B(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_C_B();
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__LD_D_H(&mut self) {
@@ -232,6 +252,11 @@ impl Z80 {
         self.instr__LD_L_C();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__LD_L_E(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_L_E();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__LD_A_NN(&mut self, nn: u8) {
         self.IncPC(2);
         self.data.A = nn;
@@ -247,6 +272,16 @@ impl Z80 {
         self.data.C = nn;
         self.increase_cycles(7);
     }
+    pub(crate) fn instr_hk__LD_D_NN(&mut self, nn: u8) {
+        self.IncPC(2);
+        self.data.D = nn;
+        self.increase_cycles(7);
+    }
+    pub(crate) fn instr_hk__LD_E_NN(&mut self, nn: u8) {
+        self.IncPC(2);
+        self.data.E = nn;
+        self.increase_cycles(7);
+    }
     pub(crate) fn instr_hk__LD_DE_NNNN(&mut self, nnnn: u16) {
         self.IncPC(3);
         self.SetDE(nnnn);
@@ -258,6 +293,11 @@ impl Z80 {
         nnnn += 1;
         self.data.H = self.memory.read_byte(nnnn);
         self.increase_cycles(16);
+    }
+    pub(crate) fn instr_hk__LD_iHL_A(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_iHL_A();
+        self.increase_cycles(7);
     }
     pub(crate) fn instr_hk__LD_iHL_B(&mut self) {
         self.IncPC(1);
