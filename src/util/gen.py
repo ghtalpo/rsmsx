@@ -87,14 +87,14 @@ def convert_to_lua(line):
                         elif is_reg8(oprr[1][0]) and oprr[1][1:3] == "=>":
                             return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1][0])
                         else:
-                            assert(False)
+                            return "self.instr_hk__LD_i%s_NN(%s);" % (tgt[:2], oprr[1])
                     else:
                         return "WRONGz %s %s" % (op,opr)
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'XOR':
-                if opr == 'A':
-                    return "z80.A = 0"
+                if is_reg8(opr):
+                    return "self.instr_hk__%s_A_%s();" % (op,opr)
                 elif re.match(r'^[\d]', opr):
                     return "z80:xor(%s)" % (opr,)
                 else:
@@ -173,7 +173,7 @@ def convert_to_lua(line):
                     return "opcodes_map.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
                 elif oprr[0] == 'A':
                     if is_reg8(oprr[1]):
-                        return "z80:adc(z80.%s)" % (oprr[1],)
+                        return "self.instr_hk__%s_A_%s();" % (op,oprr[1])
                     elif oprr[1][0] == '(' and is_reg16(oprr[1][1:3]):
                         return "z80:adc(read_byte(z80, z80_gen.%s(z80)))" % (oprr[1][1:3],)
                     else:
@@ -185,24 +185,26 @@ def convert_to_lua(line):
             elif op == 'SUB':
                 oprr = opr.split(',')
                 if is_reg16(oprr[0]) and is_reg16(oprr[1]):
-                    return "opcodes_map.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
+                    return "self.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
                 elif len(oprr) == 2 and oprr[0] == 'A':
                     return "z80:sub(%s)" % (oprr[1],)
                 elif opr[0] == '(' and is_reg16(opr[1:3]):
-                    return "opcodes_map.instr_hk__%s_A_i%s(z80)" % (op,opr[1:3])
+                    return "self.instr_hk__%s_A_i%s(z80)" % (op,opr[1:3])
                 else:
-                    return "WRONG %s %s" % (op,opr)
+                    return "self.instr_hk__%s_A_%s();" % (op,opr)
+                    # return "WRONG %s %s" % (op,opr)
             elif op == 'SBC':
                 oprr = opr.split(',')
                 if is_reg16(oprr[0]) and is_reg16(oprr[1]):
-                    return "opcodes_map.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
+                    return "self.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
                 elif len(oprr) == 2 and oprr[0] == 'A':
                     if oprr[1][0] == '(' and is_reg16(oprr[1][1:3]):
-                        return "opcodes_map.instr_hk__%s_A_i%s(z80)" % (op,oprr[1][1:3])
+                        return "self.instr_hk__%s_A_i%s(z80)" % (op,oprr[1][1:3])
                     else:
-                        return "z80:sbc(%s)" % (oprr[1],)
+                        return "self.instr_hk__%s_A_%s();" % (op,oprr[1])
+                        # return "z80:sbc(%s)" % (oprr[1],)
                 elif opr[0] == '(' and is_reg16(opr[1:3]):
-                    return "opcodes_map.instr_hk__%s_A_i%s(z80)" % (op,opr[1:3])
+                    return "self.instr_hk__%s_A_i%s(z80)" % (op,opr[1:3])
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'EX':
@@ -241,7 +243,10 @@ def convert_to_lua(line):
                         else:
                             return "WRONG %s %s" % (op,opr)
                     else:
-                        return "WRONG %s %s" % (op,opr)
+                        # if is_reg16(oprr[0]) and is_reg16(oprr[1].strip()):
+                        #     return "self.instr_hk__%s_%s_%s();" % (op,oprr[0],oprr[1])
+                        # else:
+                        return "//WRONG? %s %s" % (op,opr)
             elif op == 'BIT':
                 oprr = opr.split(',')
                 bitn = int(oprr[0],16)
