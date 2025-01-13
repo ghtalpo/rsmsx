@@ -229,16 +229,17 @@ def convert_to_lua(line):
                 else:
                     return "WRONGjp? %s %s" % (op,opr)
             elif op == 'DJNZ':
-                return "self.IncPC(2);self.decB();\nif self.data.B != 0 {\n\tself.increase_cycles(13);\n\tJP %s;\n} else {\n\tself.increase_cycles(8);break;}\n" % opr
+                return "self.IncPC(2);self.decB();\nif self.data.B != 0 {\n\tself.increase_cycles(13);\n\t//JP %s;\n} else {\n\tself.increase_cycles(8);break;}\n" % opr
             elif op == 'OUT':
                 oprr = opr.split(',')
-                if oprr[0].startswith('(') and oprr[0].endswith(')'):
-                    if not is_reg16(oprr[0][1:3]):
-                        return "self.instr_hk__%s_iNN_%s(%s);" % (op,oprr[1],oprr[0][1:-1])
+                if len(oprr) == 2:
+                    if oprr[0].startswith('(') and oprr[0].endswith(')'):
+                        if not is_reg16(oprr[0][1:3]):
+                            return "self.instr_hk__%s_iNN_%s(%s);" % (op,oprr[1],oprr[0][1:-1])
+                        else:
+                            return "WRONG %s %s" % (op,opr)
                     else:
                         return "WRONG %s %s" % (op,opr)
-                else:
-                    return "WRONG %s %s" % (op,opr)
             elif op == 'BIT':
                 oprr = opr.split(',')
                 bitn = int(oprr[0],16)
