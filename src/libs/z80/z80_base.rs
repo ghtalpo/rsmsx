@@ -672,7 +672,7 @@ impl Z80 {
                 return;
             } else {
                 log::info!("z80:call ignored 0x{:04x}=>0x{:04x}", old_pc, new_pc);
-                assert!(false);
+                panic!();
             }
         }
 

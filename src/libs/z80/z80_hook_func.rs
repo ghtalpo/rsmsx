@@ -24,12 +24,35 @@ impl Z80 {
     }
 
     pub(crate) fn has_hook(&self, addr: u16) -> bool {
-        match addr {
-            0x46ac | 0x46ea | 0x4705 | 0x471c | 0x4763 | 0x4b61 | 0x6ed6 | 0x8840 | 0x8964
-            | 0x8984 | 0x899a | 0x89bc | 0x89c7 | 0x89d6 | 0x8b1b | 0x8b21 | 0x8bc4 | 0x8bca
-            | 0x8bd1 | 0x8be4 | 0x8bea | 0x8bf1 | 0xc085 | 0xc094 | 0xc09e | 0xc0ba => true,
-            _ => false,
-        }
+        matches!(
+            addr,
+            0x46ac
+                | 0x46ea
+                | 0x4705
+                | 0x471c
+                | 0x4763
+                | 0x4b61
+                | 0x6ed6
+                | 0x8840
+                | 0x8964
+                | 0x8984
+                | 0x899a
+                | 0x89bc
+                | 0x89c7
+                | 0x89d6
+                | 0x8b1b
+                | 0x8b21
+                | 0x8bc4
+                | 0x8bca
+                | 0x8bd1
+                | 0x8be4
+                | 0x8bea
+                | 0x8bf1
+                | 0xc085
+                | 0xc094
+                | 0xc09e
+                | 0xc0ba
+        )
     }
     fn call_hook_internal(&mut self, addr: u16) -> bool {
         match addr {

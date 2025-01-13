@@ -3,7 +3,7 @@ use super::z80_base::Z80;
 #[allow(non_snake_case, dead_code)]
 impl Z80 {
     pub(crate) fn increase_cycles(&mut self, n: u64) {
-        self.data.cycles = self.data.cycles + n;
+        self.data.cycles += n;
     }
     // add
     pub(crate) fn instr_hk__ADD_HL_BC(&mut self) {
