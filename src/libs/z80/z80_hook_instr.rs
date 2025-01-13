@@ -279,6 +279,11 @@ impl Z80 {
         self.instr__OR_A_B();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__OR_A_C(&mut self) {
+        self.IncPC(1);
+        self.instr__OR_A_C();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__OR_NN(&mut self, nn: u8) {
         self.IncPC(2);
         self.or(nn);
