@@ -7,7 +7,7 @@ def is_reg16(r):
 def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
-ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES']
+ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ']
 sops = ['RLA','RRA','DI','EI']
 def convert_to_lua(line):
     import re
@@ -228,6 +228,8 @@ def convert_to_lua(line):
                     return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) == 0 {\n\tJP %s;\n}" % oprr[1]
                 else:
                     return "WRONGjp? %s %s" % (op,opr)
+            elif op == 'DJNZ':
+                return "self.IncPC(2);self.decB();\nif self.data.B != 0 {\n\tself.increase_cycles(13);\n\tJP %s;\n} else {\n\tself.increase_cycles(8);break;}\n" % opr
             elif op == 'OUT':
                 oprr = opr.split(',')
                 if oprr[0].startswith('(') and oprr[0].endswith(')'):
