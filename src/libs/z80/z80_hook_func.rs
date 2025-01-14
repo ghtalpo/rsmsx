@@ -81,8 +81,8 @@ impl Z80 {
                 | 0x6ed6
                 | 0x75d2
                 | 0x7f80
-                // | 0x8018
-                // | 0x80c0
+                | 0x8018
+                | 0x80c0
                 | 0x8140
                 | 0x81ec
                 | 0x823d
@@ -195,8 +195,8 @@ impl Z80 {
             0x6ed6 => self.hook_6ed6(),
             0x75d2 => self.hook_75d2(),
             0x7f80 => self.hook_7f80(),
-            // 0x8018 => self.hook_8018(),
-            // 0x80c0 => self.hook_80c0(),
+            0x8018 => self.hook_8018(),
+            0x80c0 => self.hook_80c0(),
             0x8140 => self.hook_8140(),
             0x81ec => self.hook_81ec(),
             0x823d => self.hook_823d(),
