@@ -8,7 +8,7 @@ def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
 ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ', 'SRL']
-sops = ['RLA','RRA','DI','EI','LDIR','SCF','NEG']
+sops = ['RLA','RRA','DI','EI','LDIR','LDDR','SCF','NEG']
 def convert_to_lua(line):
     import re
     # addr = re.compile(r"([\da-f]+)")
