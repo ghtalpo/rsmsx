@@ -83,6 +83,7 @@ impl Z80 {
                 | 0x7f80
                 | 0x8018
                 | 0x80c0
+                | 0x8115
                 | 0x8140
                 | 0x81ec
                 | 0x823d
@@ -197,6 +198,7 @@ impl Z80 {
             0x7f80 => self.hook_7f80(),
             0x8018 => self.hook_8018(),
             0x80c0 => self.hook_80c0(),
+            0x8115 => self.hook_8115(),
             0x8140 => self.hook_8140(),
             0x81ec => self.hook_81ec(),
             0x823d => self.hook_823d(),
@@ -4479,6 +4481,103 @@ impl Z80 {
         //         ram:80e9 c9              RET
         self.assert_pc(0x80e9);
 
+        true
+    }
+    fn hook_8115(&mut self) -> bool {
+        //
+        //                              *************************************************************
+        //                              *                           FUNCTION
+        //                              *************************************************************
+        //                              undefined  FUN_ram_8115 ()
+        //              undefined         A:1            <RETURN>
+        //                              FUN_ram_8115
+        //         ram:8115 21  da  c8       LD         HL,BYTE_ram_c8da
+        self.instr_hk__LD_HL_NNNN(0xc8da);
+        //         ram:8118 06  08           LD         B,0x8
+        self.instr_hk__LD_B_NN(0x8);
+        //                              LAB_ram_811a
+        loop {
+            //         ram:811a 7e              LD         A,(HL=>BYTE_ram_c8da )
+            self.instr_hk__LD_A_iHL();
+            //         ram:811b 3c              INC        A
+            self.instr_hk__INC_A();
+            //         ram:811c 20  05           JR         NZ,LAB_ram_8123
+            self.IncPC(2);
+            if (self.data.F & FLAG_Z) == 0 {
+                self.increase_cycles(12);
+                // JR(LAB_ram_8123);
+            } else {
+                self.increase_cycles(7);
+                //         ram:811e 3e  03           LD         A,0x3
+                self.instr_hk__LD_A_NN(0x3);
+                //         ram:8120 cd  18  80       CALL       FUN_ram_8018
+                assert!(self.call_hook(0x8018));
+                //
+            }
+
+            //                              LAB_ram_8123
+            //         ram:8123 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8124 34              INC        (HL=>BYTE_ram_c8db )
+            self.instr_hk__INC_iHL();
+            //         ram:8125 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8126 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8127 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8128 10  f0           DJNZ       LAB_ram_811a
+            self.IncPC(2);
+            self.decB();
+            if self.data.B != 0 {
+                self.increase_cycles(13);
+                //JP LAB_ram_811a;
+            } else {
+                self.increase_cycles(8);
+                break;
+            }
+        }
+
+        //         ram:812a 21  d1  c1       LD         HL,BYTE_ram_c1d1
+        self.instr_hk__LD_HL_NNNN(0xc1d1);
+        //         ram:812d 06  04           LD         B,0x4
+        self.instr_hk__LD_B_NN(0x4);
+        //                              LAB_ram_812f
+        loop {
+            //         ram:812f 34              INC        (HL=>BYTE_ram_c1d1 )
+            self.instr_hk__INC_iHL();
+            //         ram:8130 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8131 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8132 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8133 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8134 10  f9           DJNZ       LAB_ram_812f
+            self.IncPC(2);
+            self.decB();
+            if self.data.B != 0 {
+                self.increase_cycles(13);
+                //JP LAB_ram_812f;
+            } else {
+                self.increase_cycles(8);
+                break;
+            }
+        }
+        self.SetPC(0x8136);
+
+        //         ram:8136 21  e6  c1       LD         HL,BYTE_ram_c1e6
+        self.instr_hk__LD_HL_NNNN(0xc1e6);
+        //         ram:8139 35              DEC        (HL=>BYTE_ram_c1e6 )
+        self.instr_hk__DEC_iHL();
+        //         ram:813a 3e  01           LD         A,0x1
+        self.instr_hk__LD_A_NN(0x1);
+        //         ram:813c cd  40  81       CALL       sb_calc_change_mem_8140                          IN a
+        assert!(self.call_hook(0x8140));
+        //         ram:813f c9              RET
+        self.assert_pc(0x813f);
+        //
         true
     }
     fn hook_8140(&mut self) -> bool {
