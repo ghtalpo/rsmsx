@@ -24,7 +24,7 @@ def convert_to_lua(line):
             if op == 'CALL':
                 v_opr = addr.search(opr)
                 if v_opr:
-                    return "assert!(self.call_hook(0x%s));" % v_opr.group(1)
+                    return "assert!(self.call_hook(0x%s));" % v_opr.group(1).lower()
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'LD':
@@ -37,7 +37,7 @@ def convert_to_lua(line):
                         tgt = oprr[1][1:].rstrip(')').rstrip()
                         v_opr = addr.search(tgt)
                         if v_opr:
-                            return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (oprr[0], v_opr.group(1))
+                            return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (oprr[0], v_opr.group(1).lower())
                         # elif is_reg16(tgt):
                             # return "write_word(z80, 0x%s, z80_gen.%s(z80))" % (v_opr.group(1), oprr[1])
                         else:
@@ -45,7 +45,7 @@ def convert_to_lua(line):
                     else:
                         v_opr = addr.search(oprr[1])
                         if v_opr:
-                            return "self.instr_hk__LD_%s_NNNN(0x%s);" % (oprr[0], v_opr.group(1))
+                            return "self.instr_hk__LD_%s_NNNN(0x%s);" % (oprr[0], v_opr.group(1).lower())
                         else:
                             return "self.instr_hk__LD_%s_NNNN(%s);" % (oprr[0], oprr[1])
                             # return "WRONG2 %s %s" % (op,opr)
@@ -64,7 +64,7 @@ def convert_to_lua(line):
                             v_opr = addr.search(tgt)
                             if v_opr:
                                 # return "z80.%s = read_byte(z80, 0x%s)" % (oprr[0], v_opr.group(1))
-                                return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (oprr[0], v_opr.group(1))
+                                return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (oprr[0], v_opr.group(1).lower())
                             else:
                                 return "WRONG1a %s %s" % (op,opr)
                     else:
@@ -81,11 +81,11 @@ def convert_to_lua(line):
                         v_opr = addr.search(tgt)
                         if v_opr:
                             if is_reg16(oprr[1]):
-                                return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1), )
+                                return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1).lower(), )
                                 # return "write_word(z80, 0x%s, z80_gen.%s(z80))" % (v_opr.group(1), oprr[1])
                             elif is_reg8(oprr[1]):
                                 # return "self.instr_hk__LD_i%s_%s();" % (v_opr.group(1), oprr[1])
-                                return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1), )
+                                return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1).lower(), )
                                 # return "write_byte(z80, 0x%s, z80.%s)" % (v_opr.group(1), oprr[1])
                             else:
                                 return "WRONG %s %s" % (op,opr)
