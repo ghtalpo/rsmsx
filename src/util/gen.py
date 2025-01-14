@@ -8,7 +8,7 @@ def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
 ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ', 'SRL']
-sops = ['RLA','RRA','DI','EI','LDIR']
+sops = ['RLA','RRA','DI','EI','LDIR','SCF']
 def convert_to_lua(line):
     import re
     # addr = re.compile(r"([\da-f]+)")
@@ -71,7 +71,10 @@ def convert_to_lua(line):
                         return "self.instr_hk__LD_%s_%s();" % (oprr[0],oprr[1])
                 elif oprr[0].startswith('('):
                     if is_reg16(oprr[0][1:3]):
-                        return "self.instr_hk__LD_i%s_%s();" % (oprr[0][1:3], oprr[1])
+                        if is_reg8(oprr[1]):
+                            return "self.instr_hk__LD_i%s_%s();" % (oprr[0][1:3], oprr[1])
+                        else:
+                            return "self.instr_hk__LD_i%s_NN(%s);" % (oprr[0][1:3], oprr[1])
                     else:
                         tgt = oprr[0][1:].rstrip(')').rstrip()
                         # print('LD tgt?', tgt)
@@ -239,36 +242,38 @@ def convert_to_lua(line):
                     return "self.IncPC(1);\nif (self.data.F & FLAG_Z) != 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
                 elif opr == 'NZ':
                     return "self.IncPC(1);\nif (self.data.F & FLAG_Z) == 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
+                elif opr == 'NC':
+                    return "self.IncPC(1);\nif (self.data.F & FLAG_C) == 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
                 else:
                     return "WRONGr? %s %s" % (op,opr)
             elif op == 'JP':
                 oprr = opr.split(',')
                 if len(oprr) == 1:
-                    return "self.IncPC(3);self.increase_cycles(10);JP %s;\n" % oprr[0]
+                    return "self.IncPC(3);self.increase_cycles(10);JP (%s);\n" % oprr[0]
                 elif oprr[0] == 'M':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_S) != 0 {\n\tJP %s;\n}\n" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_S) != 0 {\n\tJP (%s);\n}\n" % oprr[1]
                 elif oprr[0] == 'Z':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) != 0 {\n\tJP %s;\n}\n" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) != 0 {\n\tJP (%s);\n}\n" % oprr[1]
                 elif oprr[0] == 'NZ':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) == 0 {\n\tJP %s;\n}\n" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) == 0 {\n\tJP (%s);\n}\n" % oprr[1]
                 elif oprr[0] == 'C':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) != 0 {\n\tJP %s;\n}\n" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) != 0 {\n\tJP (%s);\n}\n" % oprr[1]
                 elif oprr[0] == 'NC':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) == 0 {\n\tJP %s;\n}\n" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) == 0 {\n\tJP (%s);\n}\n" % oprr[1]
                 else:
                     return "WRONGjp? %s %s" % (op,opr)
             elif op == 'JR':
                 oprr = opr.split(',')
                 if len(oprr) == 1:
-                    return "self.IncPC(2);self.increase_cycles(12);JR %s;\n" % oprr[0]
+                    return "self.IncPC(2);self.increase_cycles(12);JR (%s);\n" % oprr[0]
                 elif oprr[0] == 'Z':
-                    return "self.IncPC(2);\nif (self.data.F & FLAG_Z) != 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_Z) != 0 {\n\tself.increase_cycles(12);JR (%s);\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
                 elif oprr[0] == 'NZ':
-                    return "self.IncPC(2);\nif (self.data.F & FLAG_Z) == 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_Z) == 0 {\n\tself.increase_cycles(12);JR (%s);\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
                 elif oprr[0] == 'C':
-                    return "self.IncPC(2);\nif (self.data.F & FLAG_C) != 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_C) != 0 {\n\tself.increase_cycles(12);JR (%s);\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
                 elif oprr[0] == 'NC':
-                    return "self.IncPC(2);\nif (self.data.F & FLAG_C) == 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_C) == 0 {\n\tself.increase_cycles(12);JR (%s);\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
                 else:
                     return "WRONGjr? %s %s" % (op,opr)
             elif op == 'DJNZ':
