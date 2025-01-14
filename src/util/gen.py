@@ -7,7 +7,7 @@ def is_reg16(r):
 def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
-ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ']
+ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ', 'SRL']
 sops = ['RLA','RRA','DI','EI']
 def convert_to_lua(line):
     import re
@@ -97,6 +97,13 @@ def convert_to_lua(line):
                     return "self.instr_hk__%s_A_%s();" % (op,opr)
                 elif re.match(r'^[\d]', opr):
                     return "self.instr_hk__%s_NN(%s);" % (op,opr)
+                else:
+                    return "WRONG %s %s" % (op,opr)
+            elif op == 'SRL':
+                if is_reg8(opr):
+                    return "self.instr_hk__%s_%s();" % (op,opr)
+                # elif re.match(r'^[\d]', opr):
+                #     return "self.instr_hk__%s_NN(%s);" % (op,opr)
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'OR':

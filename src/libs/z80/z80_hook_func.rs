@@ -1151,6 +1151,7 @@ impl Z80 {
         //         ram:563b 6b              LD         L,E
         self.instr_hk__LD_L_E();
         //         ram:563c cb 3f           SRL        A
+        self.instr_hk__SRL_A();
         //         ram:563e c6 12           ADD        A,0x12
         self.instr_hk__ADD_A_NN(0x12);
         //         ram:5640 5f              LD         E,A

@@ -597,6 +597,12 @@ impl Z80 {
         self.instr__SUB_A_iHL();
         self.increase_cycles(7);
     }
+    // srl
+    pub(crate) fn instr_hk__SRL_A(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_A();
+        self.increase_cycles(8);
+    }
     // xor
     pub(crate) fn instr_hk__XOR_A_A(&mut self) {
         self.IncPC(1);
