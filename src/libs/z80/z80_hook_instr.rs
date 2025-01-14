@@ -567,6 +567,34 @@ impl Z80 {
         self.memory.write_byte(nnnn, self.data.A);
         self.increase_cycles(13);
     }
+    // lddr
+    pub(crate) fn instr_hk__LDDR(&mut self) {
+        self.IncPC(2);
+        // pub(crate) fn instrED__LDDR(&mut self) {
+        let mut running = true;
+        while running {
+            let mut byte_temp: u8 = self.memory.read_byte(self.HL());
+            self.memory.write_byte(self.DE(), byte_temp);
+            self.memory.contend_write_no_mreq_loop(self.DE(), 1, 2);
+            self.DecBC();
+            byte_temp = byte_temp.wrapping_add(self.data.A);
+            self.data.F = self.data.F & (FLAG_C | FLAG_Z | FLAG_S)
+                | tern_op_b(self.BC() != 0, FLAG_V, 0)
+                | byte_temp & FLAG_3
+                | tern_op_b(byte_temp & 0x02 != 0, FLAG_5, 0);
+            if self.BC() != 0 {
+                self.memory.contend_write_no_mreq_loop(self.DE(), 1, 5);
+                // self.DecPC(2); // do it again
+                self.data.cycles += 23;
+            } else {
+                self.data.cycles += 18;
+                running = false;
+            }
+            self.DecHL();
+            self.DecDE();
+        }
+    }
+
     // ldir
     pub(crate) fn instr_hk__LDIR(&mut self) {
         self.IncPC(2);
@@ -594,8 +622,6 @@ impl Z80 {
             self.IncHL();
             self.IncDE();
         }
-
-        self.increase_cycles(4);
     }
     // neg
     pub(crate) fn instr_hk__NEG(&mut self) {
