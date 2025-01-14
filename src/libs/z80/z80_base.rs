@@ -730,7 +730,7 @@ impl Z80 {
     // The following functions can not be generated as they need special treatments
 
     // PC returns the program counter.
-    pub fn PC(&mut self) -> u16 {
+    pub fn PC(&self) -> u16 {
         self.data.pc
     }
 
@@ -750,7 +750,7 @@ impl Z80 {
     }
 
     // SP returns the SP register.
-    pub fn SP(&mut self) -> u16 {
+    pub fn SP(&self) -> u16 {
         self.data.sp
     }
 
