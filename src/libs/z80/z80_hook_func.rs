@@ -49,6 +49,10 @@ impl Z80 {
                 | 0x60db
                 | 0x6ed6
                 | 0x8840
+                | 0x8860
+                | 0x88ba
+                | 0x894c
+                | 0x8959
                 | 0x8964
                 | 0x8984
                 | 0x899a
@@ -101,6 +105,10 @@ impl Z80 {
             0x60db => self.hook_60db(),
             0x6ed6 => self.hook_6ed6(),
             0x8840 => self.hook_8840(),
+            0x8860 => self.hook_8860(),
+            0x88ba => self.hook_88ba(),
+            0x894c => self.hook_894c(),
+            0x8959 => self.hook_8959(),
             0x8964 => self.hook_8964(),
             0x8984 => self.hook_8984(),
             0x899a => self.hook_899a(),
@@ -153,6 +161,7 @@ impl Z80 {
     pub(crate) fn is_known_caller(&self, addr: u16) -> bool {
         match addr {
             0x4010..=0x422b => true, // in looped func
+            0x422e..=0x42b7 => true, // in looped func
             0x42e2..=0x4307 => true, // in spin lock? func
             0x431c..0x4403 => true,  // in looped func
             0x4a21..=0x4b60 => true, // in looped func
@@ -1166,6 +1175,436 @@ impl Z80 {
             self.PC(),
             0x885f
         );
+        true
+    }
+    fn hook_8860(&mut self) -> bool {
+        //
+        //                              **************************************************************
+        //                              *                          FUNCTION                          *
+        //                              **************************************************************
+        //                              undefined sb_calc_mem_8860()
+        //              undefined         A:1            <RETURN>
+        //                              sb_calc_mem_8860                                XREF[4]:     ram:418e(c), ram:419f(c),
+        //                                                                                           ram:41f3(c), ram:4236(c)
+        //         ram:8860 eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:8861 23              INC        HL
+        self.instr_hk__INC_HL();
+        //         ram:8862 22 54 c2        LD         (pt_char_c254),HL
+        self.instr_hk__LD_iNNNN_HL(0xc254);
+        //         ram:8865 ed 43 56 c2     LD         (BYTE_ram_c256),BC
+        self.instr_hk__LD_iNNNN_BC(0xc256);
+        //         ram:8869 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:886a 22 58 c2        LD         (tmp_var_c258),HL
+        self.instr_hk__LD_iNNNN_HL(0xc258);
+        //         ram:886d 2a 56 c2        LD         HL,(BYTE_ram_c256)
+        self.instr_hk__LD_HL_iNNNN(0xc256);
+        //         ram:8870 11 04 00        LD         DE,0x4
+        self.instr_hk__LD_DE_NNNN(0x4);
+        //         ram:8873 cd ac b6        CALL       sb_calc_b6ac                                     IN de, hl
+        assert!(self.call_hook(0xb6ac));
+        //                                                                                              OUT de, hl
+        //WRONG? OUT de, hl
+        //         ram:8876 22 5a c2        LD         (WORD_ram_c25a),HL
+        self.instr_hk__LD_iNNNN_HL(0xc25a);
+        //         ram:8879 2a 54 c2        LD         HL,(pt_char_c254)
+        self.instr_hk__LD_HL_iNNNN(0xc254);
+        //         ram:887c ed 5b 58 c2     LD         DE,(tmp_var_c258)
+        self.instr_hk__LD_DE_iNNNN(0xc258);
+        //         ram:8880 ed 4b 5a c2     LD         BC,(WORD_ram_c25a)
+        self.instr_hk__LD_BC_iNNNN(0xc25a);
+        //         ram:8884 cd ba 88        CALL       sb_calc_88BA                                     IN
+        assert!(self.call_hook(0x88BA));
+        //                                                                                                 hl: p
+        //                                                                                                 de: p
+        //                                                                                              change *hl, *de
+        //         ram:8887 ed 4b 5a c2     LD         BC,(WORD_ram_c25a)
+        self.instr_hk__LD_BC_iNNNN(0xc25a);
+        //         ram:888b 2a 58 c2        LD         HL,(tmp_var_c258)
+        self.instr_hk__LD_HL_iNNNN(0xc258);
+        //         ram:888e 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:888f 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:8890 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:8891 eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:8892 2a 54 c2        LD         HL,(pt_char_c254)
+        self.instr_hk__LD_HL_iNNNN(0xc254);
+        //         ram:8895 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:8896 cd ba 88        CALL       sb_calc_88BA                                     IN
+        assert!(self.call_hook(0x88BA));
+        //                                                                                                 hl: p
+        //                                                                                                 de: p
+        //                                                                                              change *hl, *de
+        //         ram:8899 ed 4b 5a c2     LD         BC,(WORD_ram_c25a)
+        self.instr_hk__LD_BC_iNNNN(0xc25a);
+        //         ram:889d 2a 58 c2        LD         HL,(tmp_var_c258)
+        self.instr_hk__LD_HL_iNNNN(0xc258);
+        //         ram:88a0 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88a1 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88a2 eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:88a3 2a 54 c2        LD         HL,(pt_char_c254)
+        self.instr_hk__LD_HL_iNNNN(0xc254);
+        //         ram:88a6 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88a7 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88a8 cd ba 88        CALL       sb_calc_88BA                                     IN
+        assert!(self.call_hook(0x88BA));
+        //                                                                                                 hl: p
+        //                                                                                                 de: p
+        //                                                                                              change *hl, *de
+        //         ram:88ab ed 4b 5a c2     LD         BC,(WORD_ram_c25a)
+        self.instr_hk__LD_BC_iNNNN(0xc25a);
+        //         ram:88af 2a 58 c2        LD         HL,(tmp_var_c258)
+        self.instr_hk__LD_HL_iNNNN(0xc258);
+        //         ram:88b2 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88b3 eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:88b4 2a 54 c2        LD         HL,(pt_char_c254)
+        self.instr_hk__LD_HL_iNNNN(0xc254);
+        //         ram:88b7 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88b8 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:88b9 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //
+        self.internal_88ba();
+        true
+    }
+    fn internal_88ba(&mut self) {
+        assert!(self.hook_88ba());
+    }
+    fn hook_88ba(&mut self) -> bool {
+        //         ram:88ba d5              PUSH       DE                                               IN
+        self.instr_hk__PUSH_DE();
+        //         ram:88bb eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //                              loop_1                                          XREF[1]:     ram:88cc(j)
+        loop {
+            //         ram:88bc c5              PUSH       BC
+            self.instr_hk__PUSH_BC();
+            //         ram:88bd 06 08           LD         B,0x8
+            self.instr_hk__LD_B_NN(0x8);
+            //         ram:88bf 1a              LD         A,(DE)
+            self.instr_hk__LD_A_iDE();
+            //                              loop_1_a                                        XREF[1]:     ram:88c3(j)
+            loop {
+                //         ram:88c0 87              ADD        A,A
+                self.instr_hk__ADD_A_A();
+                //         ram:88c1 cb 19           RR         C
+                //         ram:88c3 10 fb           DJNZ       loop_1_a
+                self.IncPC(2);
+                self.decB();
+                if self.data.B != 0 {
+                    self.increase_cycles(13);
+                    //JP loop_1_a;
+                } else {
+                    self.increase_cycles(8);
+                    break;
+                }
+            }
+
+            //         ram:88c5 71              LD         (HL),C
+            self.instr_hk__LD_iHL_C();
+            //         ram:88c6 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:88c7 13              INC        DE
+            self.instr_hk__INC_DE();
+            //         ram:88c8 c1              POP        BC
+            self.instr_hk__POP_BC();
+            //         ram:88c9 0b              DEC        BC
+            self.instr_hk__DEC_BC();
+            //         ram:88ca 78              LD         A,B
+            self.instr_hk__LD_A_B();
+            //         ram:88cb b1              OR         C
+            self.instr_hk__OR_A_C();
+            //         ram:88cc 20 ee           JR         NZ,loop_1
+            self.IncPC(2);
+            if (self.data.F & FLAG_Z) == 0 {
+                self.increase_cycles(12); //JR loop_1;
+            } else {
+                self.increase_cycles(7);
+                break;
+            }
+        }
+
+        //         ram:88ce 2a 56 c2        LD         HL,(BYTE_ram_c256)
+        self.instr_hk__LD_HL_iNNNN(0xc256);
+        //         ram:88d1 01 80 00        LD         BC,0x80
+        self.instr_hk__LD_BC_NNNN(0x80);
+        //         ram:88d4 b7              OR         A
+        self.instr_hk__OR_A_A();
+        //         ram:88d5 ed 42           SBC        HL,BC
+        self.instr_hk__SBC_HL_BC();
+        //         ram:88d7 20 16           JR         NZ,LAB_ram_88ef
+        self.IncPC(2);
+        if (self.data.F & FLAG_Z) == 0 {
+            self.increase_cycles(12); //JR LAB_ram_88ef;
+
+            //                              LAB_ram_88ef                                    XREF[1]:     ram:88d7(j)
+            //         ram:88ef 01 a0 00        LD         BC,0xa0
+            self.instr_hk__LD_BC_NNNN(0xa0);
+            //         ram:88f2 b7              OR         A
+            self.instr_hk__OR_A_A();
+            //         ram:88f3 ed 42           SBC        HL,BC
+            self.instr_hk__SBC_HL_BC();
+            //         ram:88f5 20 12           JR         NZ,LAB_ram_8909
+            self.IncPC(2);
+            if (self.data.F & FLAG_Z) == 0 {
+                self.increase_cycles(12); //JR LAB_ram_8909;
+
+                //                              LAB_ram_8909                                    XREF[1]:     ram:88f5(j)
+                //         ram:8909 01 60 00        LD         BC,0x60
+                self.instr_hk__LD_BC_NNNN(0x60);
+                //         ram:890c b7              OR         A
+                self.instr_hk__OR_A_A();
+                //         ram:890d ed 42           SBC        HL,BC
+                self.instr_hk__SBC_HL_BC();
+                //         ram:890f 20 15           JR         NZ,LAB_ram_8926
+                self.IncPC(2);
+                if (self.data.F & FLAG_Z) == 0 {
+                    self.increase_cycles(12); //JR LAB_ram_8926;
+
+                    //                              LAB_ram_8926                                    XREF[1]:     ram:890f(j)
+                    //         ram:8926 e1              POP        HL
+                    self.instr_hk__POP_HL();
+                    //         ram:8927 06 04           LD         B,0x4
+                    self.instr_hk__LD_B_NN(0x4);
+                    //                              loop_2                                          XREF[1]:     ram:8949(j)
+                    loop {
+                        //         ram:8929 c5              PUSH       BC
+                        self.instr_hk__PUSH_BC();
+                        //         ram:892a e5              PUSH       HL
+                        self.instr_hk__PUSH_HL();
+                        //         ram:892b 54              LD         D,H
+                        self.instr_hk__LD_D_H();
+                        //         ram:892c 5d              LD         E,L
+                        self.instr_hk__LD_E_L();
+                        //         ram:892d 01 18 00        LD         BC,0x18
+                        self.instr_hk__LD_BC_NNNN(0x18);
+                        //         ram:8930 09              ADD        HL,BC
+                        self.instr_hk__ADD_HL_BC();
+                        //         ram:8931 eb              EX         DE,HL
+                        self.instr_hk__EX_DE_HL();
+                        //         ram:8932 cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+                        assert!(self.call_hook(0x894C));
+                        //                                                                                                 hl: p
+                        //                                                                                                 de: p
+                        //                                                                                              change 8bytes starting with *hl,
+                        //         ram:8935 e1              POP        HL
+                        self.instr_hk__POP_HL();
+                        //         ram:8936 e5              PUSH       HL
+                        self.instr_hk__PUSH_HL();
+                        //         ram:8937 54              LD         D,H
+                        self.instr_hk__LD_D_H();
+                        //         ram:8938 5d              LD         E,L
+                        self.instr_hk__LD_E_L();
+                        //         ram:8939 01 08 00        LD         BC,0x8
+                        self.instr_hk__LD_BC_NNNN(0x8);
+                        //         ram:893c 09              ADD        HL,BC
+                        self.instr_hk__ADD_HL_BC();
+                        //         ram:893d 09              ADD        HL,BC
+                        self.instr_hk__ADD_HL_BC();
+                        //         ram:893e eb              EX         DE,HL
+                        self.instr_hk__EX_DE_HL();
+                        //         ram:893f 09              ADD        HL,BC
+                        self.instr_hk__ADD_HL_BC();
+                        //         ram:8940 cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+                        assert!(self.call_hook(0x894C));
+                        //                                                                                                 hl: p
+                        //                                                                                                 de: p
+                        //                                                                                              change 8bytes starting with *hl,
+                        //         ram:8943 e1              POP        HL
+                        self.instr_hk__POP_HL();
+                        //         ram:8944 01 20 00        LD         BC,0x20
+                        self.instr_hk__LD_BC_NNNN(0x20);
+                        //         ram:8947 09              ADD        HL,BC
+                        self.instr_hk__ADD_HL_BC();
+                        //         ram:8948 c1              POP        BC
+                        self.instr_hk__POP_BC();
+                        //         ram:8949 10 de           DJNZ       loop_2
+                        self.IncPC(2);
+                        self.decB();
+                        if self.data.B != 0 {
+                            self.increase_cycles(13);
+                            //JP loop_2;
+                        } else {
+                            self.increase_cycles(8);
+                            break;
+                        }
+                    }
+
+                    //         ram:894b c9              RET
+                    return true;
+                } else {
+                    self.increase_cycles(7);
+                    //         ram:8911 e1              POP        HL
+                    self.instr_hk__POP_HL();
+                    //         ram:8912 54              LD         D,H
+                    self.instr_hk__LD_D_H();
+                    //         ram:8913 5d              LD         E,L
+                    self.instr_hk__LD_E_L();
+                    //         ram:8914 01 10 00        LD         BC,0x10
+                    self.instr_hk__LD_BC_NNNN(0x10);
+                    //         ram:8917 09              ADD        HL,BC
+                    self.instr_hk__ADD_HL_BC();
+                    //         ram:8918 eb              EX         DE,HL
+                    self.instr_hk__EX_DE_HL();
+                    //         ram:8919 cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+                    assert!(self.call_hook(0x894C));
+                    //                                                                                                 hl: p
+                    //                                                                                                 de: p
+                    //                                                                                              change 8bytes starting with *hl,
+                    //         ram:891c cd 59 89        CALL       sb_exchange_8bytes_ex_8959                       IN
+                    assert!(self.call_hook(0x8959));
+                    //                                                                                                 hl: p
+                    //                                                                                                 de: p
+                    //                                                                                              change 8bytes starting with *hl,
+                    //         ram:891f cd 59 89        CALL       sb_exchange_8bytes_ex_8959                       IN
+                    assert!(self.call_hook(0x8959));
+                    //                                                                                                 hl: p
+                    //                                                                                                 de: p
+                    //                                                                                              change 8bytes starting with *hl,
+                    //         ram:8922 cd 59 89        CALL       sb_exchange_8bytes_ex_8959                       IN
+                    assert!(self.call_hook(0x8959));
+                    //                                                                                                 hl: p
+                    //                                                                                                 de: p
+                    //                                                                                              change 8bytes starting with *hl,
+                    //         ram:8925 c9              RET
+                    return true;
+                }
+            } else {
+                self.increase_cycles(7);
+                //         ram:88f7 e1              POP        HL
+                self.instr_hk__POP_HL();
+                //         ram:88f8 54              LD         D,H
+                self.instr_hk__LD_D_H();
+                //         ram:88f9 5d              LD         E,L
+                self.instr_hk__LD_E_L();
+                //         ram:88fa 01 10 00        LD         BC,0x10
+                self.instr_hk__LD_BC_NNNN(0x10);
+                //         ram:88fd 09              ADD        HL,BC
+                self.instr_hk__ADD_HL_BC();
+                //         ram:88fe eb              EX         DE,HL
+                self.instr_hk__EX_DE_HL();
+                //         ram:88ff cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+                assert!(self.call_hook(0x894C));
+                //                                                                                                 hl: p
+                //                                                                                                 de: p
+                //                                                                                              change 8bytes starting with *hl,
+                //         ram:8902 cd 59 89        CALL       sb_exchange_8bytes_ex_8959                       IN
+                assert!(self.call_hook(0x8959));
+                //                                                                                                 hl: p
+                //                                                                                                 de: p
+                //                                                                                              change 8bytes starting with *hl,
+                //         ram:8905 cd 59 89        CALL       sb_exchange_8bytes_ex_8959                       IN
+                assert!(self.call_hook(0x8959));
+                //                                                                                                 hl: p
+                //                                                                                                 de: p
+                //                                                                                              change 8bytes starting with *hl,
+                //         ram:8908 c9              RET
+                return true;
+            }
+        } else {
+            self.increase_cycles(7);
+            //         ram:88d9 e1              POP        HL
+            self.instr_hk__POP_HL();
+            //         ram:88da 54              LD         D,H
+            self.instr_hk__LD_D_H();
+            //         ram:88db 5d              LD         E,L
+            self.instr_hk__LD_E_L();
+            //         ram:88dc 01 08 00        LD         BC,0x8
+            self.instr_hk__LD_BC_NNNN(0x8);
+            //         ram:88df 09              ADD        HL,BC
+            self.instr_hk__ADD_HL_BC();
+            //         ram:88e0 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:88e1 cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+            assert!(self.call_hook(0x894C));
+            //                                                                                                 hl: p
+            //                                                                                                 de: p
+            //                                                                                              change 8bytes starting with *hl,
+            //         ram:88e4 01 08 00        LD         BC,0x8
+            self.instr_hk__LD_BC_NNNN(0x8);
+            //         ram:88e7 09              ADD        HL,BC
+            self.instr_hk__ADD_HL_BC();
+            //         ram:88e8 eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:88e9 09              ADD        HL,BC
+            self.instr_hk__ADD_HL_BC();
+            //         ram:88ea eb              EX         DE,HL
+            self.instr_hk__EX_DE_HL();
+            //         ram:88eb cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+            assert!(self.call_hook(0x894C));
+            //                                                                                                 hl: p
+            //                                                                                                 de: p
+            //                                                                                              change 8bytes starting with *hl,
+            //         ram:88ee c9              RET
+            return true;
+        }
+
+        //
+    }
+    fn hook_894c(&mut self) -> bool {
+        //         ram:894c 06 08           LD         B,0x8                                            IN
+        self.instr_hk__LD_B_NN(0x8);
+        //                              loop                                            XREF[1]:     ram:8956(j)
+        loop {
+            //         ram:894e 7e              LD         A,(HL)
+            self.instr_hk__LD_A_iHL();
+            //         ram:894f 08              EX         AF,AF_
+            self.instr_hk__EX_AF_AF_();
+            //         ram:8950 1a              LD         A,(DE)
+            self.instr_hk__LD_A_iDE();
+            //         ram:8951 77              LD         (HL),A
+            self.instr_hk__LD_iHL_A();
+            //         ram:8952 08              EX         AF,AF_
+            self.instr_hk__EX_AF_AF_();
+            //         ram:8953 12              LD         (DE),A
+            self.instr_hk__LD_iDE_A();
+            //         ram:8954 23              INC        HL
+            self.instr_hk__INC_HL();
+            //         ram:8955 13              INC        DE
+            self.instr_hk__INC_DE();
+            //         ram:8956 10 f6           DJNZ       loop
+            self.IncPC(2);
+            self.decB();
+            if self.data.B != 0 {
+                self.increase_cycles(13);
+                //JP loop;
+            } else {
+                self.increase_cycles(8);
+                break;
+            }
+        }
+        //         ram:8958 c9              RET
+        true
+    }
+    fn hook_8959(&mut self) -> bool {
+        //         ram:8959 01 10 00        LD         BC,0x10                                          IN
+        self.instr_hk__LD_BC_NNNN(0x10);
+        //         ram:895c 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:895d eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:895e 09              ADD        HL,BC
+        self.instr_hk__ADD_HL_BC();
+        //         ram:895f eb              EX         DE,HL
+        self.instr_hk__EX_DE_HL();
+        //         ram:8960 cd 4c 89        CALL       sb_exchange_8bytes_894C                          IN
+        assert!(self.call_hook(0x894C));
+        //         ram:8963 c9              RET
+        //
         true
     }
     fn hook_8964(&mut self) -> bool {
