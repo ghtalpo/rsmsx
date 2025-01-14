@@ -7,13 +7,15 @@ def is_reg16(r):
 def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
-ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ']
+ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ']
 sops = ['RLA','RRA','DI','EI']
 def convert_to_lua(line):
     import re
     # addr = re.compile(r"([\da-f]+)")
     addr = re.compile(r"([\da-fA-F]{4})$")
     number = re.compile(r"(0x[\da-fA-F]|\d+)")
+    if ' RET' in line:
+        return 'return true;'
     for op in sops:
         if op in line:
             return "self.instr_hk__%s();" % (op,)
@@ -185,21 +187,21 @@ def convert_to_lua(line):
             elif op == 'SUB':
                 oprr = opr.split(',')
                 if is_reg16(oprr[0]) and is_reg16(oprr[1]):
-                    return "self.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
+                    return "self.instr_hk__%s_%s_%s();" % (op,oprr[0],oprr[1])
                 elif len(oprr) == 2 and oprr[0] == 'A':
                     return "z80:sub(%s)" % (oprr[1],)
                 elif opr[0] == '(' and is_reg16(opr[1:3]):
-                    return "self.instr_hk__%s_A_i%s(z80)" % (op,opr[1:3])
+                    return "self.instr_hk__%s_A_i%s(z80);" % (op,opr[1:3])
                 else:
                     return "self.instr_hk__%s_A_%s();" % (op,opr)
                     # return "WRONG %s %s" % (op,opr)
             elif op == 'SBC':
                 oprr = opr.split(',')
                 if is_reg16(oprr[0]) and is_reg16(oprr[1]):
-                    return "self.instr_hk__%s_%s_%s(z80)" % (op,oprr[0],oprr[1])
+                    return "self.instr_hk__%s_%s_%s();" % (op,oprr[0],oprr[1])
                 elif len(oprr) == 2 and oprr[0] == 'A':
                     if oprr[1][0] == '(' and is_reg16(oprr[1][1:3]):
-                        return "self.instr_hk__%s_A_i%s(z80)" % (op,oprr[1][1:3])
+                        return "self.instr_hk__%s_A_i%s(z80);" % (op,oprr[1][1:3])
                     else:
                         return "self.instr_hk__%s_A_%s();" % (op,oprr[1])
                         # return "z80:sbc(%s)" % (oprr[1],)
@@ -225,15 +227,27 @@ def convert_to_lua(line):
                 if len(oprr) == 1:
                     return "self.IncPC(3);self.increase_cycles(10);JP %s;\n" % oprr[0]
                 elif oprr[0] == 'Z':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) != 0 {\n\tJP %s;\n}" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) != 0 {\n\tJP %s;\n}\n" % oprr[1]
                 elif oprr[0] == 'NZ':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) == 0 {\n\tJP %s;\n}" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_Z) == 0 {\n\tJP %s;\n}\n" % oprr[1]
                 elif oprr[0] == 'NC':
-                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) == 0 {\n\tJP %s;\n}" % oprr[1]
+                    return "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_C) == 0 {\n\tJP %s;\n}\n" % oprr[1]
                 else:
                     return "WRONGjp? %s %s" % (op,opr)
+            elif op == 'JR':
+                oprr = opr.split(',')
+                if len(oprr) == 1:
+                    return "self.IncPC(2);self.increase_cycles(12);JR %s;\n" % oprr[0]
+                elif oprr[0] == 'Z':
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_Z) != 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                elif oprr[0] == 'NZ':
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_Z) == 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                elif oprr[0] == 'NC':
+                    return "self.IncPC(2);\nif (self.data.F & FLAG_C) == 0 {\n\tself.increase_cycles(12);JR %s;\n} else {\nself.increase_cycles(7);\n}\n" % oprr[1]
+                else:
+                    return "WRONGjr? %s %s" % (op,opr)
             elif op == 'DJNZ':
-                return "self.IncPC(2);self.decB();\nif self.data.B != 0 {\n\tself.increase_cycles(13);\n\t//JP %s;\n} else {\n\tself.increase_cycles(8);break;}\n" % opr
+                return "self.IncPC(2);self.decB();\nif self.data.B != 0 {\n\tself.increase_cycles(13);\n\t//JP %s;\n} else {\n\tself.increase_cycles(8);break;\n}\n" % opr
             elif op == 'OUT':
                 oprr = opr.split(',')
                 if len(oprr) == 2:
