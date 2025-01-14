@@ -8,7 +8,7 @@ def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
 ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ', 'SRL']
-sops = ['RLA','RRA','DI','EI','LDIR','SCF']
+sops = ['RLA','RRA','DI','EI','LDIR','SCF','NEG']
 def convert_to_lua(line):
     import re
     # addr = re.compile(r"([\da-f]+)")
@@ -164,8 +164,12 @@ def convert_to_lua(line):
                     return "self.instr_hk__%s_%s();" % (op,opr)
                     # return "opcodes_map.instr_hk__%s_%s(z80)" % (op,opr)
             elif op == 'DEC':
-                return "self.instr_hk__%s_%s();" % (op,opr)
-                # return "opcodes_map.instr_hk__%s_%s(z80)" % (op,opr)
+                if opr[0] == '(' and is_reg16(opr[1:3]):
+                    return "self.instr_hk__%s_i%s();" % (op,opr[1:3])
+                    # return "opcodes_map.instr_hk__%s_i%s(z80)" % (op,opr[1:3])
+                else:
+                    return "self.instr_hk__%s_%s();" % (op,opr)
+                    # return "opcodes_map.instr_hk__%s_%s(z80)" % (op,opr)
             elif op == 'ADD':
                 oprr = opr.split(',')
                 if is_reg16(oprr[0]) and is_reg16(oprr[1]):
