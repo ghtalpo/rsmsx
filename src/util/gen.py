@@ -8,14 +8,14 @@ def is_reg8(r):
     return r == 'A'or r=='F' or r == 'B'or r=='C' or r == 'D'or r=='E' or r == 'H'or r=='L'
 
 ops = ['CALL', 'LD', 'XOR', 'OR', 'CP', 'PUSH', 'POP', 'INC', 'DEC', 'JP', 'JR','ADD', 'ADC', 'SUB', 'SBC', 'AND', 'EX', 'RET', 'OUT', 'BIT', 'RES', 'DJNZ', 'SRL']
-sops = ['RLA','RRA','DI','EI']
+sops = ['RLA','RRA','DI','EI','LDIR']
 def convert_to_lua(line):
     import re
     # addr = re.compile(r"([\da-f]+)")
     addr = re.compile(r"([\da-fA-F]{4})$")
     number = re.compile(r"(0x[\da-fA-F]|\d+)")
     for op in sops:
-        if op in line:
+        if ' ' + op in line:
             return "self.instr_hk__%s();" % (op,)
     for op in ops:
         if op+' ' in line:
@@ -70,28 +70,31 @@ def convert_to_lua(line):
                     else:
                         return "self.instr_hk__LD_%s_%s();" % (oprr[0],oprr[1])
                 elif oprr[0].startswith('('):
-                    tgt = oprr[0][1:].rstrip(')').rstrip()
-                    # print('LD tgt?', tgt)
-                    v_opr = addr.search(tgt)
-                    if v_opr:
-                        if is_reg16(oprr[1]):
-                            return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1), )
-                            # return "write_word(z80, 0x%s, z80_gen.%s(z80))" % (v_opr.group(1), oprr[1])
-                        elif is_reg8(oprr[1]):
-                            # return "self.instr_hk__LD_i%s_%s();" % (v_opr.group(1), oprr[1])
-                            return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1), )
-                            # return "write_byte(z80, 0x%s, z80.%s)" % (v_opr.group(1), oprr[1])
-                        else:
-                            return "WRONG %s %s" % (op,opr)
-                    elif is_reg16(tgt[:2]):
-                        if is_reg8(oprr[1]):
-                            return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1])
-                        elif is_reg8(oprr[1][0]) and oprr[1][1:3] == "=>":
-                            return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1][0])
-                        else:
-                            return "self.instr_hk__LD_i%s_NN(%s);" % (tgt[:2], oprr[1])
+                    if is_reg16(oprr[0][1:3]):
+                        return "self.instr_hk__LD_i%s_%s();" % (oprr[0][1:3], oprr[1])
                     else:
-                        return "WRONGz %s %s" % (op,opr)
+                        tgt = oprr[0][1:].rstrip(')').rstrip()
+                        # print('LD tgt?', tgt)
+                        v_opr = addr.search(tgt)
+                        if v_opr:
+                            if is_reg16(oprr[1]):
+                                return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1), )
+                                # return "write_word(z80, 0x%s, z80_gen.%s(z80))" % (v_opr.group(1), oprr[1])
+                            elif is_reg8(oprr[1]):
+                                # return "self.instr_hk__LD_i%s_%s();" % (v_opr.group(1), oprr[1])
+                                return "self.instr_hk__LD_iNNNN_%s(0x%s);" % (oprr[1],v_opr.group(1), )
+                                # return "write_byte(z80, 0x%s, z80.%s)" % (v_opr.group(1), oprr[1])
+                            else:
+                                return "WRONG %s %s" % (op,opr)
+                        elif is_reg16(tgt[:2]):
+                            if is_reg8(oprr[1]):
+                                return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1])
+                            elif is_reg8(oprr[1][0]) and oprr[1][1:3] == "=>":
+                                return "self.instr_hk__LD_i%s_%s();" % (tgt[:2], oprr[1][0])
+                            else:
+                                return "self.instr_hk__LD_i%s_NN(%s);" % (tgt[:2], oprr[1])
+                        else:
+                            return "WRONGz %s %s" % (op,opr)
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'XOR':
