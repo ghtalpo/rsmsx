@@ -14,8 +14,6 @@ def convert_to_lua(line):
     # addr = re.compile(r"([\da-f]+)")
     addr = re.compile(r"([\da-fA-F]{4})$")
     number = re.compile(r"(0x[\da-fA-F]|\d+)")
-    if ' RET' in line:
-        return 'return true;'
     for op in sops:
         if op in line:
             return "self.instr_hk__%s();" % (op,)
@@ -98,7 +96,7 @@ def convert_to_lua(line):
                 if is_reg8(opr):
                     return "self.instr_hk__%s_A_%s();" % (op,opr)
                 elif re.match(r'^[\d]', opr):
-                    return "z80:xor(%s)" % (opr,)
+                    return "self.instr_hk__%s_NN(%s);" % (op,opr)
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'OR':
@@ -191,7 +189,7 @@ def convert_to_lua(line):
                 elif len(oprr) == 2 and oprr[0] == 'A':
                     return "z80:sub(%s)" % (oprr[1],)
                 elif opr[0] == '(' and is_reg16(opr[1:3]):
-                    return "self.instr_hk__%s_A_i%s(z80);" % (op,opr[1:3])
+                    return "self.instr_hk__%s_A_i%s();" % (op,opr[1:3])
                 else:
                     return "self.instr_hk__%s_A_%s();" % (op,opr)
                     # return "WRONG %s %s" % (op,opr)
@@ -201,12 +199,12 @@ def convert_to_lua(line):
                     return "self.instr_hk__%s_%s_%s();" % (op,oprr[0],oprr[1])
                 elif len(oprr) == 2 and oprr[0] == 'A':
                     if oprr[1][0] == '(' and is_reg16(oprr[1][1:3]):
-                        return "self.instr_hk__%s_A_i%s(z80);" % (op,oprr[1][1:3])
+                        return "self.instr_hk__%s_A_i%s();" % (op,oprr[1][1:3])
                     else:
                         return "self.instr_hk__%s_A_%s();" % (op,oprr[1])
                         # return "z80:sbc(%s)" % (oprr[1],)
                 elif opr[0] == '(' and is_reg16(opr[1:3]):
-                    return "self.instr_hk__%s_A_i%s(z80)" % (op,opr[1:3])
+                    return "self.instr_hk__%s_A_i%s()" % (op,opr[1:3])
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'EX':
@@ -277,6 +275,8 @@ def convert_to_lua(line):
                     return "WRONGres %s %s" % (op,opr)
             else:
                 return "WRONG %s %s" % (op,opr)
+    if ' RET' in line:
+        return 'return true;'
     return ""
 
 
