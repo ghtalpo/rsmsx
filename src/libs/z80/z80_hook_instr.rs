@@ -433,6 +433,16 @@ impl Z80 {
         self.instr__LD_H_B();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__LD_H_C(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_H_C();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_H_D(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_H_D();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__LD_H_NN(&mut self, nn: u8) {
         self.IncPC(2);
         self.data.H = nn;
@@ -750,6 +760,42 @@ impl Z80 {
         self.instr__SCF();
         self.increase_cycles(4);
     }
+    // srl
+    pub(crate) fn instr_hk__SRL_A(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_A();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__SRL_B(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_B();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__SRL_C(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_C();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__SRL_D(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_D();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__SRL_E(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_E();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__SRL_H(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_H();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__SRL_L(&mut self) {
+        self.IncPC(2);
+        self.instrCB__SRL_L();
+        self.increase_cycles(8);
+    }
     // sub
     pub(crate) fn instr_hk__SUB_A_B(&mut self) {
         self.IncPC(1);
@@ -780,12 +826,6 @@ impl Z80 {
         self.IncPC(1);
         self.sub(nn);
         self.increase_cycles(4);
-    }
-    // srl
-    pub(crate) fn instr_hk__SRL_A(&mut self) {
-        self.IncPC(2);
-        self.instrCB__SRL_A();
-        self.increase_cycles(8);
     }
     // xor
     pub(crate) fn instr_hk__XOR_A_A(&mut self) {
