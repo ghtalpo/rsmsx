@@ -207,6 +207,8 @@ def convert_to_lua(line):
                     return "z80:sub(%s)" % (oprr[1],)
                 elif opr[0] == '(' and is_reg16(opr[1:3]):
                     return "self.instr_hk__%s_A_i%s();" % (op,opr[1:3])
+                elif len(oprr) == 1 and is_reg8(oprr[0]):
+                    return "self.instr_hk__%s_A_%s();" % (op,opr)
                 else:
                     return "self.instr_hk__%s_NN(%s);" % (op,opr)
                     # return "WRONG %s %s" % (op,opr)
