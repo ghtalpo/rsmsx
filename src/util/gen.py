@@ -162,6 +162,11 @@ def convert_to_lua(line):
                                 oprr[0][1:3],
                                 oprr[1],
                             )
+                        elif is_reg8(oprr[1][0]) and oprr[1][1:3] == "=>":
+                            return "self.instr_hk__LD_i%s_%s();" % (
+                                oprr[0][1:3],
+                                oprr[1][0],
+                            )
                         else:
                             return "self.instr_hk__LD_i%s_NN(%s);" % (
                                 oprr[0][1:3],
@@ -369,6 +374,8 @@ def convert_to_lua(line):
                 elif len(oprr) == 2 and oprr[0] == "A":
                     if oprr[1][0] == "(" and is_reg16(oprr[1][1:3]):
                         return "self.instr_hk__%s_A_i%s();" % (op, oprr[1][1:3])
+                    elif number.search(oprr[1]):
+                        return "self.instr_hk__%s_A_NN(%s);" % (op, oprr[1])
                     else:
                         return "self.instr_hk__%s_A_%s();" % (op, oprr[1])
                         # return "z80:sbc(%s)" % (oprr[1],)
