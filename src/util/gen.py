@@ -106,26 +106,35 @@ def convert_to_lua(line):
                         else:
                             return "self.instr_hk__LD_%s_NNNN(%s);" % (oprr[0], oprr[1])
                             # return "WRONG2 %s %s" % (op,opr)
-                elif is_reg8(oprr[0]):
+                elif (
+                    is_reg8(oprr[0])
+                    or len(oprr[0]) >= 3
+                    and is_reg8(oprr[0][0])
+                    and oprr[0][1:3] == "=>"
+                ):
+                    if is_reg8(oprr[0]):
+                        opr0 = oprr[0]
+                    else:
+                        opr0 = oprr[0][0]
                     if re.match(r"^[\d]", oprr[1]):
-                        return "self.instr_hk__LD_%s_NN(%s);" % (oprr[0], oprr[1])
+                        return "self.instr_hk__LD_%s_NN(%s);" % (opr0, oprr[1])
                         # return "z80.%s = %s" % (oprr[0],oprr[1])
                     elif oprr[1].startswith("'") and oprr[1].endswith("'"):
                         return "self.instr_hk__LD_%s_NN(%s as u32 as u8);" % (
-                            oprr[0],
+                            opr0,
                             oprr[1],
                         )
                     elif oprr[1].startswith("("):
                         tgt = oprr[1][1:].rstrip(")").rstrip()
                         if is_reg16(tgt[:2]):
                             # return "z80.%s = read_byte(z80, z80_gen.%s(z80))" % (oprr[0], tgt[:2])
-                            return "self.instr_hk__LD_%s_i%s();" % (oprr[0], tgt[:2])
+                            return "self.instr_hk__LD_%s_i%s();" % (opr0, tgt[:2])
                         else:
                             v_opr = addr.search(tgt)
                             if v_opr:
                                 # return "z80.%s = read_byte(z80, 0x%s)" % (oprr[0], v_opr.group(1))
                                 return "self.instr_hk__LD_%s_iNNNN(0x%s);" % (
-                                    oprr[0],
+                                    opr0,
                                     v_opr.group(1).lower(),
                                 )
                             else:
