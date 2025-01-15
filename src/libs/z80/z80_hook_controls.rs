@@ -1,45 +1,61 @@
-use super::z80_base::Z80;
+use super::z80_base::{split_word, Z80};
 
 #[allow(non_snake_case, dead_code)]
 impl Z80 {
     // 0x8a21 |
     pub(crate) fn has_hook(&self, addr: u16) -> bool {
         match addr {
-            0x42ba | 0x4453 | 0x44b6 | 0x46ac | 0x46ea | 0x46fa | 0x4700 | 0x4705 | 0x471c
-            | 0x473d | 0x4747 | 0x4751 | 0x4760 | 0x4763 | 0x476b | 0x4778 | 0x4787 | 0x4797
-            | 0x47ab | 0x47b0 | 0x47c6 | 0x47da | 0x47f1 | 0x47f5 | 0x47f9 | 0x4801 | 0x4809
-            | 0x480d | 0x4811 | 0x4815 | 0x49a1 | 0x4b61 | 0x4c17 | 0x4fce | 0x5194 | 0x53fb
-            | 0x5445 | 0x547c | 0x5491 | 0x54a9 | 0x562d | 0x5647 | 0x566f | 0x5687 | 0x600a
-            | 0x606f | 0x6079 | 0x60db | 0x60e5 | 0x67f7 | 0x69ac | 0x69e3 | 0x6a81 | 0x6b4a
-            | 0x6bba | 0x6ed6 | 0x7335 | 0x75d2 | 0x7f80 | 0x8018 | 0x8097 | 0x80c0 | 0x80ea
+            0x0093 | 0x0096 | 0x42ba | 0x4453 | 0x44b6 | 0x46ac | 0x46da | 0x46ea | 0x46fa
+            | 0x4700 | 0x4705 | 0x4712 | 0x4717 | 0x471c | 0x4724 | 0x4729 | 0x472e | 0x4733
+            | 0x4738 | 0x473d | 0x4742 | 0x4747 | 0x474c | 0x4751 | 0x4756 | 0x475b | 0x4760
+            | 0x4763 | 0x476b | 0x4778 | 0x4787 | 0x4797 | 0x47ab | 0x47b0 | 0x47c6 | 0x47da
+            | 0x47f1 | 0x47f5 | 0x47f9 | 0x47fd | 0x4801 | 0x4805 | 0x4809 | 0x480d | 0x4811
+            | 0x4815 | 0x487f | 0x49a1 | 0x4b61 | 0x4c17 | 0x4c5b | 0x4c6e | 0x4fce | 0x513b
+            | 0x518c | 0x5194 | 0x53fb | 0x5445 | 0x547c | 0x5491 | 0x54a9 | 0x562d | 0x5647
+            | 0x566f | 0x5687 | 0x600a | 0x606f | 0x6079 | 0x60db | 0x60e5 | 0x67f7 | 0x69ac
+            | 0x69e3 | 0x6a81 | 0x6b4a | 0x6bba | 0x6ed6 | 0x7335 | 0x75d2 | 0x77a2 | 0x77e1
+            | 0x7828 | 0x787a | 0x7882 | 0x7b5b | 0x7f80 | 0x8018 | 0x8097 | 0x80c0 | 0x80ea
             | 0x8115 | 0x8140 | 0x81ec | 0x823d | 0x825d | 0x82d7 | 0x8559 | 0x859e | 0x85c8
             | 0x8824 | 0x882f | 0x8840 | 0x8860 | 0x88ba | 0x894c | 0x8959 | 0x8964 | 0x8984
             | 0x899a | 0x89bc | 0x89c7 | 0x89d6 | 0x89f5 | 0x8a60 | 0x8a6f | 0x8a86 | 0x8a92
             | 0x8a9e | 0x8ac9 | 0x8b1b | 0x8b21 | 0x8b6c | 0x8b72 | 0x8baf | 0x8bc4 | 0x8bca
-            | 0x8bd1 | 0x8be4 | 0x8bea | 0x8bf1 | 0xae82 | 0xaec4 | 0xaef5 | 0xb181 | 0xb191
-            | 0xb260 | 0xb34c | 0xb35d | 0xb387 | 0xb392 | 0xb60e | 0xb634 | 0xb64c | 0xb695
-            | 0xb6ac | 0xb6cd | 0xb6f1 | 0xb74f | 0xb7a9 | 0xb79b | 0xb79f | 0xb7bd | 0xb825
-            | 0xb8b4 | 0xb8c3 | 0xb8d6 | 0xbcc5 | 0xc000 | 0xc085 | 0xc094 | 0xc09e | 0xc0ba => {
-                true
-            }
+            | 0x8bd1 | 0x8be4 | 0x8bea | 0x8bf1 | 0x8c58 | 0xae82 | 0xaec4 | 0xaef5 | 0xb181
+            | 0xb191 | 0xb260 | 0xb34c | 0xb35d | 0xb387 | 0xb392 | 0xb60e | 0xb634 | 0xb64c
+            | 0xb695 | 0xb6ac | 0xb6cd | 0xb6f1 | 0xb74f | 0xb7a9 | 0xb79b | 0xb79f | 0xb7bd
+            | 0xb825 | 0xb8b4 | 0xb8c3 | 0xb8d6 | 0xbcc5 | 0xc000 | 0xc085 | 0xc094 | 0xc09e
+            | 0xc0ba => true,
             _ => false,
         }
     }
     fn call_hook_internal(&mut self, addr: u16) -> bool {
         match addr {
+            0x0093 => self.hook_0093(),
+            0x0096 => self.hook_0096(),
             0x42ba => self.hook_42ba(),
             // 0x4308 => self.hook_4308(),
             0x4453 => self.hook_4453(),
             0x44b6 => self.hook_44b6(),
             0x46ac => self.hook_46ac(),
+            0x46da => self.hook_46da(),
             0x46ea => self.hook_46ea(),
             0x46fa => self.hook_46fa(),
             0x4700 => self.hook_4700(),
             0x4705 => self.hook_4705(),
+            0x4712 => self.hook_4712(),
+            0x4717 => self.hook_4717(),
             0x471c => self.hook_471c(),
+            0x4724 => self.hook_4724(),
+            0x4729 => self.hook_4729(),
+            0x472e => self.hook_472e(),
+            0x4733 => self.hook_4733(),
+            0x4738 => self.hook_4738(),
             0x473d => self.hook_473d(),
+            0x4742 => self.hook_4742(),
             0x4747 => self.hook_4747(),
+            0x474c => self.hook_474c(),
             0x4751 => self.hook_4751(),
+            0x4756 => self.hook_4756(),
+            0x475b => self.hook_475b(),
             0x4760 => self.hook_4760(),
             0x4763 => self.hook_4763(),
             0x476b => self.hook_476b(),
@@ -53,15 +69,22 @@ impl Z80 {
             0x47f1 => self.hook_47f1(),
             0x47f5 => self.hook_47f5(),
             0x47f9 => self.hook_47f9(),
+            0x47fd => self.hook_47fd(),
             0x4801 => self.hook_4801(),
+            0x4805 => self.hook_4805(),
             0x4809 => self.hook_4809(),
             0x480d => self.hook_480d(),
             0x4811 => self.hook_4811(),
             0x4815 => self.hook_4815(),
+            0x487f => self.hook_487f(),
             0x49a1 => self.hook_49a1(),
             0x4b61 => self.hook_4b61(),
             0x4c17 => self.hook_4c17(),
+            0x4c5b => self.hook_4c5b(),
+            0x4c6e => self.hook_4c6e(),
             0x4fce => self.hook_4fce(),
+            0x513b => self.hook_513b(),
+            0x518c => self.hook_518c(),
             0x5194 => self.hook_5194(),
             0x53fb => self.hook_53fb(),
             0x5445 => self.hook_5445(),
@@ -88,6 +111,12 @@ impl Z80 {
             0x6ed6 => self.hook_6ed6(),
             0x7335 => self.hook_7335(),
             0x75d2 => self.hook_75d2(),
+            0x77a2 => self.hook_77a2(),
+            0x77e1 => self.hook_77e1(),
+            0x7828 => self.hook_7828(),
+            0x787a => self.hook_787a(),
+            0x7882 => self.hook_7882(),
+            0x7b5b => self.hook_7b5b(),
             0x7f80 => self.hook_7f80(),
             0x8018 => self.hook_8018(),
             0x8097 => self.hook_8097(),
@@ -134,6 +163,7 @@ impl Z80 {
             0x8be4 => self.hook_8be4(),
             0x8bea => self.hook_8bea(),
             0x8bf1 => self.hook_8bf1(),
+            0x8c58 => self.hook_8c58(),
             0xae82 => self.hook_ae82(),
             0xaec4 => self.hook_aec4(),
             0xaef5 => self.hook_aef5(),
@@ -169,23 +199,32 @@ impl Z80 {
             _ => false,
         }
     }
-    pub(crate) fn call_hook(&mut self, addr: u16) -> bool {
-        let need_guard = matches!(
-            addr,
-            0xb6cd | 0xb6f1 | 0xb74f | 0xb79b | 0xb79f | 0xb825 | 0xb8b4 | 0xb8c3
-        );
+    pub(crate) fn jp_hook(&mut self, addr: u16) -> bool {
         let old_pc = self.PC() + 3; // cd xx xx
         self.SetPC(addr);
+        let r = self.call_hook_internal(addr);
+        self.SetPC(old_pc);
+        r
+    }
+    pub(crate) fn call_hook(&mut self, addr: u16) -> bool {
+        // let need_guard = matches!(
+        //     addr,
+        //     0xb6cd | 0xb6f1 | 0xb74f | 0xb79b | 0xb79f | 0xb825 | 0xb8b4 | 0xb8c3
+        // );
+        let need_guard = true;
+        let old_pc = self.PC() + 3; // cd xx xx
+        self.SetPC(addr);
+        let mut l = 0xad;
+        let mut h = 0xde;
         if need_guard {
-            let l = 0xde;
-            let h = 0xad;
+            (h, l) = split_word(self.PC());
             self.push16(l, h);
         }
         let r = self.call_hook_internal(addr);
         if need_guard {
-            let (l, h) = self.pop16();
-            assert!(l == 0xde);
-            assert!(h == 0xad);
+            let (ll, hh) = self.pop16();
+            assert!(l == ll);
+            assert!(h == hh);
         }
         self.SetPC(old_pc);
         r
@@ -200,7 +239,7 @@ impl Z80 {
             0x44ed..0x46ab => true,  // in looped func
             0x481e..=0x49a0 => true, // in looped func
             0x4a21..=0x4b60 => true, // in looped func
-            0x4c5b..0x4e51 => true,  // in bios call func
+            0x4c6e..0x4e51 => true,  // in bios call func
             0x4e54..0x4e61 => true,  // in looped func
             0x4fe0..0x5138 => true,  // in looped func
             0x51c2..0x53fa => true,  // in looped func
@@ -221,7 +260,7 @@ impl Z80 {
             0xb028..0xb17a => true,  // long loop func
             0xb3b2..0xb5dd => true,  // long loop func
             0x8c02..=0x8c57 => true, // in bios call func
-            0x8c58..=0x8cec => true, // in bios call func
+            // 0x8c58..=0x8cec => true, // in bios call func
             0xad6b..=0xae81 => true, // in looped func
             _ => false,
         }
