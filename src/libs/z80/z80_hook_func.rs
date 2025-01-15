@@ -31,220 +31,7 @@ impl Z80 {
         println!("{}", s);
     }
 
-    // 0x8a21 |
-    pub(crate) fn has_hook(&self, addr: u16) -> bool {
-        match addr {
-            0x42ba | 0x46ac | 0x46ea | 0x46fa | 0x4700 | 0x4705 | 0x471c | 0x473d | 0x4747
-            | 0x4751 | 0x4760 | 0x4763 | 0x476b | 0x4778 | 0x4787 | 0x4797 | 0x47b0 | 0x47c6
-            | 0x47da | 0x47f1 | 0x47f5 | 0x47f9 | 0x4801 | 0x480d | 0x4811 | 0x4815 | 0x49a1
-            | 0x4b61 | 0x4c17 | 0x4fce | 0x5194 | 0x53fb | 0x5445 | 0x547c | 0x5491 | 0x54a9
-            | 0x562d | 0x5647 | 0x566f | 0x5687 | 0x600a | 0x606f | 0x6079 | 0x60db | 0x60e5
-            | 0x67f7 | 0x69ac | 0x69e3 | 0x6a81 | 0x6b4a | 0x6ed6 | 0x7335 | 0x75d2 | 0x7f80
-            | 0x8018 | 0x80c0 | 0x80ea | 0x8115 | 0x8140 | 0x81ec | 0x823d | 0x825d | 0x82d7
-            | 0x8559 | 0x859e | 0x85c8 | 0x8824 | 0x882f | 0x8840 | 0x8860 | 0x88ba | 0x894c
-            | 0x8959 | 0x8964 | 0x8984 | 0x899a | 0x89bc | 0x89c7 | 0x89d6 | 0x89f5 | 0x8a60
-            | 0x8a6f | 0x8a86 | 0x8a92 | 0x8a9e | 0x8ac9 | 0x8b1b | 0x8b21 | 0x8b6c | 0x8b72
-            | 0x8baf | 0x8bc4 | 0x8bca | 0x8bd1 | 0x8be4 | 0x8bea | 0x8bf1 | 0xae82 | 0xaec4
-            | 0xaef5 | 0xb181 | 0xb191 | 0xb260 | 0xb34c | 0xb35d | 0xb387 | 0xb392 | 0xb60e
-            | 0xb634 | 0xb64c | 0xb695 | 0xb6ac | 0xb6cd | 0xb6f1 | 0xb74f | 0xb7a9 | 0xb79b
-            | 0xb79f | 0xb7bd | 0xb825 | 0xb8b4 | 0xb8c3 | 0xb8d6 | 0xbcc5 | 0xc000 | 0xc085
-            | 0xc094 | 0xc09e | 0xc0ba => true,
-            _ => false,
-        }
-    }
-    fn call_hook_internal(&mut self, addr: u16) -> bool {
-        match addr {
-            0x42ba => self.hook_42ba(),
-            // 0x4308 => self.hook_4308(),
-            0x46ac => self.hook_46ac(),
-            0x46ea => self.hook_46ea(),
-            0x46fa => self.hook_46fa(),
-            0x4700 => self.hook_4700(),
-            0x4705 => self.hook_4705(),
-            0x471c => self.hook_471c(),
-            0x473d => self.hook_473d(),
-            0x4747 => self.hook_4747(),
-            0x4751 => self.hook_4751(),
-            0x4760 => self.hook_4760(),
-            0x4763 => self.hook_4763(),
-            0x476b => self.hook_476b(),
-            0x4778 => self.hook_4778(),
-            0x4787 => self.hook_4787(),
-            0x4797 => self.hook_4797(),
-            0x47b0 => self.hook_47b0(),
-            0x47c6 => self.hook_47c6(),
-            0x47da => self.hook_47da(),
-            0x47f1 => self.hook_47f1(),
-            0x47f5 => self.hook_47f5(),
-            0x47f9 => self.hook_47f9(),
-            0x4801 => self.hook_4801(),
-            0x480d => self.hook_480d(),
-            0x4811 => self.hook_4811(),
-            0x4815 => self.hook_4815(),
-            0x49a1 => self.hook_49a1(),
-            0x4b61 => self.hook_4b61(),
-            0x4c17 => self.hook_4c17(),
-            0x4fce => self.hook_4fce(),
-            0x5194 => self.hook_5194(),
-            0x53fb => self.hook_53fb(),
-            0x5445 => self.hook_5445(),
-            0x547c => self.hook_547c(),
-            0x5491 => self.hook_5491(),
-            0x54a9 => self.hook_54a9(),
-            0x5647 => self.hook_5647(),
-            0x562d => self.hook_562d(),
-            0x566f => self.hook_566f(),
-            0x5687 => self.hook_5687(),
-            0x600a => self.hook_600a(),
-            0x606f => self.hook_606f(),
-            0x6079 => self.hook_6079(),
-            0x60db => self.hook_60db(),
-            0x60e5 => self.hook_60e5(),
-            0x67f7 => self.hook_67f7(),
-            0x69ac => self.hook_69ac(),
-            0x69e3 => self.hook_69e3(),
-            0x6a81 => self.hook_6a81(),
-            // 0x6acb => self.hook_6acb(),
-            // 0x6b23 => self.hook_6b23(),
-            0x6b4a => self.hook_6b4a(),
-            0x6ed6 => self.hook_6ed6(),
-            0x7335 => self.hook_7335(),
-            0x75d2 => self.hook_75d2(),
-            0x7f80 => self.hook_7f80(),
-            0x8018 => self.hook_8018(),
-            0x80c0 => self.hook_80c0(),
-            0x80ea => self.hook_80ea(),
-            0x8115 => self.hook_8115(),
-            0x8140 => self.hook_8140(),
-            0x81ec => self.hook_81ec(),
-            0x823d => self.hook_823d(),
-            0x825d => self.hook_825d(),
-            0x82d7 => self.hook_82d7(),
-            0x8559 => self.hook_8559(),
-            0x859e => self.hook_859e(),
-            0x85c8 => self.hook_85c8(),
-            0x8824 => self.hook_8824(),
-            0x882f => self.hook_882f(),
-            0x8840 => self.hook_8840(),
-            0x8860 => self.hook_8860(),
-            0x88ba => self.hook_88ba(),
-            0x894c => self.hook_894c(),
-            0x8959 => self.hook_8959(),
-            0x8964 => self.hook_8964(),
-            0x8984 => self.hook_8984(),
-            0x899a => self.hook_899a(),
-            0x89bc => self.hook_89bc(),
-            0x89c7 => self.hook_89c7(),
-            0x89d6 => self.hook_89d6(),
-            0x89f5 => self.hook_89f5(),
-            // 0x8a21 => self.hook_8a21(),
-            0x8a60 => self.hook_8a60(),
-            0x8a6f => self.hook_8a6f(),
-            0x8a86 => self.hook_8a86(),
-            0x8a92 => self.hook_8a92(),
-            0x8a9e => self.hook_8a9e(),
-            0x8ac9 => self.hook_8ac9(),
-            0x8b1b => self.hook_8b1b(),
-            0x8b21 => self.hook_8b21(),
-            0x8b6c => self.hook_8b6c(),
-            0x8b72 => self.hook_8b72(),
-            0x8baf => self.hook_8baf(),
-            0x8bc4 => self.hook_8bc4(),
-            0x8bca => self.hook_8bca(),
-            0x8bd1 => self.hook_8bd1(),
-            0x8be4 => self.hook_8be4(),
-            0x8bea => self.hook_8bea(),
-            0x8bf1 => self.hook_8bf1(),
-            0xae82 => self.hook_ae82(),
-            0xaec4 => self.hook_aec4(),
-            0xaef5 => self.hook_aef5(),
-            0xb181 => self.hook_b181(),
-            0xb191 => self.hook_b191(),
-            0xb260 => self.hook_b260(),
-            0xb34c => self.hook_b34c(),
-            0xb35d => self.hook_b35d(),
-            0xb387 => self.hook_b387(),
-            0xb392 => self.hook_b392(),
-            0xb60e => self.hook_b60e(),
-            0xb634 => self.hook_b634(),
-            0xb64c => self.hook_b64c(),
-            0xb695 => self.hook_b695(),
-            0xb6ac => self.hook_b6ac(),
-            0xb6cd => self.hook_b6cd(),
-            0xb6f1 => self.hook_b6f1(),
-            0xb74f => self.hook_b74f(),
-            0xb79b => self.hook_b79b(),
-            0xb79f => self.hook_b79f(),
-            0xb7a9 => self.hook_b7a9(),
-            0xb7bd => self.hook_b7bd(),
-            0xb825 => self.hook_b825(),
-            0xb8b4 => self.hook_b8b4(),
-            0xb8c3 => self.hook_b8c3(),
-            0xb8d6 => self.hook_b8d6(),
-            0xbcc5 => self.hook_bcc5(),
-            0xc000 => self.hook_c000(),
-            0xc085 => self.hook_c085(),
-            0xc094 => self.hook_c094(),
-            0xc09e => self.hook_c09e(),
-            0xc0ba => self.hook_c0ba(),
-            _ => false,
-        }
-    }
-    pub(crate) fn call_hook(&mut self, addr: u16) -> bool {
-        let need_guard = matches!(
-            addr,
-            0xb6cd | 0xb6f1 | 0xb74f | 0xb79b | 0xb79f | 0xb825 | 0xb8b4 | 0xb8c3
-        );
-        let old_pc = self.PC() + 3; // cd xx xx
-        self.SetPC(addr);
-        if need_guard {
-            let l = 0xde;
-            let h = 0xad;
-            self.push16(l, h);
-        }
-        let r = self.call_hook_internal(addr);
-        if need_guard {
-            let (l, h) = self.pop16();
-            assert!(l == 0xde);
-            assert!(h == 0xad);
-        }
-        self.SetPC(old_pc);
-        r
-    }
-    pub(crate) fn is_known_caller(&self, addr: u16) -> bool {
-        match addr {
-            0x4010..=0x422b => true, // in looped func
-            0x422e..=0x42b7 => true, // in looped func
-            0x42e2..=0x4307 => true, // in spin lock? func
-            0x4308..0x4403 => true,  // in looped func
-            0x44ed..0x46ab => true,  // in looped func
-            0x481e..=0x49a0 => true, // in looped func
-            0x4a21..=0x4b60 => true, // in looped func
-            0x4c5b..0x4e51 => true,  // in bios call func
-            0x4e54..0x4e61 => true,  // in looped func
-            0x4fe0..0x5138 => true,  // in looped func
-            0x51c2..0x53fa => true,  // in looped func
-            0x54e3..0x55ef => true,  // in looped func
-            0x55f2..0x5629 => true,  // in looped func
-            0x587b..0x6009 => true,  // in looped func
-            0x61b5..0x6265 => true,  // in looped func
-            0x6448..0x6650 => true,  // in looped func
-            0x6699..0x67de => true,  // in looped func
-            0x6acb..0x6b49 => true,  // in looped func
-            0x6c41..=0x6e81 => true, // in looped func
-            0x6f2d..0x7037 => true,  // in looped func
-            0x70a5..0x7209 => true,  // in bios call func
-            0x720c..0x7332 => true,  // in bios call func
-            0x79dc..0x7b34 => true,  // in looped func
-            0xb028..0xb17a => true,  // long loop func
-            0xb3b2..0xb5dd => true,  // long loop func
-            0x8c02..=0x8c57 => true, // in bios call func
-            0x8c58..=0x8cec => true, // in bios call func
-            0xad6b..=0xae81 => true, // in looped func
-            _ => false,
-        }
-    }
-    fn hook_42ba(&mut self) -> bool {
+    pub(crate) fn hook_42ba(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -377,7 +164,7 @@ impl Z80 {
     //     self.assert_pc(0x431b);
     //     true
     // }
-    fn hook_46ac(&mut self) -> bool {
+    pub(crate) fn hook_46ac(&mut self) -> bool {
         //         ram:46ac c5              PUSH       BC
         self.instr_hk__PUSH_BC();
         //         ram:46ad 22  be  c8       LD         (BYTE_ram_c8be ),HL
@@ -453,7 +240,7 @@ impl Z80 {
         self.assert_pc(0x46d3);
         true
     }
-    fn hook_46ea(&mut self) -> bool {
+    pub(crate) fn hook_46ea(&mut self) -> bool {
         //         ram:46ea 21  ee  c1       LD         HL,BYTE_ram_c1ee                                 OUT d,e
         self.instr_hk__LD_HL_NNNN(0xc1ee);
         self.internal_46ed();
@@ -483,17 +270,17 @@ impl Z80 {
         //         ram:46f9 c9              RET
         self.assert_pc(0x46f9);
     }
-    fn hook_46fa(&mut self) -> bool {
+    pub(crate) fn hook_46fa(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1ec);
         self.internal_46ed();
         true
     }
-    fn hook_4700(&mut self) -> bool {
+    pub(crate) fn hook_4700(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1fb);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4705(&mut self) -> bool {
+    pub(crate) fn hook_4705(&mut self) -> bool {
         // ram:4705 3a  1b  c2       LD         A,(bt_player_idx_c21b )
         self.instr_hk__LD_A_iNNNN(0xc21b);
         // ram:4708 c6  03           ADD        A,0x3
@@ -511,17 +298,17 @@ impl Z80 {
         self.assert_pc(0x4711);
         true
     }
-    fn hook_4712(&mut self) -> bool {
+    pub(crate) fn hook_4712(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1e3);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4717(&mut self) -> bool {
+    pub(crate) fn hook_4717(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1e0);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_471c(&mut self) -> bool {
+    pub(crate) fn hook_471c(&mut self) -> bool {
         // log::info!("hook_471c");
         //         ram:471c 21  bd  c1       LD         HL,by_player_controller_c1bd
         self.instr_hk__LD_HL_NNNN(0xc1bd);
@@ -533,72 +320,72 @@ impl Z80 {
         self.assert_pc(0x4723);
         true
     }
-    fn hook_4724(&mut self) -> bool {
+    pub(crate) fn hook_4724(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1a2);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4729(&mut self) -> bool {
+    pub(crate) fn hook_4729(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1cd);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_472e(&mut self) -> bool {
+    pub(crate) fn hook_472e(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1c4);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4733(&mut self) -> bool {
+    pub(crate) fn hook_4733(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1c7);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4738(&mut self) -> bool {
+    pub(crate) fn hook_4738(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1ca);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_473d(&mut self) -> bool {
+    pub(crate) fn hook_473d(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc196);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4742(&mut self) -> bool {
+    pub(crate) fn hook_4742(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc199);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4747(&mut self) -> bool {
+    pub(crate) fn hook_4747(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc19c);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_474c(&mut self) -> bool {
+    pub(crate) fn hook_474c(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1ba);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4751(&mut self) -> bool {
+    pub(crate) fn hook_4751(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1c0);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4756(&mut self) -> bool {
+    pub(crate) fn hook_4756(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc19f);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_475b(&mut self) -> bool {
+    pub(crate) fn hook_475b(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1a5);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4760(&mut self) -> bool {
+    pub(crate) fn hook_4760(&mut self) -> bool {
         self.instr_hk__LD_HL_NNNN(0xc1f8);
         assert!(self.call_hook(0x4763));
         true
     }
-    fn hook_4763(&mut self) -> bool {
+    pub(crate) fn hook_4763(&mut self) -> bool {
         // log::info!("hook_4763");
         //         ram:4763 3a  1b  c2       LD         A,(bt_player_idx_c21b )
         self.instr_hk__LD_A_iNNNN(0xc21b);
@@ -612,7 +399,7 @@ impl Z80 {
         self.assert_pc(0x476a);
         true
     }
-    fn hook_476b(&mut self) -> bool {
+    pub(crate) fn hook_476b(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -643,7 +430,7 @@ impl Z80 {
 
         true
     }
-    fn hook_4778(&mut self) -> bool {
+    pub(crate) fn hook_4778(&mut self) -> bool {
         //         ram:4778 3a 1b c2        LD         A,(bt_player_idx_c21b)
         self.instr_hk__LD_A_iNNNN(0xc21b);
         //         ram:477b 87              ADD        A,A                                              a <- 2 * player_idx
@@ -667,7 +454,7 @@ impl Z80 {
         self.assert_pc(0x4786);
         true
     }
-    fn hook_4787(&mut self) -> bool {
+    pub(crate) fn hook_4787(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -696,7 +483,7 @@ impl Z80 {
         self.assert_pc(0x4796);
         return true;
     }
-    fn hook_4797(&mut self) -> bool {
+    pub(crate) fn hook_4797(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -746,7 +533,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_47b0(&mut self) -> bool {
+    pub(crate) fn hook_47b0(&mut self) -> bool {
         // println!("hook_47b0");
 
         //                              **************************************************************
@@ -792,7 +579,7 @@ impl Z80 {
 
         true
     }
-    fn hook_47c6(&mut self) -> bool {
+    pub(crate) fn hook_47c6(&mut self) -> bool {
         // println!("hook_47c6");
 
         //                              **************************************************************
@@ -828,7 +615,7 @@ impl Z80 {
 
         true
     }
-    fn hook_47da(&mut self) -> bool {
+    pub(crate) fn hook_47da(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -896,49 +683,49 @@ impl Z80 {
         //
         true
     }
-    fn hook_47f1(&mut self) -> bool {
+    pub(crate) fn hook_47f1(&mut self) -> bool {
         // log::info!("hook_47f1");
         self.instr_hk__LD_C_NN(0x06);
         // ram:47f3 18  22           JR         sb_get_char_internal_4817
         self.internal_4817()
     }
-    fn hook_47f5(&mut self) -> bool {
+    pub(crate) fn hook_47f5(&mut self) -> bool {
         // log::info!("hook_47f5");
         self.instr_hk__LD_C_NN(0x07);
         self.internal_4817()
     }
-    fn hook_47f9(&mut self) -> bool {
+    pub(crate) fn hook_47f9(&mut self) -> bool {
         // log::info!("hook_47f9");
         self.instr_hk__LD_C_NN(0x08);
         self.internal_4817()
     }
-    fn hook_47fd(&mut self) -> bool {
+    pub(crate) fn hook_47fd(&mut self) -> bool {
         // log::info!("hook_47fd");
         self.instr_hk__LD_C_NN(0x09);
         self.internal_4817()
     }
-    fn hook_4801(&mut self) -> bool {
+    pub(crate) fn hook_4801(&mut self) -> bool {
         // log::info!("hook_4801");
         self.instr_hk__LD_C_NN(0xa);
         // ram:4803 18  12           JR         sb_get_char_internal_4817
         self.internal_4817()
     }
-    fn hook_4805(&mut self) -> bool {
+    pub(crate) fn hook_4805(&mut self) -> bool {
         // log::info!("hook_4805");
         self.instr_hk__LD_C_NN(0x0b);
         self.internal_4817()
     }
-    fn hook_4809(&mut self) -> bool {
+    pub(crate) fn hook_4809(&mut self) -> bool {
         // log::info!("hook_4809");
         self.instr_hk__LD_C_NN(0x0d);
         self.internal_4817()
     }
-    fn hook_480d(&mut self) -> bool {
+    pub(crate) fn hook_480d(&mut self) -> bool {
         // log::info!("hook_480d");
         self.instr_hk__LD_C_NN(0x0f);
         self.internal_4817()
     }
-    fn hook_4811(&mut self) -> bool {
+    pub(crate) fn hook_4811(&mut self) -> bool {
         // log::info!("hook_4811");
         self.instr_hk__LD_C_NN(0x10);
         self.internal_4817()
@@ -955,12 +742,12 @@ impl Z80 {
         self.assert_pc(0x481d);
         true
     }
-    fn hook_4815(&mut self) -> bool {
+    pub(crate) fn hook_4815(&mut self) -> bool {
         // log::info!("hook_4811");
         self.instr_hk__LD_C_NN(0x11);
         self.internal_4817()
     }
-    fn hook_49a1(&mut self) -> bool {
+    pub(crate) fn hook_49a1(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -1283,7 +1070,7 @@ impl Z80 {
             }
         }
     }
-    fn hook_4b61(&mut self) -> bool {
+    pub(crate) fn hook_4b61(&mut self) -> bool {
         //         ram:4b61 21 08 28        LD         HL,0x2808
         self.instr_hk__LD_HL_NNNN(0x2808);
         //         ram:4b64 01 30 02        LD         BC,0x230
@@ -1295,7 +1082,7 @@ impl Z80 {
         true
     }
 
-    fn hook_4c17(&mut self) -> bool {
+    pub(crate) fn hook_4c17(&mut self) -> bool {
         // println!("hook_4c17");
         //         ram:4c17 d5              PUSH       DE
         self.instr_hk__PUSH_DE();
@@ -1489,7 +1276,7 @@ impl Z80 {
     //     //
     //     true
     // }
-    fn hook_4fce(&mut self) -> bool {
+    pub(crate) fn hook_4fce(&mut self) -> bool {
         //         ram:4fce 06 09           LD         B,0x9                                            from (14,13)  wh (15, 9)
         self.instr_hk__LD_B_NN(0x9);
         //         ram:4fd0 11 0d 0e        LD         DE,0xe0d
@@ -1529,7 +1316,7 @@ impl Z80 {
         self.assert_pc(0x4fdf);
         true
     }
-    fn hook_5194(&mut self) -> bool {
+    pub(crate) fn hook_5194(&mut self) -> bool {
         //         ram:5194 11  11  02       LD         DE,0x211                                         maybe character command in the i
         self.instr_hk__LD_DE_NNNN(0x211);
         //                                                                                              prints HEALING, LEAVE, STAY, SPE
@@ -1570,7 +1357,7 @@ impl Z80 {
         self.assert_pc(0x51c1);
         true
     }
-    fn hook_53fb(&mut self) -> bool {
+    pub(crate) fn hook_53fb(&mut self) -> bool {
         //         ram:53fb cd  f1  47       CALL       sb_get_char_level_47F1
         assert!(self.call_hook(0x47f1));
         //         ram:53fe 7e              LD         A,(HL)
@@ -1670,7 +1457,7 @@ impl Z80 {
         self.assert_pc(0x5444);
         true
     }
-    fn hook_5445(&mut self) -> bool {
+    pub(crate) fn hook_5445(&mut self) -> bool {
         //         ram:5445 11  08  15       LD         DE,0x1508
         self.instr_hk__LD_DE_NNNN(0x1508);
         //         ram:5448 06  07           LD         B,0x7
@@ -1731,7 +1518,7 @@ impl Z80 {
         self.assert_pc(0x547b);
         true
     }
-    fn hook_547c(&mut self) -> bool {
+    pub(crate) fn hook_547c(&mut self) -> bool {
         //         ram:547c cd  45  54       CALL       sb_print_hp_max_5445                             ()
         assert!(self.call_hook(0x5445));
         //         ram:547f 11  0d  03       LD         DE,0x30d
@@ -1753,7 +1540,7 @@ impl Z80 {
         self.assert_pc(0x5490);
         true
     }
-    fn hook_5491(&mut self) -> bool {
+    pub(crate) fn hook_5491(&mut self) -> bool {
         //         ram:5491 cd 01 48        CALL       sb_get_char_gold_hi_4801
         assert!(self.call_hook(0x4801));
         //         ram:5494 5e              LD         E,(HL)
@@ -1786,7 +1573,7 @@ impl Z80 {
         self.assert_pc(0x54a8);
         return true;
     }
-    fn hook_54a9(&mut self) -> bool {
+    pub(crate) fn hook_54a9(&mut self) -> bool {
         //         ram:54a9 3a 4f c2        LD         A,(DAT_ram_c24f)
         self.instr_hk__LD_A_iNNNN(0xc24f);
         //         ram:54ac ee 01           XOR        0x1
@@ -1876,7 +1663,7 @@ impl Z80 {
         self.assert_pc(0x54cd);
         true
     }
-    fn hook_562d(&mut self) -> bool {
+    pub(crate) fn hook_562d(&mut self) -> bool {
         //         ram:562d 3a 47 c2        LD         A,(bt_cmds_idx_c247)
         self.instr_hk__LD_A_iNNNN(0xc247);
         //         ram:5630 87              ADD        A,A
@@ -1915,7 +1702,7 @@ impl Z80 {
         self.assert_pc(0x5646);
         true
     }
-    fn hook_5647(&mut self) -> bool {
+    pub(crate) fn hook_5647(&mut self) -> bool {
         // ram:5647 3a 47 c2        LD         A,(bt_cmds_idx_c247)                             @(3, cmd_idx + 18) ~ 7lines
         self.instr_hk__LD_A_iNNNN(0xc247);
         // ram:564a c6 12           ADD        A,0x12
@@ -1934,7 +1721,7 @@ impl Z80 {
         self.assert_pc(0x5654);
         true
     }
-    fn hook_566f(&mut self) -> bool {
+    pub(crate) fn hook_566f(&mut self) -> bool {
         //         ram:566f 3a  47  c2       LD         A,(bt_cmds_idx_c247 )
         self.instr_hk__LD_A_iNNNN(0xc247);
         //         ram:5672 87              ADD        A,A
@@ -1968,7 +1755,7 @@ impl Z80 {
         self.assert_pc(0x5686);
         true
     }
-    fn hook_5687(&mut self) -> bool {
+    pub(crate) fn hook_5687(&mut self) -> bool {
         //         ram:5687 3a  47  c2       LD         A,(bt_cmds_idx_c247 )                            8 spaces from (12, 13 + cmd_idx)
         self.instr_hk__LD_A_iNNNN(0xc247);
         //         ram:568a 87              ADD        A,A
@@ -1987,7 +1774,7 @@ impl Z80 {
         self.assert_pc(0x5695);
         true
     }
-    fn hook_600a(&mut self) -> bool {
+    pub(crate) fn hook_600a(&mut self) -> bool {
         //         ram:600a 3a  1b  c2       LD         A,(bt_player_idx_c21b )
         self.instr_hk__LD_A_iNNNN(0xc21b);
         //         ram:600d 5f              LD         E,A
@@ -2007,7 +1794,7 @@ impl Z80 {
         self.assert_pc(0x601a);
         true
     }
-    fn hook_606f(&mut self) -> bool {
+    pub(crate) fn hook_606f(&mut self) -> bool {
         //         ram:606f 21  96  60       LD         HL,s_LOAD_CHARACTER_ram_6096                     prints "LOAD CHARACTER"
         self.instr_hk__LD_HL_NNNN(0x6096);
         //         ram:6072 11  0a  09       LD         DE,0x90a
@@ -2019,7 +1806,7 @@ impl Z80 {
         self.assert_pc(0x6078);
         true
     }
-    fn hook_6079(&mut self) -> bool {
+    pub(crate) fn hook_6079(&mut self) -> bool {
         //         ram:6079 21  83  60       LD         HL,s_MAKE_NEW_CHARACTER_ram_6083                 prints "MAKE NEW CHARACTER"
         self.instr_hk__LD_HL_NNNN(0x6083);
         //         ram:607c 11  0c  07       LD         DE,0x70c
@@ -2031,7 +1818,7 @@ impl Z80 {
         self.assert_pc(0x6082);
         true
     }
-    fn hook_60e5(&mut self) -> bool {
+    pub(crate) fn hook_60e5(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                         SUBROUTINE                         *
@@ -2550,7 +2337,7 @@ impl Z80 {
         // //
         // return true;
     }
-    fn hook_60db(&mut self) -> bool {
+    pub(crate) fn hook_60db(&mut self) -> bool {
         loop {
             self.SetPC(0x60db);
             //         ram:60db c5              PUSH       BC
@@ -2576,7 +2363,7 @@ impl Z80 {
         //         ram:60e4 c9              RET
         true
     }
-    fn hook_67f7(&mut self) -> bool {
+    pub(crate) fn hook_67f7(&mut self) -> bool {
         println!("hook_67f7");
         //         ram:67f7 cd  6b  47       CALL       sb_get_current_char_spell_addr_guess_476b
         assert!(self.call_hook(0x476b));
@@ -2590,7 +2377,7 @@ impl Z80 {
 
         true
     }
-    fn hook_69ac(&mut self) -> bool {
+    pub(crate) fn hook_69ac(&mut self) -> bool {
         //         ram:69ac 3a 1f c2        LD         A,(BYTE_ram_c21f)
         self.instr_hk__LD_A_iNNNN(0xc21f);
         //         ram:69af b7              OR         A
@@ -2675,7 +2462,7 @@ impl Z80 {
 
         true
     }
-    fn hook_69e3(&mut self) -> bool {
+    pub(crate) fn hook_69e3(&mut self) -> bool {
         //         ram:69e3 32 1c c2        LD         (BYTE_ram_c21c),A
         self.instr_hk__LD_iNNNN_A(0xc21c);
         //         ram:69e6 ed 53 1d c2     LD         (wd_l_c21d),DE
@@ -3017,7 +2804,7 @@ impl Z80 {
         //         ram:6a74 c9              RET
         return true;
     }
-    fn hook_6a81(&mut self) -> bool {
+    pub(crate) fn hook_6a81(&mut self) -> bool {
         //         ram:6a81 3a 87 c3        LD         A,(BYTE_ram_c387)
         self.instr_hk__LD_A_iNNNN(0xc387);
 
@@ -3539,7 +3326,7 @@ impl Z80 {
     //     return true;
     //     //
     // }
-    fn hook_6b4a(&mut self) -> bool {
+    pub(crate) fn hook_6b4a(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -3964,7 +3751,7 @@ impl Z80 {
         true //?
              //                              -- Flow Override: CALL_RETURN (CALL_TERMINATOR)
     }
-    fn hook_6bd1(&mut self) -> bool {
+    pub(crate) fn hook_6bd1(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -3995,7 +3782,7 @@ impl Z80 {
             return true;
         }
     }
-    fn hook_6ed6(&mut self) -> bool {
+    pub(crate) fn hook_6ed6(&mut self) -> bool {
         //         ram:6ed6 ed 53 3c c2     LD         (DAT_ram_c23c),DE
         self.instr_hk__LD_iNNNN_DE(0xc23c);
         //         ram:6eda cd 05 47        CALL       sb_read_mem_for_player_4705
@@ -4110,7 +3897,7 @@ impl Z80 {
         self.assert_pc(0x6f2c);
         true
     }
-    fn hook_7335(&mut self) -> bool {
+    pub(crate) fn hook_7335(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -4355,7 +4142,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_75d2(&mut self) -> bool {
+    pub(crate) fn hook_75d2(&mut self) -> bool {
         //         ram:75d2 cd 0a 60        CALL       sb_get_player_addr_600A
         assert!(self.call_hook(0x600a));
         //         ram:75d5 22 54 c2        LD         (pt_char_c254),HL
@@ -4970,7 +4757,7 @@ impl Z80 {
         self.assert_pc(0x76fa);
         true
     }
-    fn hook_7f80(&mut self) -> bool {
+    pub(crate) fn hook_7f80(&mut self) -> bool {
         println!("hook_7f80");
 
         //                              *************************************************************
@@ -5256,7 +5043,7 @@ impl Z80 {
         //         ram:7f9c c9              RET
         return true;
     }
-    fn hook_8018(&mut self) -> bool {
+    pub(crate) fn hook_8018(&mut self) -> bool {
         println!("hook_8018");
 
         //                              **************************************************************
@@ -5561,7 +5348,7 @@ impl Z80 {
         }
         // }
     }
-    fn hook_80c0(&mut self) -> bool {
+    pub(crate) fn hook_80c0(&mut self) -> bool {
         println!("hook_80c0");
 
         //                              *************************************************************
@@ -5659,7 +5446,7 @@ impl Z80 {
 
         true
     }
-    fn hook_80ea(&mut self) -> bool {
+    pub(crate) fn hook_80ea(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -5758,7 +5545,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_8115(&mut self) -> bool {
+    pub(crate) fn hook_8115(&mut self) -> bool {
         //
         //                              *************************************************************
         //                              *                           FUNCTION
@@ -5855,7 +5642,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_8140(&mut self) -> bool {
+    pub(crate) fn hook_8140(&mut self) -> bool {
         println!("hook_8140");
 
         //                              *************************************************************
@@ -6079,7 +5866,7 @@ impl Z80 {
         //         ram:8198 c9              RET
         return true;
     }
-    fn hook_81ec(&mut self) -> bool {
+    pub(crate) fn hook_81ec(&mut self) -> bool {
         //         ram:81ec e5              PUSH       HL
         self.instr_hk__PUSH_HL();
         //         ram:81ed 3a e9 c1        LD         A,(BYTE_ram_c1e9)
@@ -6190,7 +5977,7 @@ impl Z80 {
 
         true
     }
-    fn hook_823d(&mut self) -> bool {
+    pub(crate) fn hook_823d(&mut self) -> bool {
         //         ram:823d 06 20           LD         B,0x20
         self.instr_hk__LD_B_NN(0x20);
         //         ram:823f 3a e8 c1        LD         A,(BYTE_ram_c1e8)
@@ -6328,11 +6115,11 @@ impl Z80 {
 
         // true
     }
-    fn hook_825d(&mut self) -> bool {
+    pub(crate) fn hook_825d(&mut self) -> bool {
         self.internal_825d();
         true
     }
-    fn hook_82d7(&mut self) -> bool {
+    pub(crate) fn hook_82d7(&mut self) -> bool {
         //         ram:82d7 3a 1b c2        LD         A,(bt_player_idx_c21b)
         self.instr_hk__LD_A_iNNNN(0xc21b);
         //         ram:82da 87              ADD        A,A
@@ -6354,7 +6141,7 @@ impl Z80 {
 
         true
     }
-    fn hook_8559(&mut self) -> bool {
+    pub(crate) fn hook_8559(&mut self) -> bool {
         //         ram:8559 cd 0a 60        CALL       sb_get_player_addr_600A
         assert!(self.call_hook(0x600a));
         //         ram:855c 22 54 c2        LD         (pt_char_c254),HL
@@ -6446,7 +6233,7 @@ impl Z80 {
             true
         }
     }
-    fn hook_859e(&mut self) -> bool {
+    pub(crate) fn hook_859e(&mut self) -> bool {
         //         ram:859e ed 5b 5e c2     LD         DE,(wd_x0_y0_c25e)
         self.instr_hk__LD_DE_iNNNN(0xc25e);
         //         ram:85a2 14              INC        D
@@ -6495,7 +6282,7 @@ impl Z80 {
 
         true
     }
-    fn hook_85c8(&mut self) -> bool {
+    pub(crate) fn hook_85c8(&mut self) -> bool {
         //         ram:85c8 ed 5b 5e c2     LD         DE,(wd_x0_y0_c25e)
         self.instr_hk__LD_DE_iNNNN(0xc25e);
         //         ram:85cc 14              INC        D
@@ -6542,7 +6329,7 @@ impl Z80 {
 
         true
     }
-    fn hook_8824(&mut self) -> bool {
+    pub(crate) fn hook_8824(&mut self) -> bool {
         //         ram:8824 3a 3e c2        LD         A,(DAT_ram_c23e)
         self.instr_hk__LD_A_iNNNN(0xc23e);
         //         ram:8827 b7              OR         A
@@ -6590,10 +6377,10 @@ impl Z80 {
 
         true
     }
-    fn hook_882f(&mut self) -> bool {
+    pub(crate) fn hook_882f(&mut self) -> bool {
         return self.internal_882f();
     }
-    fn hook_8840(&mut self) -> bool {
+    pub(crate) fn hook_8840(&mut self) -> bool {
         // println!("hook_8840");
         //         ram:8840 f5              PUSH       AF                                               IN
         self.instr_hk__PUSH_AF();
@@ -6642,7 +6429,7 @@ impl Z80 {
         self.assert_pc(0x885f);
         true
     }
-    fn hook_8860(&mut self) -> bool {
+    pub(crate) fn hook_8860(&mut self) -> bool {
         //         ram:8860 eb              EX         DE,HL
         self.instr_hk__EX_DE_HL();
         //         ram:8861 23              INC        HL
@@ -6734,7 +6521,7 @@ impl Z80 {
     fn internal_88ba(&mut self) {
         assert!(self.hook_88ba());
     }
-    fn hook_88ba(&mut self) -> bool {
+    pub(crate) fn hook_88ba(&mut self) -> bool {
         //         ram:88ba d5              PUSH       DE                                               IN
         self.instr_hk__PUSH_DE();
         //         ram:88bb eb              EX         DE,HL
@@ -6994,7 +6781,7 @@ impl Z80 {
             return true;
         }
     }
-    fn hook_894c(&mut self) -> bool {
+    pub(crate) fn hook_894c(&mut self) -> bool {
         //         ram:894c 06 08           LD         B,0x8                                            IN
         self.instr_hk__LD_B_NN(0x8);
         //                              loop
@@ -7031,7 +6818,7 @@ impl Z80 {
         //         ram:8958 c9              RET
         true
     }
-    fn hook_8959(&mut self) -> bool {
+    pub(crate) fn hook_8959(&mut self) -> bool {
         //         ram:8959 01 10 00        LD         BC,0x10                                          IN
         self.instr_hk__LD_BC_NNNN(0x10);
         //         ram:895c 09              ADD        HL,BC
@@ -7048,7 +6835,7 @@ impl Z80 {
 
         true
     }
-    fn hook_8964(&mut self) -> bool {
+    pub(crate) fn hook_8964(&mut self) -> bool {
         //         ram:8964 e5              PUSH       HL                                               IN
         self.instr_hk__PUSH_HL();
         //         ram:8965 d5              PUSH       DE
@@ -7095,7 +6882,7 @@ impl Z80 {
         self.assert_pc(0x8983);
         true
     }
-    fn hook_8984(&mut self) -> bool {
+    pub(crate) fn hook_8984(&mut self) -> bool {
         loop {
             self.SetPC(0x8984);
             //         ram:8984 c5              PUSH       BC                                               IN
@@ -7135,7 +6922,7 @@ impl Z80 {
         self.assert_pc(0x8999);
         true
     }
-    fn hook_899a(&mut self) -> bool {
+    pub(crate) fn hook_899a(&mut self) -> bool {
         //         ram:899a e5              PUSH       HL                                               IN
         self.instr_hk__PUSH_HL();
         //         ram:899b d5              PUSH       DE
@@ -7182,7 +6969,7 @@ impl Z80 {
         self.assert_pc(0x89bb);
         true
     }
-    fn hook_89bc(&mut self) -> bool {
+    pub(crate) fn hook_89bc(&mut self) -> bool {
         //         ram:89bc 5c              LD         E,H
         self.instr_hk__LD_E_H();
         //         ram:89bd 26 00           LD         H,0x0
@@ -7206,7 +6993,7 @@ impl Z80 {
         self.assert_pc(0x89c6);
         true
     }
-    fn hook_89c7(&mut self) -> bool {
+    pub(crate) fn hook_89c7(&mut self) -> bool {
         //         ram:89c7 d5              PUSH       DE
         self.instr_hk__PUSH_DE();
         //                              loop
@@ -7239,7 +7026,7 @@ impl Z80 {
         self.assert_pc(0x89d5);
         true
     }
-    fn hook_89d6(&mut self) -> bool {
+    pub(crate) fn hook_89d6(&mut self) -> bool {
         //         ram:89d6 fe a0           CP         0xa0
         self.instr_hk__CP_NN(0xa0);
         //         ram:89d8 d2 e0 89        JP         NC,LAB_ram_89e0
@@ -7289,7 +7076,7 @@ impl Z80 {
         self.assert_pc(0x89f4);
         true
     }
-    fn hook_89f5(&mut self) -> bool {
+    pub(crate) fn hook_89f5(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -7663,7 +7450,7 @@ impl Z80 {
     //     //
     //     true
     // }
-    fn hook_8a60(&mut self) -> bool {
+    pub(crate) fn hook_8a60(&mut self) -> bool {
         //
         //                              *************************************************************
         //                              *                          SUBROUTINE
@@ -7701,7 +7488,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_8a6f(&mut self) -> bool {
+    pub(crate) fn hook_8a6f(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -7742,7 +7529,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_8a86(&mut self) -> bool {
+    pub(crate) fn hook_8a86(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -7771,7 +7558,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_8a92(&mut self) -> bool {
+    pub(crate) fn hook_8a92(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -7928,11 +7715,11 @@ impl Z80 {
         //
         // true
     }
-    fn hook_8a9e(&mut self) -> bool {
+    pub(crate) fn hook_8a9e(&mut self) -> bool {
         self.internal_8a9e();
         true
     }
-    fn hook_8ac9(&mut self) -> bool {
+    pub(crate) fn hook_8ac9(&mut self) -> bool {
         // println!("hook_8ac9");
         //         ram:8ac9 21 1a cc        LD         HL,font_cc1a
         self.instr_hk__LD_HL_NNNN(0xcc1a);
@@ -8065,7 +7852,7 @@ impl Z80 {
         self.assert_pc(0x8b1a);
         true
     }
-    fn hook_8b1b(&mut self) -> bool {
+    pub(crate) fn hook_8b1b(&mut self) -> bool {
         //         ram:8b1b f3              DI
         self.instr_hk__DI();
         //         ram:8b1c cd 21 8b        CALL       sb_blit_ram_to_vram_guess_8b21
@@ -8076,7 +7863,7 @@ impl Z80 {
         self.assert_pc(0x8b20);
         true
     }
-    fn hook_8b21(&mut self) -> bool {
+    pub(crate) fn hook_8b21(&mut self) -> bool {
         //         ram:8b21 06 00           LD         B,0x0
         self.instr_hk__LD_B_NN(0x0);
         //         ram:8b23 c5              PUSH       BC
@@ -8153,7 +7940,7 @@ impl Z80 {
         self.assert_pc(0x8b50);
         true
     }
-    fn hook_8b6c(&mut self) -> bool {
+    pub(crate) fn hook_8b6c(&mut self) -> bool {
         //         ram:8b6c f3              DI
         self.instr_hk__DI();
         //         ram:8b6d cd 72 8b        CALL       sb_mem_blit_ram_to_vram_guess_8b72
@@ -8165,7 +7952,7 @@ impl Z80 {
 
         true
     }
-    fn hook_8b72(&mut self) -> bool {
+    pub(crate) fn hook_8b72(&mut self) -> bool {
         //         ram:8b72 f5              PUSH       AF
         self.instr_hk__PUSH_AF();
         //         ram:8b73 06  00           LD         B,0x0
@@ -8277,7 +8064,7 @@ impl Z80 {
         self.assert_pc(0x8bae);
         true
     }
-    fn hook_8baf(&mut self) -> bool {
+    pub(crate) fn hook_8baf(&mut self) -> bool {
         //         ram:8baf f3              DI
         self.instr_hk__DI();
         //         ram:8bb0 3a  1b  c2       LD         A,(bt_player_idx_c21b )
@@ -8302,7 +8089,7 @@ impl Z80 {
         self.assert_pc(0x8bc3);
         true
     }
-    fn hook_8bc4(&mut self) -> bool {
+    pub(crate) fn hook_8bc4(&mut self) -> bool {
         //         ram:8bc4 cd  ca  8b       CALL       sb_read_mem_for_player_8BCA
         assert!(self.call_hook(0x8bca));
         //         ram:8bc7 7e              LD         A,(HL)
@@ -8313,7 +8100,7 @@ impl Z80 {
         self.assert_pc(0x8bc9);
         true
     }
-    fn hook_8bca(&mut self) -> bool {
+    pub(crate) fn hook_8bca(&mut self) -> bool {
         //         ram:8bca 21  90  c2       LD         HL,DAT_ram_c290
         self.instr_hk__LD_HL_NNNN(0xc290);
         //         ram:8bcd cd  63  47       CALL       fn_add_player_idx_to_addr_4763
@@ -8322,7 +8109,7 @@ impl Z80 {
         self.assert_pc(0x8bd0);
         true
     }
-    fn hook_8bd1(&mut self) -> bool {
+    pub(crate) fn hook_8bd1(&mut self) -> bool {
         // log::info!("hook_8bd1");
         //         ram:8bd1 21  a2  c2       LD         HL,0xc2a2
         self.instr_hk__LD_HL_NNNN(0xc2a2);
@@ -8332,7 +8119,7 @@ impl Z80 {
         self.assert_pc(0x8bd7);
         true
     }
-    fn hook_8be4(&mut self) -> bool {
+    pub(crate) fn hook_8be4(&mut self) -> bool {
         // log::info!("hook_8be4");
         //         ram:8be4 cd  ea  8b       CALL       sb_read_mem_for_player_8bea
         assert!(self.call_hook(0x8bea));
@@ -8344,7 +8131,7 @@ impl Z80 {
         self.assert_pc(0x8be9);
         true
     }
-    fn hook_8bea(&mut self) -> bool {
+    pub(crate) fn hook_8bea(&mut self) -> bool {
         // log::info!("hook_8bea");
         //         ram:8bea 21  93  c2       LD         HL,DAT_ram_c293
         self.instr_hk__LD_HL_NNNN(0xc293);
@@ -8354,7 +8141,7 @@ impl Z80 {
         self.assert_pc(0x8bf0);
         true
     }
-    fn hook_8bf1(&mut self) -> bool {
+    pub(crate) fn hook_8bf1(&mut self) -> bool {
         // log::info!("hook_8bf1");
         //         ram:8bf1 21  a5  c2       LD         HL,DAT_ram_c2a5
         self.instr_hk__LD_HL_NNNN(0xc2a5);
@@ -8363,7 +8150,7 @@ impl Z80 {
         //         ram:8bf7 c9              RET
         true
     }
-    fn hook_ae82(&mut self) -> bool {
+    pub(crate) fn hook_ae82(&mut self) -> bool {
         println!("hook_ae82");
         //         ram:ae82 cd  0e  b6       CALL       sb_rand_guess_B60E                               OUT hl, a
         assert!(self.call_hook(0xb60e));
@@ -8548,7 +8335,7 @@ impl Z80 {
         self.assert_pc(0xaec3);
         true
     }
-    fn hook_aec4(&mut self) -> bool {
+    pub(crate) fn hook_aec4(&mut self) -> bool {
         //         ram:aec4 21 9a c9        LD         HL,DAT_ram_c99a
         self.instr_hk__LD_HL_NNNN(0xc99a);
 
@@ -8568,7 +8355,7 @@ impl Z80 {
 
         true
     }
-    fn hook_aef5(&mut self) -> bool {
+    pub(crate) fn hook_aef5(&mut self) -> bool {
         //         ram:aef5 af              XOR        A
         self.instr_hk__XOR_A_A();
         //         ram:aef6 cd c4 ae        CALL       sb_mem_fill_xxx_AEC4
@@ -8857,7 +8644,7 @@ impl Z80 {
             return true;
         }
     }
-    fn hook_b181(&mut self) -> bool {
+    pub(crate) fn hook_b181(&mut self) -> bool {
         //         ram:b181 06 14           LD         B,0x14
         self.instr_hk__LD_B_NN(0x14);
         //                              loop
@@ -8892,7 +8679,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b191(&mut self) -> bool {
+    pub(crate) fn hook_b191(&mut self) -> bool {
         //         ram:b191 cd 4c b6        CALL       FUN_ram_b64c                                     ()
         assert!(self.call_hook(0xb64c));
         //         ram:b194 11 0e 00        LD         DE,0xe
@@ -9245,7 +9032,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b260(&mut self) -> bool {
+    pub(crate) fn hook_b260(&mut self) -> bool {
         //         ram:b260 01 e0 00        LD         BC,0xe0
         self.instr_hk__LD_BC_NNNN(0xe0);
         //                              loop_1
@@ -9605,7 +9392,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b34c(&mut self) -> bool {
+    pub(crate) fn hook_b34c(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -9672,7 +9459,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_b35d(&mut self) -> bool {
+    pub(crate) fn hook_b35d(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -9729,7 +9516,7 @@ impl Z80 {
         self.assert_pc(0xb386);
         return true;
     }
-    fn hook_b387(&mut self) -> bool {
+    pub(crate) fn hook_b387(&mut self) -> bool {
         //                              **************************************************************
         //                              *                          FUNCTION                          *
         //                              **************************************************************
@@ -9752,7 +9539,7 @@ impl Z80 {
         //
         true
     }
-    fn hook_b392(&mut self) -> bool {
+    pub(crate) fn hook_b392(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -9804,7 +9591,7 @@ impl Z80 {
         //                  43 45 00
         //
     }
-    fn hook_b60e(&mut self) -> bool {
+    pub(crate) fn hook_b60e(&mut self) -> bool {
         //         ram:b60e ed  5b  44  c2    LD         DE,(wd_rand_seed_c244 )
         self.instr_hk__LD_DE_iNNNN(0xc244);
         //         ram:b612 01  cd  43       LD         BC,0x43cd
@@ -9868,7 +9655,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b634(&mut self) -> bool {
+    pub(crate) fn hook_b634(&mut self) -> bool {
         //         ram:b634 21  00  00       LD         HL,0x0                                           :
         self.instr_hk__LD_HL_NNNN(0x0);
 
@@ -9920,7 +9707,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b64c(&mut self) -> bool {
+    pub(crate) fn hook_b64c(&mut self) -> bool {
         //         ram:b64c 2a 58 c2        LD         HL,(tmp_var_c258)
         self.instr_hk__LD_HL_iNNNN(0xc258);
         //         ram:b64f e5              PUSH       HL
@@ -9988,7 +9775,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b695(&mut self) -> bool {
+    pub(crate) fn hook_b695(&mut self) -> bool {
         //         ram:b695 e5              PUSH       HL
         self.instr_hk__PUSH_HL();
 
@@ -10047,7 +9834,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b6ac(&mut self) -> bool {
+    pub(crate) fn hook_b6ac(&mut self) -> bool {
         //         ram:b6ac 42              LD         B,D
         self.instr_hk__LD_B_D();
 
@@ -10121,7 +9908,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b6cd(&mut self) -> bool {
+    pub(crate) fn hook_b6cd(&mut self) -> bool {
         //         ram:b6cd 21 06 00        LD         HL,0x6
         self.instr_hk__LD_HL_NNNN(0x6);
         //         ram:b6d0 39              ADD        HL,SP
@@ -10189,7 +9976,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b6f1(&mut self) -> bool {
+    pub(crate) fn hook_b6f1(&mut self) -> bool {
         //         ram:b6f1 21 06 00        LD         HL,0x6
         self.instr_hk__LD_HL_NNNN(0x6);
         //         ram:b6f4 39              ADD        HL,SP
@@ -10380,7 +10167,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b74f(&mut self) -> bool {
+    pub(crate) fn hook_b74f(&mut self) -> bool {
         //         ram:b74f 01 00 00        LD         BC,0x0                                           IN
         self.instr_hk__LD_BC_NNNN(0x0);
 
@@ -10539,7 +10326,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b79b(&mut self) -> bool {
+    pub(crate) fn hook_b79b(&mut self) -> bool {
         //         ram:b79b 21 06 00        LD         HL,0x6
         self.instr_hk__LD_HL_NNNN(0x6);
         //         ram:b79e 39              ADD        HL,SP
@@ -10565,11 +10352,11 @@ impl Z80 {
         self.instr_hk__PUSH_BC();
         //         ram:b7a8 c9              RET
     }
-    fn hook_b79f(&mut self) -> bool {
+    pub(crate) fn hook_b79f(&mut self) -> bool {
         self.internal_b79f();
         true
     }
-    fn hook_b7a9(&mut self) -> bool {
+    pub(crate) fn hook_b7a9(&mut self) -> bool {
         // ram:b7a9 44              LD         B,H
         self.instr_hk__LD_B_H();
         // ram:b7aa 4d              LD         C,L
@@ -10615,7 +10402,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b7bd(&mut self) -> bool {
+    pub(crate) fn hook_b7bd(&mut self) -> bool {
         //         ram:b7bd e5              PUSH       HL
         self.instr_hk__PUSH_HL();
 
@@ -10768,7 +10555,7 @@ impl Z80 {
 
         true
     }
-    fn hook_b825(&mut self) -> bool {
+    pub(crate) fn hook_b825(&mut self) -> bool {
         //         ram:b825 22 65 c2        LD         (wd_l_paddr_c265),HL
         self.instr_hk__LD_iNNNN_HL(0xc265);
         //         ram:b828 af              XOR        A
@@ -10934,7 +10721,7 @@ impl Z80 {
         //         ram:b8b3 c9              RET
         true
     }
-    fn hook_b8b4(&mut self) -> bool {
+    pub(crate) fn hook_b8b4(&mut self) -> bool {
         //         ram:b8b4 c1              POP        BC                                               IN
         self.instr_hk__POP_BC();
 
@@ -10969,7 +10756,7 @@ impl Z80 {
         self.assert_pc(0xb8c2);
         true
     }
-    fn hook_b8c3(&mut self) -> bool {
+    pub(crate) fn hook_b8c3(&mut self) -> bool {
         //         ram:b8c3 f5              PUSH       AF                                               IN
         self.instr_hk__PUSH_AF();
         //         ram:b8c4 cd 4f b7        CALL       sb_change_mem_B74F                               IN
@@ -11008,7 +10795,7 @@ impl Z80 {
         self.assert_pc(0xb8d5);
         true
     }
-    fn hook_b8d6(&mut self) -> bool {
+    pub(crate) fn hook_b8d6(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -11131,7 +10918,7 @@ impl Z80 {
             return true;
         }
     }
-    fn hook_bcc5(&mut self) -> bool {
+    pub(crate) fn hook_bcc5(&mut self) -> bool {
         //
         //                              **************************************************************
         //                              *                          FUNCTION                          *
@@ -11227,7 +11014,7 @@ impl Z80 {
             return true;
         }
     }
-    fn hook_c000(&mut self) -> bool {
+    pub(crate) fn hook_c000(&mut self) -> bool {
         loop {
             self.SetPC(0xc000);
             //         ram:c000 1a              LD         A,(DE)
@@ -11442,7 +11229,7 @@ impl Z80 {
 
         true
     }
-    fn hook_c085(&mut self) -> bool {
+    pub(crate) fn hook_c085(&mut self) -> bool {
         //         ram:c085 eb              EX         DE,HL
         self.instr_hk__EX_DE_HL();
         //         ram:c086 cd 9e c0        CALL       fn_vdp_set_vaddr_to_write_c09e
@@ -11475,7 +11262,7 @@ impl Z80 {
         self.assert_pc(0xc093);
         true
     }
-    fn hook_c094(&mut self) -> bool {
+    pub(crate) fn hook_c094(&mut self) -> bool {
         //         ram:c094 f5              PUSH       AF
         self.instr_hk__PUSH_AF();
         //         ram:c095 cd 9e c0        CALL       fn_vdp_set_vaddr_to_write_c09e
@@ -11492,7 +11279,7 @@ impl Z80 {
         self.assert_pc(0xc09d);
         true
     }
-    fn hook_c09e(&mut self) -> bool {
+    pub(crate) fn hook_c09e(&mut self) -> bool {
         //         ram:c09e 7d              LD         A,L
         self.instr_hk__LD_A_L();
         //         ram:c09f d3 99           OUT        (DAT_io_0099),A
@@ -11510,7 +11297,7 @@ impl Z80 {
         self.assert_pc(0xc0a8);
         true
     }
-    fn hook_c0ba(&mut self) -> bool {
+    pub(crate) fn hook_c0ba(&mut self) -> bool {
         // println!("hook_c0ba BC?{} pc:{:04x}", self.BC(), self.PC());
         // assert!(false);
         //         ram:c0ba f5              PUSH       AF                                               IN
