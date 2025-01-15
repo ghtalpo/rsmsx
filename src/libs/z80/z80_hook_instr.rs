@@ -868,6 +868,16 @@ impl Z80 {
         self.instr__SUB_A_E();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__SUB_A_H(&mut self) {
+        self.IncPC(1);
+        self.instr__SUB_A_H();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__SUB_A_L(&mut self) {
+        self.IncPC(1);
+        self.instr__SUB_A_L();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__SUB_A_iHL(&mut self) {
         self.IncPC(1);
         self.instr__SUB_A_iHL();
