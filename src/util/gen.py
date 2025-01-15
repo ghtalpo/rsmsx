@@ -56,7 +56,7 @@ ops = [
     "RR",
 ]
 
-sops = ["RLA", "RRA", "DI", "EI", "LDIR", "LDDR", "SCF", "NEG", "CPL"]
+sops = ["RLA", "RRA", "DI", "EI", "LDIR", "LDDR", "SCF", "NEG", "CPL", "EXX"]
 
 
 def convert_to_lua(line):
