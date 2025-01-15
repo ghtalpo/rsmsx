@@ -341,10 +341,10 @@ def convert_to_lua(line):
                 elif (
                     oprr[0].startswith("(")
                     and oprr[0].endswith(")")
-                    and is_reg16(oprr[0][1:-1])
+                    and is_reg16(oprr[0][1:3])
                     and is_reg16(oprr[1])
                 ):
-                    return "self.instr_hk__%s_i%s_%s();" % (op, oprr[0][1:-1], oprr[1])
+                    return "self.instr_hk__%s_i%s_%s();" % (op, oprr[0][1:3], oprr[1])
                 else:
                     return "WRONG %s %s" % (op, opr)
             elif op == "RET":
