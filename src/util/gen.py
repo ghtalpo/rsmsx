@@ -16,6 +16,10 @@ def is_reg16(r):
     )
 
 
+def is_reg16i(r):
+    return r == "IX" or r == "IY"
+
+
 def is_reg8(r):
     return (
         r == "A"
@@ -129,6 +133,16 @@ def convert_to_lua(line):
                         if is_reg16(tgt[:2]):
                             # return "z80.%s = read_byte(z80, z80_gen.%s(z80))" % (oprr[0], tgt[:2])
                             return "self.instr_hk__LD_%s_i%s();" % (opr0, tgt[:2])
+                        elif is_reg16i(tgt[:2]):
+                            if tgt[2] == "+":
+                                # return "z80.%s = read_byte(z80, z80_gen.%s(z80))" % (oprr[0], tgt[:2])
+                                return "self.instr_hk__LD_%s_i%spDD(%s);" % (
+                                    opr0,
+                                    tgt[:2],
+                                    tgt[3:],
+                                )
+                            else:
+                                return "self.instr_hk__LD_%s_i%s();" % (opr0, tgt[:2])
                         else:
                             v_opr = addr.search(tgt)
                             if v_opr:
@@ -153,6 +167,25 @@ def convert_to_lua(line):
                                 oprr[0][1:3],
                                 oprr[1],
                             )
+                    elif is_reg16i(oprr[0][1:3]):
+                        if oprr[0][3] == "+":
+                            return "self.instr_hk__LD_i%spDD_%s(%s);" % (
+                                oprr[0][1:3],
+                                oprr[1],
+                                oprr[0][4:].rstrip(")"),
+                            )
+                            # return "WRONG1az %s %s" % (op, opr)
+                        else:
+                            if is_reg8(oprr[1]):
+                                return "self.instr_hk__LD_i%s_%s();" % (
+                                    oprr[0][1:3],
+                                    oprr[1],
+                                )
+                            else:
+                                return "self.instr_hk__LD_i%s_NN(%s);" % (
+                                    oprr[0][1:3],
+                                    oprr[1],
+                                )
                     else:
                         tgt = oprr[0][1:].rstrip(")").rstrip()
                         # print('LD tgt?', tgt)
@@ -361,6 +394,8 @@ def convert_to_lua(line):
                     return "self.IncPC(1);\nif (self.data.F & FLAG_Z) != 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
                 elif opr == "NZ":
                     return "self.IncPC(1);\nif (self.data.F & FLAG_Z) == 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
+                elif opr == "C":
+                    return "self.IncPC(1);\nif (self.data.F & FLAG_C) != 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
                 elif opr == "NC":
                     return "self.IncPC(1);\nif (self.data.F & FLAG_C) == 0 {\n\tself.increase_cycles(11);return true;\n} else {\n\tself.increase_cycles(5);\n}"
                 else:
