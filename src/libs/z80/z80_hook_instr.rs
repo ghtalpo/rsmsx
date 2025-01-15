@@ -368,6 +368,16 @@ impl Z80 {
         self.instr__LD_B_A();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__LD_B_B(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_B_B();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_B_C(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_B_C();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__LD_B_D(&mut self) {
         self.IncPC(1);
         self.instr__LD_B_D();
@@ -376,6 +386,11 @@ impl Z80 {
     pub(crate) fn instr_hk__LD_B_H(&mut self) {
         self.IncPC(1);
         self.instr__LD_B_H();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_B_L(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_B_L();
         self.increase_cycles(4);
     }
     pub(crate) fn instr_hk__LD_C_A(&mut self) {
