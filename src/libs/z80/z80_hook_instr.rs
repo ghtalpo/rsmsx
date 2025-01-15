@@ -1,4 +1,6 @@
-use super::z80_base::{tern_op_b, FLAG_3, FLAG_5, FLAG_C, FLAG_S, FLAG_V, FLAG_Z, Z80};
+use super::z80_base::{
+    sign_extend, tern_op_b, FLAG_3, FLAG_5, FLAG_C, FLAG_S, FLAG_V, FLAG_Z, Z80,
+};
 
 #[allow(non_snake_case, dead_code)]
 impl Z80 {
@@ -83,6 +85,36 @@ impl Z80 {
         self.increase_cycles(7);
     }
     // and
+    pub(crate) fn instr_hk__AND_A_B(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_B();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__AND_A_C(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_C();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__AND_A_D(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_D();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__AND_A_E(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_E();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__AND_A_H(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_H();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__AND_A_L(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_L();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__AND_NN(&mut self, nn: u8) {
         self.IncPC(2);
         self.and(nn);
@@ -444,6 +476,16 @@ impl Z80 {
         self.instr__LD_E_B();
         self.increase_cycles(4);
     }
+    pub(crate) fn instr_hk__LD_E_C(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_E_C();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__LD_E_D(&mut self) {
+        self.IncPC(1);
+        self.instr__LD_E_D();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__LD_E_H(&mut self) {
         self.IncPC(1);
         self.instr__LD_E_H();
@@ -613,6 +655,129 @@ impl Z80 {
         self.memory.write_byte(nnnn, self.data.A);
         self.increase_cycles(13);
     }
+
+    /* LD A,(ix+dd) */
+    // instrDD__LD_A_iREGpDD
+    pub(crate) fn instr_hk__LD_A_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.A = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD B,(ix+dd) */
+    pub(crate) fn instr_hk__LD_B_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.B = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD C,(ix+dd) */
+    pub(crate) fn instr_hk__LD_C_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.C = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD D,(ix+dd) */
+    pub(crate) fn instr_hk__LD_D_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.D = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD E,(ix+dd) */
+    pub(crate) fn instr_hk__LD_E_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.E = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD H,(ix+dd) */
+    pub(crate) fn instr_hk__LD_H_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.H = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD L,(ix+dd) */
+    pub(crate) fn instr_hk__LD_L_iIXpDD(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.data.L = self
+            .memory
+            .read_byte(self.IX() + (sign_extend(offset) as u16));
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),A */
+    // instrDD__LD_iREGpDD_A
+    pub(crate) fn instr_hk__LD_iIXpDD_A(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.A);
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),B */
+    pub(crate) fn instr_hk__LD_iIXpDD_B(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.B);
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),C */
+    pub(crate) fn instr_hk__LD_iIXpDD_C(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.C);
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),D*/
+    pub(crate) fn instr_hk__LD_iIXpDD_D(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.D);
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),E */
+    pub(crate) fn instr_hk__LD_iIXpDD_E(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.E);
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),H */
+    pub(crate) fn instr_hk__LD_iIXpDD_H(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.H);
+        self.increase_cycles(19);
+    }
+    /* LD (ix+dd),L */
+    pub(crate) fn instr_hk__LD_iIXpDD_L(&mut self, nn: u8) {
+        self.IncPC(3);
+        let offset: u8 = nn;
+        self.memory
+            .write_byte(self.IX() + (sign_extend(offset) as u16), self.data.L);
+        self.increase_cycles(19);
+    }
+
     // lddr
     pub(crate) fn instr_hk__LDDR(&mut self) {
         self.IncPC(2);
