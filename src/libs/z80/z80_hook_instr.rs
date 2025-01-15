@@ -88,7 +88,11 @@ impl Z80 {
         self.and(nn);
         self.increase_cycles(7);
     }
-
+    pub(crate) fn instr_hk__AND_A_iHL(&mut self) {
+        self.IncPC(1);
+        self.instr__AND_A_iHL();
+        self.increase_cycles(7);
+    }
     // bit
     pub(crate) fn instr_hk__BIT_7_B(&mut self) {
         self.IncPC(2);
@@ -126,6 +130,12 @@ impl Z80 {
         self.IncPC(1);
         self.instr__CP_iHL();
         self.increase_cycles(7);
+    }
+    // cpl
+    pub(crate) fn instr_hk__CPL(&mut self) {
+        self.IncPC(1);
+        self.instr__CPL();
+        self.increase_cycles(4);
     }
     // dec
     pub(crate) fn instr_hk__DEC_A(&mut self) {
@@ -488,6 +498,11 @@ impl Z80 {
         self.data.E = nn;
         self.increase_cycles(7);
     }
+    pub(crate) fn instr_hk__LD_L_NN(&mut self, nn: u8) {
+        self.IncPC(2);
+        self.data.L = nn;
+        self.increase_cycles(7);
+    }
     pub(crate) fn instr_hk__LD_DE_NNNN(&mut self, nnnn: u16) {
         self.IncPC(3);
         self.SetDE(nnnn);
@@ -726,6 +741,42 @@ impl Z80 {
         self.IncPC(1);
         self.instr__RLA();
         self.increase_cycles(4);
+    }
+    // rr
+    pub(crate) fn instr_hk__RR_A(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_A();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__RR_B(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_B();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__RR_C(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_C();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__RR_D(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_D();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__RR_E(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_E();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__RR_H(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_H();
+        self.increase_cycles(8);
+    }
+    pub(crate) fn instr_hk__RR_L(&mut self) {
+        self.IncPC(2);
+        self.instrCB__RR_L();
+        self.increase_cycles(8);
     }
     // rra
     pub(crate) fn instr_hk__RRA(&mut self) {
