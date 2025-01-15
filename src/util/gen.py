@@ -137,6 +137,9 @@ def convert_to_lua(line):
                 elif re.match(r'^[\d]', opr):
                     return "self.instr_hk__%s_NN(%s);" % (op,opr)
                     # return "z80:op_and(%s)" % (opr,)
+                elif opr[0] == '(' and is_reg16(opr[1:3]):
+                    return "self.instr_hk__%s_A_i%s();" % (op,opr[1:3])
+                    # return "z80:op_or(read_byte(z80, z80_gen.%s(z80)))" % (opr[1:3],)
                 else:
                     return "WRONG %s %s" % (op,opr)
             elif op == 'CP':
