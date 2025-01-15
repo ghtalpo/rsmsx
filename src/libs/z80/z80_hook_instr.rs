@@ -655,6 +655,16 @@ impl Z80 {
         self.memory.write_byte(nnnn, self.data.A);
         self.increase_cycles(13);
     }
+    pub(crate) fn instr_hk__LD_IX_NNNN(&mut self, nnnn: u16) {
+        self.IncPC(43);
+        self.SetIX(nnnn);
+        self.increase_cycles(14);
+    }
+    pub(crate) fn instr_hk__LD_IY_NNNN(&mut self, nnnn: u16) {
+        self.IncPC(43);
+        self.SetIY(nnnn);
+        self.increase_cycles(14);
+    }
 
     /* LD A,(ix+dd) */
     // instrDD__LD_A_iREGpDD
