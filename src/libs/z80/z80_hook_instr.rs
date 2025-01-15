@@ -8,6 +8,31 @@ impl Z80 {
         self.data.cycles += n;
     }
     // adc
+    pub(crate) fn instr_hk__ADC_A_B(&mut self) {
+        self.IncPC(1);
+        self.instr__ADC_A_B();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__ADC_A_C(&mut self) {
+        self.IncPC(1);
+        self.instr__ADC_A_C();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__ADC_A_D(&mut self) {
+        self.IncPC(1);
+        self.instr__ADC_A_D();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__ADC_A_E(&mut self) {
+        self.IncPC(1);
+        self.instr__ADC_A_E();
+        self.increase_cycles(4);
+    }
+    pub(crate) fn instr_hk__ADC_A_H(&mut self) {
+        self.IncPC(1);
+        self.instr__ADC_A_H();
+        self.increase_cycles(4);
+    }
     pub(crate) fn instr_hk__ADC_A_L(&mut self) {
         self.IncPC(1);
         self.instr__ADC_A_L();
@@ -16,6 +41,11 @@ impl Z80 {
     pub(crate) fn instr_hk__ADC_A_iHL(&mut self) {
         self.IncPC(1);
         self.instr__ADC_A_iHL();
+        self.increase_cycles(7);
+    }
+    pub(crate) fn instr_hk__ADC_A_NN(&mut self, nn: u8) {
+        self.IncPC(2);
+        self.adc(nn);
         self.increase_cycles(7);
     }
     // add
@@ -126,6 +156,11 @@ impl Z80 {
         self.increase_cycles(7);
     }
     // bit
+    pub(crate) fn instr_hk__BIT_7_A(&mut self) {
+        self.IncPC(2);
+        self.instrCB__BIT_7_A();
+        self.increase_cycles(8);
+    }
     pub(crate) fn instr_hk__BIT_7_B(&mut self) {
         self.IncPC(2);
         self.instrCB__BIT_7_B();
@@ -308,6 +343,12 @@ impl Z80 {
     pub(crate) fn instr_hk__INC_iHL(&mut self) {
         self.IncPC(1);
         self.instr__INC_iHL();
+        self.increase_cycles(11);
+    }
+    // jp
+    pub(crate) fn instr_hk__JP_HL(&mut self) {
+        self.IncPC(1);
+        self.instr__JP_HL();
         self.increase_cycles(11);
     }
     // ld
