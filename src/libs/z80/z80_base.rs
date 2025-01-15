@@ -673,7 +673,7 @@ impl Z80 {
             if !self.is_known_caller(old_pc) {
                 let debug_call = true;
                 if debug_call {
-                    log::info!("z80:call UNKOWN 0x{:04x}=>0x{:04x}", old_pc, new_pc);
+                    log::info!("z80:call UNKNOWN 0x{:04x}=>0x{:04x}", old_pc, new_pc);
                     self.peek_stack(5);
                 }
                 assert!(!die_after_unknown_caller);
