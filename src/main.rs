@@ -53,7 +53,7 @@ struct MyLogger;
 
 impl log::Log for MyLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
+        metadata.level() <= Level::Debug
     }
 
     fn log(&self, record: &Record) {
@@ -71,7 +71,7 @@ impl log::Log for MyLogger {
 #[macroquad::main("rsmsx")]
 async fn main() {
     log::set_logger(&MY_LOGGER).unwrap();
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Debug);
 
     let args: std::vec::Vec<_> = std::env::args().skip(1).collect();
     match MyArgs::from_args(args.iter().map(|x| x.as_str())) {
