@@ -73,7 +73,7 @@ impl Z80 {
             //         ram:42e1 c9              RET
 
             self.assert_pc(0x42e1);
-            return true;
+            true
         } else {
             self.SetPC(0x42c2);
             //         ram:42c2 cd 0e b6        CALL       sb_rand_guess_B60E
@@ -106,7 +106,7 @@ impl Z80 {
             }
             self.assert_pc(0x42d1);
             //         ram:42d1 c9              RET
-            return true;
+            true
         }
     }
     // fn hook_4308(&mut self) -> bool {
@@ -457,7 +457,7 @@ impl Z80 {
         self.instr_hk__ADD_HL_BC();
         //         ram:4796 c9              RET
         self.assert_pc(0x4796);
-        return true;
+        true
     }
     pub(crate) fn hook_4797(&mut self) -> bool {
         //         ram:4797 21 d2 c8        LD         HL,BYTE_ram_c8d2                                 hl <- c8ca + *c8b7 if *c23e == 0
@@ -1497,7 +1497,7 @@ impl Z80 {
         self.instr_hk__LD_HL_NNNN(0xc7b0);
         //         ram:54a8 c9              RET
         self.assert_pc(0x54a8);
-        return true;
+        true
     }
     pub(crate) fn hook_54a9(&mut self) -> bool {
         //         ram:54a9 3a 4f c2        LD         A,(DAT_ram_c24f)
@@ -2226,7 +2226,7 @@ impl Z80 {
             //         ram:61b1 37              SCF
             self.instr_hk__SCF();
             //         ram:61b2 c9              RET
-            return true;
+            true
         } else {
             //         ram:60fc c3 7f 61        JP         LAB_ram_617f
             self.IncPC(3);
@@ -2246,7 +2246,7 @@ impl Z80 {
             self.instr_hk__OR_A_A();
             //         ram:61b4 c9              RET
             //
-            return true;
+            true
         }
     }
     pub(crate) fn hook_60db(&mut self) -> bool {
@@ -2714,7 +2714,7 @@ impl Z80 {
         self.instr_hk__XOR_A_A();
         self.assert_pc(0x6a74);
         //         ram:6a74 c9              RET
-        return true;
+        true
     }
     pub(crate) fn hook_6a81(&mut self) -> bool {
         //         ram:6a81 3a 87 c3        LD         A,(BYTE_ram_c387)
@@ -2745,7 +2745,7 @@ impl Z80 {
                 //         ram:6aca c9              RET
 
                 self.assert_pc(0x6aca);
-                return true;
+                true
             } else {
                 self.assert_pc(0x6aae);
                 //         ram:6aae fe 25           CP         37
@@ -2754,7 +2754,7 @@ impl Z80 {
                 self.IncPC(1);
                 if (self.data.F & FLAG_C) == 0 {
                     self.increase_cycles(11);
-                    return true;
+                    true
                 } else {
                     self.assert_pc(0x6ab1);
                     self.increase_cycles(5);
@@ -2780,7 +2780,7 @@ impl Z80 {
                         self.instr_hk__INC_C();
                         //         ram:6ac8 c9              RET
                         self.assert_pc(0x6ac8);
-                        return true;
+                        true
                     } else {
                         self.assert_pc(0x6ab6);
                         //         ram:6ab6 fe 15           CP         21
@@ -2789,7 +2789,7 @@ impl Z80 {
                         self.IncPC(1);
                         if (self.data.F & FLAG_C) == 0 {
                             self.increase_cycles(11);
-                            return true;
+                            true
                         } else {
                             self.assert_pc(0x6ab9);
                             self.increase_cycles(5);
@@ -2806,7 +2806,7 @@ impl Z80 {
                                 self.instr_hk__INC_C();
                                 //         ram:6ac8 c9              RET
                                 self.assert_pc(0x6ac8);
-                                return true;
+                                true
                             } else {
                                 self.assert_pc(0x6abe);
                                 //         ram:6abe fe 01           CP         1
@@ -2826,11 +2826,11 @@ impl Z80 {
                                     self.instr_hk__INC_C();
                                     //         ram:6ac8 c9              RET
                                     self.assert_pc(0x6ac8);
-                                    return true;
+                                    true
                                 } else {
                                     //         ram:6ac3 c9              RET
                                     self.assert_pc(0x6ac3);
-                                    return true;
+                                    true
                                 }
                             }
                         }
@@ -2853,7 +2853,7 @@ impl Z80 {
                 //         ram:6aca c9              RET
 
                 self.assert_pc(0x6aca);
-                return true;
+                true
             } else {
                 //         ram:6a8e fe 23           CP         35
                 self.instr_hk__CP_NN(35);
@@ -2861,7 +2861,7 @@ impl Z80 {
                 self.IncPC(1);
                 if (self.data.F & FLAG_C) == 0 {
                     self.increase_cycles(11);
-                    return true;
+                    true
                 } else {
                     self.assert_pc(0x6a91);
                     self.increase_cycles(5);
@@ -2882,7 +2882,7 @@ impl Z80 {
                         self.instr_hk__INC_C();
                         //         ram:6ac8 c9              RET
                         self.assert_pc(0x6ac8);
-                        return true;
+                        true
                     } else {
                         //         ram:6a96 fe 15           CP         21
                         self.assert_pc(0x6a96);
@@ -2891,7 +2891,7 @@ impl Z80 {
                         self.IncPC(1);
                         if (self.data.F & FLAG_C) == 0 {
                             self.increase_cycles(11);
-                            return true;
+                            true
                         } else {
                             self.assert_pc(0x6a99);
                             self.increase_cycles(5);
@@ -2917,7 +2917,7 @@ impl Z80 {
                                 self.instr_hk__INC_C();
                                 //         ram:6ac8 c9              RET
                                 self.assert_pc(0x6ac8);
-                                return true;
+                                true
                             } else {
                                 self.assert_pc(0x6a9e);
                                 //         ram:6a9e fe 09           CP         9
@@ -2937,7 +2937,7 @@ impl Z80 {
                                     self.instr_hk__INC_C();
                                     //         ram:6ac8 c9              RET
                                     self.assert_pc(0x6ac8);
-                                    return true;
+                                    true
                                 } else {
                                     self.assert_pc(0x6aa3);
                                     //         ram:6aa3 fe 01           CP         1
@@ -2953,11 +2953,11 @@ impl Z80 {
                                         self.instr_hk__INC_C();
                                         //         ram:6ac8 c9              RET
                                         self.assert_pc(0x6ac8);
-                                        return true;
+                                        true
                                     } else {
                                         //         ram:6aa8 c9              RET
                                         self.assert_pc(0x6aa8);
-                                        return true;
+                                        true
                                     }
                                 }
                             }
@@ -4947,7 +4947,7 @@ impl Z80 {
         //         ram:7f9b 37              SCF
         self.instr_hk__SCF();
         //         ram:7f9c c9              RET
-        return true;
+        true
     }
     pub(crate) fn hook_8018(&mut self) -> bool {
         println!("hook_8018");
@@ -5231,7 +5231,7 @@ impl Z80 {
             self.instr_hk__LD_iHL_NN(0xff);
             //         ram:8090 c9              RET
             println!("~hook_8018_6");
-            return true;
+            true
         } else {
             //         ram:804f 21 bd c8        LD         HL,BYTE_ram_c8bd
             self.instr_hk__LD_HL_NNNN(0xc8bd);
@@ -5250,7 +5250,7 @@ impl Z80 {
             //         ram:8096 c9              RET
 
             println!("~hook_8018_7");
-            return true;
+            true
         }
         // }
     }
@@ -5763,7 +5763,7 @@ impl Z80 {
 
         self.assert_pc(0x8198);
         //         ram:8198 c9              RET
-        return true;
+        true
     }
     pub(crate) fn hook_81ec(&mut self) -> bool {
         //         ram:81ec e5              PUSH       HL
@@ -6583,7 +6583,7 @@ impl Z80 {
 
                     //         ram:894b c9              RET
                     self.assert_pc(0x894b);
-                    return true;
+                    true
                 } else {
                     self.increase_cycles(7);
                     self.SetPC(0x8911);
@@ -6613,7 +6613,7 @@ impl Z80 {
 
                     //         ram:8925 c9              RET
                     self.assert_pc(0x8925);
-                    return true;
+                    true
                 }
             } else {
                 self.increase_cycles(7);
@@ -6642,7 +6642,7 @@ impl Z80 {
 
                 //         ram:8908 c9              RET
                 self.assert_pc(0x8908);
-                return true;
+                true
             }
         } else {
             self.increase_cycles(7);
@@ -6677,7 +6677,7 @@ impl Z80 {
 
             //         ram:88ee c9              RET
             self.assert_pc(0x88ee);
-            return true;
+            true
         }
     }
     pub(crate) fn hook_894c(&mut self) -> bool {
@@ -8514,7 +8514,7 @@ impl Z80 {
 
             //         ram:af7f c9              RET
             self.assert_pc(0xaf7f);
-            return true;
+            true
         }
     }
     pub(crate) fn hook_b181(&mut self) -> bool {
@@ -9368,7 +9368,7 @@ impl Z80 {
         assert!(self.call_hook(0x89f5));
         //         ram:b386 c9              RET
         self.assert_pc(0xb386);
-        return true;
+        true
     }
     pub(crate) fn hook_b387(&mut self) -> bool {
         //         ram:b387 3a b7 c8        LD         A,(BYTE_ram_c8b7)                                hl <- (*c8b7) >> 1
@@ -9429,7 +9429,7 @@ impl Z80 {
         //         ram:b3a5 7d              LD         A,L
         self.instr_hk__LD_A_L();
         //         ram:b3a6 c9              RET
-        return true;
+        true
         //                              s_ITEM_ram_b3a7                                 XREF[1]:     sb_shop_guess_b3b2:b43e(*)
         //         ram:b3a7 49 54 45        ds         "ITEM"
         //                  4d 00
@@ -10739,7 +10739,7 @@ impl Z80 {
             self.instr_hk__LD_iHL_A();
             //         ram:b919 c9              RET
             self.assert_pc(0xb919);
-            return true;
+            true
             //
             // true
         } else {
@@ -10754,7 +10754,7 @@ impl Z80 {
             self.instr_hk__LD_iHL_A();
             //         ram:b911 c9              RET
             self.assert_pc(0xb911);
-            return true;
+            true
         }
     }
     pub(crate) fn hook_bcc5(&mut self) -> bool {
@@ -10839,13 +10839,13 @@ impl Z80 {
             //         ram:bcfb c9              RET
             self.assert_pc(0xbcfb);
             //
-            return true;
+            true
         } else {
             //         ram:bcf7 3e 01           LD         A,0x1
             self.instr_hk__LD_A_NN(0x1);
             //         ram:bcf9 c9              RET
             self.assert_pc(0xbcf9);
-            return true;
+            true
         }
     }
     pub(crate) fn hook_c000(&mut self) -> bool {
