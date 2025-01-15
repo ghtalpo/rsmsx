@@ -221,6 +221,12 @@ impl Z80 {
         self.instr__EX_iSP_HL();
         self.increase_cycles(19);
     }
+    // exx
+    pub(crate) fn instr_hk__EXX(&mut self) {
+        self.IncPC(1);
+        self.instr__EXX();
+        self.increase_cycles(4);
+    }
     // inc
     pub(crate) fn instr_hk__INC_A(&mut self) {
         self.IncPC(1);
