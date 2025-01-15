@@ -1042,6 +1042,12 @@ impl Z80 {
         self.instrED__SBC_HL_DE();
         self.increase_cycles(15);
     }
+    pub(crate) fn instr_hk__SBC_A_NN(&mut self, nn: u8) {
+        self.IncPC(2);
+        self.sbc(nn);
+        self.increase_cycles(7);
+    }
+
     // scf
     pub(crate) fn instr_hk__SCF(&mut self) {
         self.IncPC(1);
