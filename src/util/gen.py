@@ -84,7 +84,7 @@ def convert_to_lua(line):
                     return "WRONG %s %s" % (op, opr)
             elif op == "LD":
                 oprr = opr.split(",")
-                if is_reg16(oprr[0]):
+                if is_reg16(oprr[0]) or is_reg16i(oprr[0]):
                     if re.match(r"^[\d]", oprr[1]):
                         # return "z80_gen.Set%s(z80, %s)" % (oprr[0],oprr[1])
                         return "self.instr_hk__LD_%s_NNNN(%s);" % (oprr[0], oprr[1])
