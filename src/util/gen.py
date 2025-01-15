@@ -344,7 +344,7 @@ def convert_to_lua(line):
                         return "self.instr_hk__%s_A_i%s();" % (op, oprr[1][1:3])
                         # return "z80:adc(read_byte(z80, z80_gen.%s(z80)))" % (oprr[1][1:3],)
                     else:
-                        return "z80:adc(%s)" % (oprr[1],)
+                        return "self.instr_hk__%s_A_NN(%s);" % (op, oprr[1])
                 # elif is_reg8(oprr[0]):
                 # return "z80.add(z80.%s)" % (oprr[1],)
                 else:
@@ -403,7 +403,18 @@ def convert_to_lua(line):
             elif op == "JP":
                 oprr = opr.split(",")
                 if len(oprr) == 1:
-                    return "self.IncPC(3);self.increase_cycles(10);JP (%s);\n" % oprr[0]
+                    if (
+                        len(oprr[0]) >= 4
+                        and oprr[0].startswith("(")
+                        and (is_reg16(oprr[0][1:3]) or is_reg16i(oprr[0][1:3]))
+                    ):
+                        return "self.instr_hk__%s_%s();" % (op, oprr[0][1:3])
+                    # return "self.IncPC(3);self.increase_cycles(10);JP (%s);\n" % oprr[0]
+                    else:
+                        return (
+                            "self.IncPC(3);self.increase_cycles(10);JP (%s);\n"
+                            % oprr[0]
+                        )
                 elif oprr[0] == "M":
                     return (
                         "self.IncPC(3);self.increase_cycles(10);\nif (self.data.F & FLAG_S) != 0 {\n\tJP (%s);\n}\n"
